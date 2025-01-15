@@ -17,9 +17,12 @@
       "automerge": true
     }
   ],
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": ["^pkg/values/framework\\.go$"],
+      "customType": "regex",
+      "fileMatch": [
+        "^pkg/values/framework\\.go$"
+      ],
       "matchStrings": [
         "frameWorkVersion\\s*=\\s*\"(?<currentValue>v[^\"]+)\""
       ],
