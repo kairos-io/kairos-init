@@ -2,6 +2,10 @@ package stages
 
 import (
 	"fmt"
+	"github.com/kairos-io/kairos-init/pkg/system"
+	"github.com/mudler/yip/pkg/console"
+	"github.com/mudler/yip/pkg/executor"
+	"github.com/twpayne/go-vfs/v5"
 	"os"
 	"sort"
 
@@ -38,6 +42,10 @@ func getLatestKernel(l types.KairosLogger) (string, error) {
 
 	sort.Sort(semver.Collection(versions))
 	kernelVersion = versions[0].String()
+	if kernelVersion == "" {
+		l.Logger.Error().Msgf("Failed to find the latest kernel version")
+		return kernelVersion, fmt.Errorf("failed to find the latest kernel")
+	}
 	return kernelVersion, nil
 }
 
@@ -58,11 +66,19 @@ func GetKairosReleaseStage(sis values.System, _ types.KairosLogger) []schema.Sta
 	}
 }
 
-func GetInstallStage(sis values.System, logger types.KairosLogger) []schema.Stage {
+func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Stage, error) {
 	// Get the packages
-	packages, _ := values.GetPackages(sis, logger)
+	packages, err := values.GetPackages(sis, logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to get the packages: %s", err)
+		return []schema.Stage{}, err
+	}
 	// Now parse the packages with the templating engine
-	finalMergedPkgs, _ := values.PackageListToTemplate(packages, values.GetTemplateParams(sis), logger)
+	finalMergedPkgs, err := values.PackageListToTemplate(packages, values.GetTemplateParams(sis), logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to parse the packages: %s", err)
+		return []schema.Stage{}, err
+	}
 	return []schema.Stage{
 		{
 			Name: "Install base packages",
@@ -71,11 +87,15 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) []schema.Stag
 				Refresh: true,
 			},
 		},
-	}
+	}, nil
 }
 
-func GetKernelStage(_ values.System, logger types.KairosLogger) []schema.Stage {
-	kernel, _ := getLatestKernel(logger)
+func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage, error) {
+	kernel, err := getLatestKernel(logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to get the latest kernel: %s", err)
+		return []schema.Stage{}, err
+	}
 
 	return []schema.Stage{
 		{
@@ -99,11 +119,15 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) []schema.Stage {
 				fmt.Sprintf("ln -s /boot/vmlinuz-%s /boot/vmlinuz", kernel),
 			},
 		},
-	}
+	}, nil
 }
 
-func GetInitrdStage(_ values.System, logger types.KairosLogger) []schema.Stage {
-	kernel, _ := getLatestKernel(logger)
+func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage, error) {
+	kernel, err := getLatestKernel(logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to get the latest kernel: %s", err)
+		return []schema.Stage{}, err
+	}
 
 	return []schema.Stage{
 		{
@@ -118,7 +142,7 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) []schema.Stage {
 				fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel),
 			},
 		},
-	}
+	}, nil
 }
 
 func GetCleanupStage(_ values.System, _ types.KairosLogger) []schema.Stage {
@@ -164,18 +188,43 @@ func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.St
 	}
 }
 
-// GetAllStages Returns all the stages in the correct order and in the init stage
-// TODO: other stages should be able to return an error so we stop
-func GetAllStages(sis values.System, logger types.KairosLogger) schema.YipConfig {
-	data := schema.YipConfig{Stages: map[string][]schema.Stage{}}
-	data.Stages["init"] = []schema.Stage{}
+// RunAllStages Runs all the stages in the correct order
+func RunAllStages(logger types.KairosLogger) (schema.YipConfig, error) {
+	sis := system.DetectSystem(logger)
+	initExecutor := executor.NewExecutor(executor.WithLogger(logger))
+	yipConsole := console.NewStandardConsole(console.WithLogger(logger))
 
+	data := schema.YipConfig{Stages: map[string][]schema.Stage{}}
+	installStage, err := GetInstallStage(sis, logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to get the install stage: %s", err)
+		return data, err
+	}
+	data.Stages["install"] = installStage
+	// Run install first, as kernel and initrd resolution depend on the installed packages
+	err = initExecutor.Run("install", vfs.OSFS, yipConsole, data.ToString())
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to run the install stage: %s", err)
+		return data, err
+	}
+
+	// Now the init stage with the rest of the steps
+	data.Stages["init"] = []schema.Stage{}
 	data.Stages["init"] = append(data.Stages["init"], GetKairosReleaseStage(sis, logger)...)
-	data.Stages["init"] = append(data.Stages["init"], GetInstallStage(sis, logger)...)
-	data.Stages["init"] = append(data.Stages["init"], GetKernelStage(sis, logger)...)
+	kernelStage, err := GetKernelStage(sis, logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to get the kernel stage: %s", err)
+		return data, err
+	}
+	data.Stages["init"] = append(data.Stages["init"], kernelStage...)
 	data.Stages["init"] = append(data.Stages["init"], GetInstallFrameworkStage(sis, logger)...)
-	data.Stages["init"] = append(data.Stages["init"], GetInitrdStage(sis, logger)...)
+	initrdStage, err := GetInitrdStage(sis, logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to get the initrd stage: %s", err)
+		return data, err
+	}
+	data.Stages["init"] = append(data.Stages["init"], initrdStage...)
 	data.Stages["init"] = append(data.Stages["init"], GetCleanupStage(sis, logger)...)
 
-	return data
+	return data, nil
 }

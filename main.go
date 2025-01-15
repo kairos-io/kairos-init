@@ -5,13 +5,9 @@ import (
 	"os"
 
 	"github.com/kairos-io/kairos-init/pkg/stages"
-	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types"
-	"github.com/mudler/yip/pkg/console"
-	"github.com/mudler/yip/pkg/executor"
 	"github.com/sanity-io/litter"
-	"github.com/twpayne/go-vfs/v5"
 )
 
 func main() {
@@ -22,13 +18,8 @@ func main() {
 	logger := types.NewKairosLogger("kairos-init", *level, false)
 	logger.Infof("Starting kairos-init version %s", values.GetVersion())
 	logger.Debug(values.GetFullVersion())
-	// Detect the system
-	sis := system.DetectSystem(logger)
-	initExecutor := executor.NewExecutor(executor.WithLogger(logger))
-	yipConsole := console.NewStandardConsole(console.WithLogger(logger))
 
-	runStages := stages.GetAllStages(sis, logger)
-	err := initExecutor.Run("init", vfs.OSFS, yipConsole, runStages.ToString())
+	runStages, err := stages.RunAllStages(logger)
 	if err != nil {
 		logger.Error(err)
 		os.Exit(1)
