@@ -188,27 +188,80 @@ func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.St
 	}
 }
 
+func GetServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
+	return []schema.Stage{
+		{
+			Name: "Enable services",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"systemd-networkd", // Separate this and use ifOS to trigger it only on systemd systems? i.e. do a reverse regex match somehow
+					"ssh",
+				},
+			},
+		},
+	}
+}
+
 // RunAllStages Runs all the stages in the correct order
 func RunAllStages(logger types.KairosLogger) (schema.YipConfig, error) {
+	fullYipConfig := schema.YipConfig{Stages: map[string][]schema.Stage{}}
+	installStage, err := RunInstallStage(logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to run the install stage: %s", err)
+		return installStage, err
+	}
+
+	fullYipConfig.Stages["install"] = installStage.Stages["install"]
+	// Add packages install
+
+	initStage, err := RunInitStage(logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to run the init stage: %s", err)
+		return fullYipConfig, err
+	}
+	fullYipConfig.Stages["init"] = initStage.Stages["init"]
+
+	return fullYipConfig, nil
+}
+
+// RunInstallStage Runs the install stage
+// This is good if we are doing the init in layers as this will allow us to run the install stage and cache that then run
+// the init stage later so we can cache the install stage which is usually the longest
+func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	sis := system.DetectSystem(logger)
 	initExecutor := executor.NewExecutor(executor.WithLogger(logger))
 	yipConsole := console.NewStandardConsole(console.WithLogger(logger))
 
 	data := schema.YipConfig{Stages: map[string][]schema.Stage{}}
+	// Add packages install
 	installStage, err := GetInstallStage(sis, logger)
 	if err != nil {
 		logger.Logger.Error().Msgf("Failed to get the install stage: %s", err)
 		return data, err
 	}
 	data.Stages["install"] = installStage
+	// Add the framework stage
+	data.Stages["install"] = append(data.Stages["install"], GetInstallFrameworkStage(sis, logger)...)
+
 	// Run install first, as kernel and initrd resolution depend on the installed packages
 	err = initExecutor.Run("install", vfs.OSFS, yipConsole, data.ToString())
 	if err != nil {
 		logger.Logger.Error().Msgf("Failed to run the install stage: %s", err)
 		return data, err
 	}
+	return data, nil
+}
 
-	// Now the init stage with the rest of the steps
+// RunInitStage Runs the init stage
+// This is good if we are doing the init in layers as this will allow us to run the install stage and cache that then run
+// the init stage later so we can cache the install stage which is usually the longest
+func RunInitStage(logger types.KairosLogger) (schema.YipConfig, error) {
+	sis := system.DetectSystem(logger)
+	initExecutor := executor.NewExecutor(executor.WithLogger(logger))
+	yipConsole := console.NewStandardConsole(console.WithLogger(logger))
+
+	data := schema.YipConfig{Stages: map[string][]schema.Stage{}}
+
 	data.Stages["init"] = []schema.Stage{}
 	data.Stages["init"] = append(data.Stages["init"], GetKairosReleaseStage(sis, logger)...)
 	kernelStage, err := GetKernelStage(sis, logger)
@@ -217,14 +270,19 @@ func RunAllStages(logger types.KairosLogger) (schema.YipConfig, error) {
 		return data, err
 	}
 	data.Stages["init"] = append(data.Stages["init"], kernelStage...)
-	data.Stages["init"] = append(data.Stages["init"], GetInstallFrameworkStage(sis, logger)...)
 	initrdStage, err := GetInitrdStage(sis, logger)
 	if err != nil {
 		logger.Logger.Error().Msgf("Failed to get the initrd stage: %s", err)
 		return data, err
 	}
 	data.Stages["init"] = append(data.Stages["init"], initrdStage...)
+	data.Stages["init"] = append(data.Stages["init"], GetServicesStage(sis, logger)...)
 	data.Stages["init"] = append(data.Stages["init"], GetCleanupStage(sis, logger)...)
 
+	err = initExecutor.Run("init", vfs.OSFS, yipConsole, data.ToString())
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to run the install stage: %s", err)
+		return data, err
+	}
 	return data, nil
 }
