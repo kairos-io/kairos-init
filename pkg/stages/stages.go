@@ -6,9 +6,9 @@ import (
 	"sort"
 
 	semver "github.com/hashicorp/go-version"
+	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types"
 	"github.com/mudler/yip/pkg/schema"
-	"kairos-init-yip/pkg/values"
 )
 
 func getLatestKernel(l types.KairosLogger) (string, error) {
