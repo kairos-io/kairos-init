@@ -6,7 +6,7 @@ var (
 	version = "v0.0.1"
 	// gitCommit is the git sha1 + dirty if build from a dirty git.
 	gitCommit = "none"
-	// Not even sure this below works out of the box
+	// This gets auto updated by renovate on github
 	// renovate: datasource=docker depName=quay.io/kairos/framework versioning=semver
 	frameWorkVersion = "v2.15.0"
 )

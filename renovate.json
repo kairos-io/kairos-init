@@ -2,5 +2,30 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "config:recommended"
+  ],
+  "timezone": "Europe/Brussels",
+  "pinDigests": false,
+  "commitMessagePrefix": ":arrow_up: Update",
+  "reviewers": [
+    "team:maintainers"
+  ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": [
+        "patch"
+      ],
+      "automerge": true
+    }
+  ],
+  "regexManagers": [
+    {
+      "fileMatch": ["^pkg/values/framework\\.go$"],
+      "matchStrings": [
+        "frameWorkVersion\\s*=\\s*\"(?<currentValue>v[^\"]+)\""
+      ],
+      "depNameTemplate": "quay.io/kairos/framework",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver"
+    }
   ]
 }
