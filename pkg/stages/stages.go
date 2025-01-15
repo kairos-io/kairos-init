@@ -2,9 +2,11 @@ package stages
 
 import (
 	"fmt"
+	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/mudler/yip/pkg/console"
 	"github.com/mudler/yip/pkg/executor"
+	"github.com/sanity-io/litter"
 	"github.com/twpayne/go-vfs/v5"
 	"os"
 	"sort"
@@ -284,5 +286,8 @@ func RunInitStage(logger types.KairosLogger) (schema.YipConfig, error) {
 		logger.Logger.Error().Msgf("Failed to run the install stage: %s", err)
 		return data, err
 	}
+
+	logger.Debug(litter.Sdump(config.DefaultConfig))
+
 	return data, nil
 }
