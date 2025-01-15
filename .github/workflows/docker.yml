@@ -13,6 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Docker Metadata action
+        id: meta
         uses: docker/metadata-action@v5.6.1
         with:
           images: ttl.sh/kairos-init
@@ -29,3 +30,5 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64, linux/arm64
           push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
