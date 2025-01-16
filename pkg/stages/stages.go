@@ -6,7 +6,6 @@ import (
 	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/mudler/yip/pkg/console"
 	"github.com/mudler/yip/pkg/executor"
-	"github.com/sanity-io/litter"
 	"github.com/twpayne/go-vfs/v5"
 	"os"
 	"sort"
@@ -56,12 +55,12 @@ func GetKairosReleaseStage(sis values.System, _ types.KairosLogger) []schema.Sta
 		{
 			Name: "Write kairos-release",
 			Environment: map[string]string{
-				"KAIROS_VERSION": sis.Version,
+				"KAIROS_VERSION": config.DefaultConfig.FrameworkVersion, // Move to use the framework version
 				"KAIROS_ARCH":    sis.Arch.String(),
 				"KAIROS_FLAVOR":  sis.Distro.String(),
 				"KAIROS_FAMILY":  sis.Family.String(),
-				"KAIROS_MODEL":   "generic", // NEEDED or it breaks boot!
-				"KAIROS_VARIANT": "core",    // Maybe needed?
+				"KAIROS_MODEL":   config.DefaultConfig.Model, // NEEDED or it breaks boot!
+				"KAIROS_VARIANT": config.DefaultConfig.Variant,
 			},
 			EnvironmentFile: "/etc/kairos-release",
 		},
@@ -125,26 +124,32 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 }
 
 func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage, error) {
-	kernel, err := getLatestKernel(logger)
-	if err != nil {
-		logger.Logger.Error().Msgf("Failed to get the latest kernel: %s", err)
-		return []schema.Stage{}, err
-	}
-
-	return []schema.Stage{
+	stage := []schema.Stage{
 		{
 			Name: "Remove all initrds",
 			Commands: []string{
 				"rm -f /boot/initrd*",
 			},
 		},
-		{
+	}
+
+	// If we are not using trusted boot we need to create a new initrd
+	if !config.DefaultConfig.TrustedBoot {
+		kernel, err := getLatestKernel(logger)
+		if err != nil {
+			logger.Logger.Error().Msgf("Failed to get the latest kernel: %s", err)
+			return []schema.Stage{}, err
+		}
+
+		stage = append(stage, schema.Stage{
 			Name: "Create new initrd",
 			Commands: []string{
 				fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel),
 			},
-		},
-	}, nil
+		})
+	}
+
+	return stage, nil
 }
 
 func GetCleanupStage(_ values.System, _ types.KairosLogger) []schema.Stage {
@@ -293,8 +298,6 @@ func RunInitStage(logger types.KairosLogger) (schema.YipConfig, error) {
 		logger.Logger.Error().Msgf("Failed to run the install stage: %s", err)
 		return data, err
 	}
-
-	logger.Debug(litter.Sdump(config.DefaultConfig))
 
 	return data, nil
 }

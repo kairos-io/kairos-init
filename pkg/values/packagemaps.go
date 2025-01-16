@@ -2,6 +2,7 @@ package values
 
 import (
 	"bytes"
+	"github.com/kairos-io/kairos-init/pkg/config"
 
 	semver "github.com/hashicorp/go-version"
 	sdkTypes "github.com/kairos-io/kairos-sdk/types"
@@ -215,37 +216,46 @@ func PackageListToTemplate(packages []string, params map[string]string, l sdkTyp
 
 func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 	mergedPkgs := CommonPackages
-	version, err := semver.NewVersion(s.Version)
+	systemVersion, err := semver.NewVersion(s.Version)
 	if err != nil {
 		return nil, err
 	}
 
 	// Go over all packages maps
-	for _, packages := range []VersionMap{
+	filteredPackages := []VersionMap{
 		BasePackages[s.Distro][s.Arch],
-		ImmucorePackages[s.Distro][s.Arch], // immucore packages should only be installed under grub
 		KernelPackages[s.Distro][s.Arch],
-		GrubPackages[s.Distro][s.Arch],    // grub packages should only be installed under grub
-		SystemdPackages[s.Distro][s.Arch], // systemd packages should only be installed under trusted boot
-	} {
+	}
+
+	if config.DefaultConfig.TrustedBoot {
+		// Install only systemd-boot packages
+		filteredPackages = append(filteredPackages, SystemdPackages[s.Distro][s.Arch])
+	} else {
+		// install grub and immucore packages
+		filteredPackages = append(filteredPackages, GrubPackages[s.Distro][s.Arch])
+		filteredPackages = append(filteredPackages, ImmucorePackages[s.Distro][s.Arch])
+	}
+
+	// Go over each list of packages
+	for _, packages := range filteredPackages {
 		// for each package map, check if the version matches the constraint
-		for k, v := range packages {
+		for constraint, values := range packages {
 			// Add them if they are common
-			l.Logger.Debug().Str("constraint", k).Str("version", version.String()).Msg("Checking constraint")
-			if k == Common {
-				l.Logger.Debug().Strs("packages", v).Msg("Adding common packages")
-				mergedPkgs = append(mergedPkgs, v...)
+			l.Logger.Debug().Str("constraint", constraint).Str("version", systemVersion.String()).Msg("Checking constraint")
+			if constraint == Common {
+				l.Logger.Debug().Strs("packages", values).Msg("Adding common packages")
+				mergedPkgs = append(mergedPkgs, values...)
 				continue
 			}
-			constraint, err := semver.NewConstraint(k)
+			semverConstraint, err := semver.NewConstraint(constraint)
 			if err != nil {
-				l.Logger.Error().Err(err).Str("constraint", k).Msg("Error parsing constraint.")
+				l.Logger.Error().Err(err).Str("constraint", constraint).Msg("Error parsing constraint.")
 				continue
 			}
 			// Also add them if the constraint matches
-			if constraint.Check(version) {
-				l.Logger.Debug().Strs("packages", v).Msg("Constraint matches, adding packages")
-				mergedPkgs = append(mergedPkgs, v...)
+			if semverConstraint.Check(systemVersion) {
+				l.Logger.Debug().Strs("packages", values).Msg("Constraint matches, adding packages")
+				mergedPkgs = append(mergedPkgs, values...)
 			}
 		}
 	}

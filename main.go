@@ -3,15 +3,14 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/mudler/yip/pkg/schema"
-	"os"
-	"strings"
-
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/stages"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types"
+	"github.com/mudler/yip/pkg/schema"
 	"github.com/sanity-io/litter"
+	"os"
+	"strings"
 )
 
 func main() {
@@ -24,10 +23,6 @@ func main() {
 	flag.StringVar(&config.DefaultConfig.FrameworkVersion, "f", values.GetFrameworkVersion(), "set the framework version to use")
 	showHelp := flag.Bool("help", false, "show help")
 
-	if strings.ToLower(trusted) == "true" {
-		config.DefaultConfig.TrustedBoot = true
-	}
-
 	// Custom usage function
 	flag.Usage = func() {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
@@ -39,6 +34,11 @@ func main() {
 	}
 
 	flag.Parse()
+
+	// Set the trusted boot flag to true
+	if strings.ToLower(trusted) == "true" || strings.ToLower(trusted) == "1" {
+		config.DefaultConfig.TrustedBoot = true
+	}
 
 	if *showHelp {
 		flag.Usage()
