@@ -8,7 +8,7 @@ require (
 	github.com/hashicorp/go-version v1.7.0
 	github.com/joho/godotenv v1.5.1
 	github.com/kairos-io/kairos-sdk v0.7.2
-	github.com/mudler/yip v1.13.2-0.20250115153933-94a48dbd4d9b
+	github.com/mudler/yip v1.14.0
 	github.com/sanity-io/litter v1.5.6
 	github.com/twpayne/go-vfs/v5 v5.0.4
 )
