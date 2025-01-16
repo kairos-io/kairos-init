@@ -30,5 +30,6 @@ jobs:
           file: Dockerfile
           platforms: linux/amd64, linux/arm64
           push: true
+          target: kairos-init
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

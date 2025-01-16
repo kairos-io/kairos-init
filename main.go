@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/mudler/yip/pkg/schema"
 	"os"
+	"strings"
 
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/stages"
@@ -14,15 +15,35 @@ import (
 )
 
 func main() {
-	flag.StringVar(&config.DefaultConfig.Level, "level", "info", "set the log level (shorthand: -l)")
-	flag.StringVar(&config.DefaultConfig.Level, "l", "info", "set the log level (shorthand: -l)")
-	flag.StringVar(&config.DefaultConfig.Stage, "stage", "", "set the stage to run (shorthand: -s)")
-	flag.StringVar(&config.DefaultConfig.Stage, "s", "", "set the stage to run (shorthand: -s)")
-	flag.StringVar(&config.DefaultConfig.Model, "model", "generic", "model to build for, like generic or rpi4 (shorthand: -m)")
-	flag.StringVar(&config.DefaultConfig.Model, "m", "generic", "model to build for, like generic or rpi4 (shorthand: -m)")
-	flag.BoolVar(&config.DefaultConfig.TrustedBoot, "trustedboot", false, "init the system for Trusted Boot, changes bootloader to systemd (shorthand: -t)")
-	flag.BoolVar(&config.DefaultConfig.TrustedBoot, "t", false, "init the system for Trusted Boot, changes bootloader to systemd (shorthand: -t)")
+	var trusted string
+	flag.StringVar(&config.DefaultConfig.Level, "l", "info", "set the log level")
+	flag.StringVar(&config.DefaultConfig.Stage, "s", "all", "set the stage to run")
+	flag.StringVar(&config.DefaultConfig.Model, "m", "generic", "model to build for, like generic or rpi4")
+	flag.StringVar(&config.DefaultConfig.Variant, "v", "core", "variant to build (core or standard for k3s flavor) (shorthand: -v)")
+	flag.StringVar(&trusted, "t", "false", "init the system for Trusted Boot, changes bootloader to systemd")
+	flag.StringVar(&config.DefaultConfig.FrameworkVersion, "f", values.GetFrameworkVersion(), "set the framework version to use")
+	showHelp := flag.Bool("help", false, "show help")
+
+	if strings.ToLower(trusted) == "true" {
+		config.DefaultConfig.TrustedBoot = true
+	}
+
+	// Custom usage function
+	flag.Usage = func() {
+		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
+		flag.VisitAll(func(f *flag.Flag) {
+			if f.Name != "cpuprofile" && f.Name != "memprofile" && f.Name != "stubs" && f.Name != "help" && f.Name != "pkg" && f.Name != "log" && f.Name != "e" && f.Name != "out" {
+				fmt.Fprintf(os.Stderr, "  -%s: %s (default: %s)\n", f.Name, f.Usage, f.DefValue)
+			}
+		})
+	}
+
 	flag.Parse()
+
+	if *showHelp {
+		flag.Usage()
+		os.Exit(0)
+	}
 
 	logger := types.NewKairosLogger("kairos-init", config.DefaultConfig.Level, false)
 	logger.Infof("Starting kairos-init version %s", values.GetVersion())
@@ -39,12 +60,12 @@ func main() {
 			runStages, err = stages.RunInstallStage(logger)
 		case "init":
 			runStages, err = stages.RunInitStage(logger)
+		case "all":
+			runStages, err = stages.RunAllStages(logger)
 		default:
-			logger.Errorf("Unknown stage %s", config.DefaultConfig.Stage)
+			logger.Errorf("Unknown stage %s. Valid values are install, init and all", config.DefaultConfig.Stage)
 			os.Exit(1)
 		}
-	} else {
-		runStages, err = stages.RunAllStages(logger)
 	}
 
 	if err != nil {

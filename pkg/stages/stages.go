@@ -167,6 +167,13 @@ func GetCleanupStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 }
 
 func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.Stage {
+	var frameworkVersion string
+	// If the framework version is set in the config use that, otherwise use the version from the values which usually its the latest
+	if config.DefaultConfig.FrameworkVersion != "" {
+		frameworkVersion = config.DefaultConfig.FrameworkVersion
+	} else {
+		frameworkVersion = values.GetFrameworkVersion()
+	}
 	return []schema.Stage{
 		{
 			Name: "Create kairos directory",
@@ -182,7 +189,7 @@ func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.St
 			Name: "Install framework",
 			UnpackImages: []schema.UnpackImageConf{
 				{
-					Source: fmt.Sprintf("quay.io/kairos/framework:%s", values.GetFrameworkVersion()),
+					Source: fmt.Sprintf("quay.io/kairos/framework:%s", frameworkVersion),
 					Target: "/",
 				},
 			},
