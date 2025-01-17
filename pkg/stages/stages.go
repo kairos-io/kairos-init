@@ -2,18 +2,17 @@ package stages
 
 import (
 	"fmt"
+	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/system"
+	"github.com/kairos-io/kairos-init/pkg/values"
+	"github.com/kairos-io/kairos-sdk/types"
 	"github.com/mudler/yip/pkg/console"
 	"github.com/mudler/yip/pkg/executor"
+	"github.com/mudler/yip/pkg/schema"
 	"github.com/twpayne/go-vfs/v5"
 	"os"
 	"sort"
-
-	semver "github.com/hashicorp/go-version"
-	"github.com/kairos-io/kairos-init/pkg/values"
-	"github.com/kairos-io/kairos-sdk/types"
-	"github.com/mudler/yip/pkg/schema"
 )
 
 func getLatestKernel(l types.KairosLogger) (string, error) {
@@ -24,29 +23,39 @@ func getLatestKernel(l types.KairosLogger) (string, error) {
 	if err != nil {
 		l.Logger.Error().Msgf("Failed to read the directory %s: %s", modulesPath, err)
 		return kernelVersion, err
-
 	}
 
 	var versions []*semver.Version
-
+	var version *semver.Version
 	for _, dir := range dirs {
 		if dir.IsDir() {
 			// Parse the directory name as a semver version
-			version, err := semver.NewVersion(dir.Name())
+			version, err = semver.NewVersion(dir.Name())
 			if err != nil {
-				l.Logger.Error().Msgf("Failed to parse the version %s: %s", dir.Name(), err)
+				l.Logger.Debug().Err(err).Msgf("Failed to parse the version %s as semver", dir.Name())
 				continue
 			}
 			versions = append(versions, version)
 		}
 	}
 
-	sort.Sort(semver.Collection(versions))
-	kernelVersion = versions[0].String()
-	if kernelVersion == "" {
-		l.Logger.Error().Msgf("Failed to find the latest kernel version")
-		return kernelVersion, fmt.Errorf("failed to find the latest kernel")
+	// We could have no semver version but custom versions like 5.4.0-101-generic.fc32.x86_64
+	// In that case we need to just use the full name
+	if len(versions) == 0 {
+		if len(dirs) >= 1 {
+			kernelVersion = dirs[0].Name()
+		} else {
+			return kernelVersion, fmt.Errorf("no kernel versions found")
+		}
+	} else {
+		sort.Sort(semver.Collection(versions))
+		kernelVersion = versions[0].String()
+		if kernelVersion == "" {
+			l.Logger.Error().Msgf("Failed to find the latest kernel version")
+			return kernelVersion, fmt.Errorf("failed to find the latest kernel")
+		}
 	}
+
 	return kernelVersion, nil
 }
 
@@ -228,11 +237,33 @@ func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.St
 func GetServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 	return []schema.Stage{
 		{
-			Name: "Enable services",
+			Name: "Enable services for all",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"systemd-networkd", // Separate this and use ifOS to trigger it only on systemd systems? i.e. do a reverse regex match somehow
+				},
+			},
+		},
+		{
+			Name:     "Enable services for Debian family",
+			OnlyIfOs: "Ubuntu.*|Debian.*",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
 					"ssh",
+				},
+			},
+		},
+		{
+			Name:     "Enable services for RHEL family",
+			OnlyIfOs: "Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"sshd",
+					"systemd-resolved",
+				},
+				Disable: []string{
+					"dnf-makecache",
+					"dnf-makecache.timer",
 				},
 			},
 		},
