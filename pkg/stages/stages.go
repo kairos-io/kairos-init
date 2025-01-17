@@ -152,6 +152,29 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 	return stage, nil
 }
 
+// GetWorkaroundsStage Returns the workarounds stage
+// It applies some workarounds to the system to fix up inconsistent things or issues on the system
+func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
+	return []schema.Stage{
+		{
+			Name:     "Link grub-editenv to grub2-editenv",
+			OnlyIfOs: "ubuntu",
+			If:       "test -f /usr/bin/grub-editenv",
+			Commands: []string{
+				"ln -s /usr/bin/grub-editenv /usr/bin/grub2-editenv",
+			},
+		},
+		{
+			Name:     "Fixup sudo perms",
+			OnlyIfOs: "ubuntu",
+			Commands: []string{
+				"chown root:root /usr/bin/sudo",
+				"chmod 4755 /usr/bin/sudo",
+			},
+		},
+	}
+}
+
 func GetCleanupStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 	return []schema.Stage{
 		{
@@ -291,6 +314,7 @@ func RunInitStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	}
 	data.Stages["init"] = append(data.Stages["init"], initrdStage...)
 	data.Stages["init"] = append(data.Stages["init"], GetServicesStage(sis, logger)...)
+	data.Stages["init"] = append(data.Stages["init"], GetWorkaroundsStage(sis, logger)...)
 	data.Stages["init"] = append(data.Stages["init"], GetCleanupStage(sis, logger)...)
 
 	err = initExecutor.Run("init", vfs.OSFS, yipConsole, data.ToString())
