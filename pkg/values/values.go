@@ -52,6 +52,15 @@ const (
 	SUSEFamily    Family = "suse"
 )
 
+type Model string              // Model is the type of the system
+func (m Model) String() string { return string(m) }
+
+const (
+	Generic Model = "generic"
+	Rpi3    Model = "rpi3"
+	Rpi4    Model = "rpi4"
+)
+
 type System struct {
 	Name    string
 	Distro  Distro

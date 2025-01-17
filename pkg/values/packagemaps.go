@@ -53,8 +53,8 @@ type VersionMap map[string][]string
 // ImmucorePackages are the minimum set of packages that immucore needs.
 // Otherwise you wont be able to build the initrd with immucore on it.
 var ImmucorePackages = PackageMap{
-	Ubuntu: {
-		ArchAMD64: {
+	DebianFamily: {
+		ArchCommon: {
 			Common: {
 				"dracut",            // To build the initrd
 				"dracut-network",    // Network-legacy support for dracut
@@ -63,11 +63,21 @@ var ImmucorePackages = PackageMap{
 				"systemd-sysv",      // No idea, drop it?
 				"cloud-guest-utils", // This brings growpart, so we can resize the partitions
 			},
+		},
+	},
+	Ubuntu: {
+		ArchAMD64: {
 			">=22.04": {
 				"dracut-live", // Livenet support for dracut, split into a separate package on 22.04
 			},
 		},
-		ArchARM64: {},
+	},
+	Debian: {
+		ArchAMD64: {
+			Common: {
+				"dracut-live",
+			},
+		},
 	},
 	RedHatFamily: {
 		ArchAMD64: {
@@ -96,6 +106,20 @@ var KernelPackages = PackageMap{
 			"24.10": {"linux-image-generic-hwe-24.04"},
 		},
 	},
+	Debian: {
+		ArchAMD64: {
+			Common: {
+				"linux-image-amd64",
+				"firmware-linux-free",
+			},
+		},
+		ArchARM64: {
+			Common: {
+				"linux-image-arm64",
+				"firmware-linux-free",
+			},
+		},
+	},
 	RedHatFamily: {
 		ArchCommon: {
 			Common: {
@@ -113,7 +137,62 @@ var BasePackages = PackageMap{
 	DebianFamily: {
 		ArchCommon: {
 			Common: {
-				"curl", // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
+				"ca-certificates", // Basic certificates for secure communication
+				"curl",            // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
+				"binutils",
+				"conntrack",
+				"console-setup",
+				"coreutils",
+				"cryptsetup",
+				"debianutils",
+				"ethtool",
+				"fuse3",
+				"gdisk",
+				"gnupg",
+				"gnupg1-l10n",
+				"haveged",
+				"iproute2",
+				"iptables",
+				"iputils-ping",
+				"krb5-locales",
+				"libatm1",
+				"libglib2.0-data",
+				"libgpm2",
+				"libldap-common",
+				"libnss-systemd",
+				"libpam-cap",
+				"libsasl2-modules",
+				"mdadm",
+				"nbd-client",
+				"ncurses-term",
+				"neovim",
+				"nfs-common",
+				"nftables",
+				"open-iscsi",
+				"openssh-server",
+				"open-vm-tools",
+				"os-prober",
+				"patch",
+				"pigz",
+				"pkg-config",
+				"psmisc",
+				"publicsuffix",
+				"python3-pynvim",
+				"shared-mime-info",
+				"snapd",
+				"systemd-timesyncd",
+				"xauth",
+				"xclip",
+				"xdg-user-dirs",
+				"xxd",
+				"xz-utils",
+				"zerofree",
+			},
+			"bookworm": {
+				"systemd-cryptsetup", // separated package on bookworm?
+			},
+			"testing": {
+				"systemd-cryptsetup",
 			},
 		},
 	},
@@ -138,41 +217,33 @@ var BasePackages = PackageMap{
 			},
 		},
 	},
+	Debian: {
+		ArchCommon: {
+			Common: {
+				"systemd-resolved",
+				"nohang",
+				"polkitd",
+			},
+		},
+	},
 	Ubuntu: {
 		ArchCommon: {
 			Common: {
-				"gdisk",           // Yip requires it for partitioning
-				"fdisk",           // Yip requires it for partitioning
-				"ca-certificates", // Basic certificates for secure communication
+				// TODO: Check if we need all of these packages, some of them are probably not needed or can go into the family?
+				"fdisk", // Yip requires it for partitioning
 				"conntrack",
 				"console-data",      // Console font support
 				"cloud-guest-utils", // Yip requires it, this brings growpart, so we can resize the partitions
-				"cryptsetup",        // For encrypted partitions support
-				"debianutils",
 				"gettext",
-				"haveged",
-				"iproute2",
-				"iputils-ping",
-				"krb5-locales",
-				"nbd-client",
-				"nfs-common",
-				"open-iscsi",
-				"open-vm-tools",  // For vmware support, probably move it to a bundle?
-				"openssh-server", // Basic ssh server
-				"systemd-timesyncd",
 				"systemd-container",      // Not sure if needed?
 				"ubuntu-advantage-tools", // For ubuntu advantage support, enablement of ubuntu services
-				"xz-utils",               // Compression support for xz
 				"tpm2-tools",             // For TPM support, mainly trusted boot
 				"dmsetup",                // Device mapper support, needed for lvm and cryptsetup
-				"mdadm",                  // For software raid support, not sure if needed?
-				"ncurses-term",
 				"networkd-dispatcher",
 				"packagekit-tools",
 				"publicsuffix",
 				"xdg-user-dirs",
-				"xxd",
-				"zerofree",
+				"zfsutils-linux", // For zfs tools (zfs and zpool)
 			},
 			">=24.04": {
 				"systemd-resolved", // For systemd-resolved support, added as a separate package on 24.04
@@ -214,22 +285,21 @@ var BasePackages = PackageMap{
 // we should probably move those into a new PackageMap called ExtendedPackages or something like that
 // instead of merging them with grub packages.
 var GrubPackages = PackageMap{
-	Ubuntu: {
+	DebianFamily: {
 		ArchAMD64: {
 			Common: {
 				"grub2",                 // Basic grub support
 				"grub-efi-amd64-bin",    // Basic grub support for EFI
 				"grub-efi-amd64-signed", // For secure boot support
 				"grub-pc-bin",           // Basic grub support for BIOS, probably needed byt AuroraBoot to build hybrid isos?
-				"coreutils",             // Basic tools, probably needs to be part of BasePackages?
 				"grub2-common",          // Basic grub support
 				"kbd",                   // Keyboard configuration
 				"lldpd",                 // For lldp support, check if needed?
-				"neovim",                // For neovim support, check if needed? Move to BasePackages if so?
 				"shim-signed",           // For secure boot support
 				"snmpd",                 // For snmp support, check if needed? Move to BasePackages if so?
 				"squashfs-tools",        // For squashfs support, probably needs to be part of BasePackages
-				"zfsutils-linux",        // For zfs tools (zfs and zpool), probably needs to be part of BasePackages
+				//"zfsutils-linux",        // For zfs tools (zfs and zpool), probably needs to be part of BasePackages
+				// Requires a repo add
 			},
 		},
 		ArchARM64: {
@@ -277,6 +347,18 @@ var SystemdPackages = PackageMap{
 				"kmod",
 				"linux-base",
 				"systemd-boot", // Trusted boot support, it was split as a package on 24.04
+			},
+		},
+	},
+}
+
+// RpiPackages is a map of packages to install for each distro and architecture for Raspberry Pi variants
+// TODO: Actually implement this somehow somewhere lol
+var RpiPackages = PackageMap{
+	Debian: {
+		ArchAMD64: {
+			Rpi4.String(): {
+				"raspi-firmware",
 			},
 		},
 	},
