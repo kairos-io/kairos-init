@@ -25,7 +25,6 @@ import "text/template"
 
 // CommonPackages are packages that are named the same across all distros and arches
 var CommonPackages = []string{
-	"curl",       // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts
 	"file",       // Basic tool.
 	"gawk",       // Basic tool.
 	"iptables",   // Basic tool.
@@ -44,7 +43,11 @@ var CommonPackages = []string{
 	"parted",     // Partitioning support, check if we need it anymore
 }
 
-type PackageMap map[Distro]map[Architecture]VersionMap
+// DistroFamilyInterface is an interface to get the value of a distro or family
+// So we can refer to the package maps by the distro or family
+type DistroFamilyInterface interface{}
+
+type PackageMap map[DistroFamilyInterface]map[Architecture]VersionMap
 type VersionMap map[string][]string
 
 // ImmucorePackages are the minimum set of packages that immucore needs.
@@ -66,7 +69,7 @@ var ImmucorePackages = PackageMap{
 		},
 		ArchARM64: {},
 	},
-	Fedora: {
+	RedHatFamily: {
 		ArchAMD64: {
 			Common: {
 				"dracut",
@@ -77,7 +80,6 @@ var ImmucorePackages = PackageMap{
 				"dhcp-client",
 			},
 		},
-		ArchARM64: {},
 	},
 }
 
@@ -94,7 +96,7 @@ var KernelPackages = PackageMap{
 			"24.10": {"linux-image-generic-hwe-24.04"},
 		},
 	},
-	Fedora: {
+	RedHatFamily: {
 		ArchCommon: {
 			Common: {
 				"kernel",
@@ -108,6 +110,34 @@ var KernelPackages = PackageMap{
 // BasePackages is a map of packages to install for each distro and architecture.
 // This comprises the base packages that are needed for the system to work on a Kairos system
 var BasePackages = PackageMap{
+	DebianFamily: {
+		ArchCommon: {
+			Common: {
+				"curl", // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
+			},
+		},
+	},
+	SUSEFamily: {
+		ArchCommon: {
+			Common: {
+				"curl", // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
+			},
+		},
+	},
+	ArchFamily: {
+		ArchCommon: {
+			Common: {
+				"curl", // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
+			},
+		},
+	},
+	AlpineFamily: {
+		ArchCommon: {
+			Common: {
+				"curl", // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
+			},
+		},
+	},
 	Ubuntu: {
 		ArchCommon: {
 			Common: {
@@ -148,11 +178,8 @@ var BasePackages = PackageMap{
 				"systemd-resolved", // For systemd-resolved support, added as a separate package on 24.04
 			},
 		},
-		ArchAMD64: {},
-		ArchARM64: {},
 	},
-	RedHat: {},
-	Fedora: {
+	RedHatFamily: {
 		ArchCommon: {
 			Common: {
 				"gdisk",                // Yip requires it for partitioning, maybe BasePackages
@@ -160,21 +187,24 @@ var BasePackages = PackageMap{
 				"cracklib-dicts",       // Password dictionary support
 				"cloud-utils-growpart", // grow partition use. Check if yip still needs it?
 				"device-mapper",        // Device mapper support, needed for lvm and cryptsetup
-				"haveged",              // Random number generator, check if needed?
 				"openssh-server",
 				"openssh-clients",
 				"polkit",
 				"qemu-guest-agent",
-				"systemd-networkd",
 				"systemd-resolved",
 				"which",      // Basic tool. Basepackages?
 				"cryptsetup", // For encrypted partitions support, needed for trusted boot and dracut building
 			},
 		},
 	},
-	Alpine: {},
-	Arch:   {},
-	Debian: {},
+	Fedora: {
+		ArchCommon: {
+			Common: {
+				"haveged",          // Random number generator, check if needed?
+				"systemd-networkd", // Not available in other distros, too old version maybe?
+			},
+		},
+	},
 }
 
 // GrubPackages is a map of packages to install for each distro and architecture.
@@ -210,7 +240,7 @@ var GrubPackages = PackageMap{
 			},
 		},
 	},
-	Fedora: {
+	RedHatFamily: {
 		ArchCommon: {
 			Common: {
 				"grub2",
@@ -283,21 +313,31 @@ func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 	// Go over all packages maps
 	filteredPackages := []VersionMap{
 		BasePackages[s.Distro][ArchCommon],   // Common packages to both arches
+		BasePackages[s.Family][ArchCommon],   // Common packages to both arches by family
 		BasePackages[s.Distro][s.Arch],       // Specific packages for the arch
+		BasePackages[s.Family][s.Arch],       // Specific packages for the arch by family
 		KernelPackages[s.Distro][ArchCommon], // Common kernel packages to both arches
+		KernelPackages[s.Family][ArchCommon], // Common kernel packages to both arches by family
 		KernelPackages[s.Distro][s.Arch],     // Specific kernel packages for the arch
+		KernelPackages[s.Family][s.Arch],     // Specific kernel packages for the arch by family
 	}
 
 	if config.DefaultConfig.TrustedBoot {
 		// Install only systemd-boot packages
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Distro][ArchCommon])
+		filteredPackages = append(filteredPackages, SystemdPackages[s.Family][ArchCommon])
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Distro][s.Arch])
+		filteredPackages = append(filteredPackages, SystemdPackages[s.Family][s.Arch])
 	} else {
 		// install grub and immucore packages
 		filteredPackages = append(filteredPackages, GrubPackages[s.Distro][ArchCommon])
+		filteredPackages = append(filteredPackages, GrubPackages[s.Family][ArchCommon])
 		filteredPackages = append(filteredPackages, GrubPackages[s.Distro][s.Arch])
+		filteredPackages = append(filteredPackages, GrubPackages[s.Family][s.Arch])
 		filteredPackages = append(filteredPackages, ImmucorePackages[s.Distro][ArchCommon])
+		filteredPackages = append(filteredPackages, ImmucorePackages[s.Family][ArchCommon])
 		filteredPackages = append(filteredPackages, ImmucorePackages[s.Distro][s.Arch])
+		filteredPackages = append(filteredPackages, ImmucorePackages[s.Family][s.Arch])
 	}
 
 	// Go over each list of packages

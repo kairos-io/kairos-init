@@ -89,12 +89,14 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		logger.Logger.Error().Msgf("Failed to parse the packages: %s", err)
 		return []schema.Stage{}, err
 	}
+	// TODO(rhel): Add zfs packages? Currently we add the repos to alma+rocky but we don't install the packages so?
 	return []schema.Stage{
 		{
 			Name: "Install base packages",
 			Packages: schema.Packages{
 				Install: finalMergedPkgs,
 				Refresh: true,
+				Upgrade: true,
 			},
 		},
 	}, nil
@@ -138,6 +140,7 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 			Name: "Remove all initrds",
 			Commands: []string{
 				"rm -f /boot/initrd*",
+				"rm -f /boot/initramfs*",
 			},
 		},
 	}
@@ -237,7 +240,8 @@ func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.St
 func GetServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 	return []schema.Stage{
 		{
-			Name: "Enable services for all",
+			Name:     "Enable services for Modern systems",
+			OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"systemd-networkd", // Separate this and use ifOS to trigger it only on systemd systems? i.e. do a reverse regex match somehow
