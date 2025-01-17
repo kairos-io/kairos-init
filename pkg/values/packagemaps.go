@@ -66,6 +66,19 @@ var ImmucorePackages = PackageMap{
 		},
 		ArchARM64: {},
 	},
+	Fedora: {
+		ArchAMD64: {
+			Common: {
+				"dracut",
+				"dracut-live",
+				"dracut-network",
+				"dracut-squash",
+				"squashfs-tools",
+				"dhcp-client",
+			},
+		},
+		ArchARM64: {},
+	},
 }
 
 // KernelPackages is a map of packages to install for each distro.
@@ -81,13 +94,22 @@ var KernelPackages = PackageMap{
 			"24.10": {"linux-image-generic-hwe-24.04"},
 		},
 	},
+	Fedora: {
+		ArchCommon: {
+			Common: {
+				"kernel",
+				"kernel-modules",
+				"kernel-modules-extra",
+			},
+		},
+	},
 }
 
 // BasePackages is a map of packages to install for each distro and architecture.
 // This comprises the base packages that are needed for the system to work on a Kairos system
 var BasePackages = PackageMap{
 	Ubuntu: {
-		ArchAMD64: {
+		ArchCommon: {
 			Common: {
 				"gdisk",           // Yip requires it for partitioning
 				"fdisk",           // Yip requires it for partitioning
@@ -126,10 +148,29 @@ var BasePackages = PackageMap{
 				"systemd-resolved", // For systemd-resolved support, added as a separate package on 24.04
 			},
 		},
+		ArchAMD64: {},
 		ArchARM64: {},
 	},
 	RedHat: {},
-	Fedora: {},
+	Fedora: {
+		ArchCommon: {
+			Common: {
+				"gdisk",                // Yip requires it for partitioning, maybe BasePackages
+				"audit",                // For audit support, check if needed?
+				"cracklib-dicts",       // Password dictionary support
+				"cloud-utils-growpart", // grow partition use. Check if yip still needs it?
+				"device-mapper",        // Device mapper support, needed for lvm and cryptsetup
+				"haveged",              // Random number generator, check if needed?
+				"openssh-server",
+				"openssh-clients",
+				"polkit",
+				"qemu-guest-agent",
+				"systemd-networkd",
+				"systemd-resolved",
+				"which", // Basic tool. Basepackages?
+			},
+		},
+	},
 	Alpine: {},
 	Arch:   {},
 	Debian: {},
@@ -168,13 +209,35 @@ var GrubPackages = PackageMap{
 			},
 		},
 	},
+	Fedora: {
+		ArchCommon: {
+			Common: {
+				"grub2",
+			},
+		},
+		ArchAMD64: {
+			Common: {
+				"grub2-efi-x64",
+				"grub2-efi-x64-modules",
+				"grub2-pc",
+				"shim-x64",
+			},
+		},
+		ArchARM64: {
+			Common: {
+				"grub2-efi-aa64",
+				"grub2-efi-aa64-modules",
+				"shim-aa64",
+			},
+		},
+	},
 }
 
 // SystemdPackages is a map of packages to install for each distro and architecture for systemd-boot (trusted boot) variants
 // TODO: Check why some packages we only install on amd64 and not on arm64?? Like kmod???
 var SystemdPackages = PackageMap{
 	Ubuntu: {
-		ArchAMD64: {
+		ArchCommon: {
 			Common: {
 				"systemd",
 			},
@@ -183,11 +246,6 @@ var SystemdPackages = PackageMap{
 				"kmod",
 				"linux-base",
 				"systemd-boot", // Trusted boot support, it was split as a package on 24.04
-			},
-		},
-		ArchARM64: {
-			Common: {
-				"systemd",
 			},
 		},
 	},
@@ -223,16 +281,21 @@ func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 
 	// Go over all packages maps
 	filteredPackages := []VersionMap{
-		BasePackages[s.Distro][s.Arch],
-		KernelPackages[s.Distro][s.Arch],
+		BasePackages[s.Distro][ArchCommon],   // Common packages to both arches
+		BasePackages[s.Distro][s.Arch],       // Specific packages for the arch
+		KernelPackages[s.Distro][ArchCommon], // Common kernel packages to both arches
+		KernelPackages[s.Distro][s.Arch],     // Specific kernel packages for the arch
 	}
 
 	if config.DefaultConfig.TrustedBoot {
 		// Install only systemd-boot packages
+		filteredPackages = append(filteredPackages, SystemdPackages[s.Distro][ArchCommon])
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Distro][s.Arch])
 	} else {
 		// install grub and immucore packages
+		filteredPackages = append(filteredPackages, GrubPackages[s.Distro][ArchCommon])
 		filteredPackages = append(filteredPackages, GrubPackages[s.Distro][s.Arch])
+		filteredPackages = append(filteredPackages, ImmucorePackages[s.Distro][ArchCommon])
 		filteredPackages = append(filteredPackages, ImmucorePackages[s.Distro][s.Arch])
 	}
 

@@ -1,6 +1,7 @@
 package system
 
 import (
+	"github.com/sanity-io/litter"
 	"os"
 	"runtime"
 
@@ -104,5 +105,7 @@ func DetectSystem(l sdkTypes.KairosLogger) values.System {
 	if s.Name == "" {
 		s.Name = val["NAME"]
 	}
+
+	l.Debugf("Detected system: %s", litter.Sdump(s))
 	return s
 }
