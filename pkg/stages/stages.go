@@ -158,7 +158,7 @@ func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 	return []schema.Stage{
 		{
 			Name:     "Link grub-editenv to grub2-editenv",
-			OnlyIfOs: "ubuntu",
+			OnlyIfOs: "Ubuntu.*",
 			If:       "test -f /usr/bin/grub-editenv",
 			Commands: []string{
 				"ln -s /usr/bin/grub-editenv /usr/bin/grub2-editenv",
@@ -166,7 +166,7 @@ func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:     "Fixup sudo perms",
-			OnlyIfOs: "ubuntu",
+			OnlyIfOs: "Ubuntu.*",
 			Commands: []string{
 				"chown root:root /usr/bin/sudo",
 				"chmod 4755 /usr/bin/sudo",
