@@ -35,5 +35,5 @@ jobs:
           push: false
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          build-args:
-            BASE_IMAGE: ${{ matrix.base_image }}
+          build-args: |
+            BASE_IMAGE=${{ matrix.base_image }}
