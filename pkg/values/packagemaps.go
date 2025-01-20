@@ -34,7 +34,6 @@ var CommonPackages = []string{
 	"tar",        // Basic tool.
 	"zstd",       // Compression support for zstd
 	"rsync",      // Install, upgrade, reset use it to sync the files
-	"systemd",    // Basic tool.
 	"dbus",       // Basic tool.
 	"lvm2",       // Seems to be used to support rpi3 only
 	"jq",         // No idea why we need it, check if we can drop it?
@@ -129,6 +128,13 @@ var KernelPackages = PackageMap{
 			},
 		},
 	},
+	AlpineFamily: {
+		ArchCommon: {
+			Common: {
+				"linux-lts",
+			},
+		},
+	},
 }
 
 // BasePackages is a map of packages to install for each distro and architecture.
@@ -180,6 +186,7 @@ var BasePackages = PackageMap{
 				"python3-pynvim",
 				"shared-mime-info",
 				"snapd",
+				"systemd", // Basic tool.
 				"systemd-timesyncd",
 				"xauth",
 				"xclip",
@@ -199,7 +206,8 @@ var BasePackages = PackageMap{
 	SUSEFamily: {
 		ArchCommon: {
 			Common: {
-				"curl", // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
+				"curl",    // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
+				"systemd", // Basic tool.
 			},
 		},
 	},
@@ -207,6 +215,77 @@ var BasePackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				"curl", // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
+				"bash",
+				"bash-completion",
+				"blkid",
+				"cloud-utils-growpart",
+				"bonding",
+				"bridge",
+				"busybox-openrc",
+				"ca-certificates",
+				"connman",
+				"conntrack-tools",
+				"coreutils",
+				"cryptsetup",
+				"device-mapper-udev",
+				"dbus",
+				"dmidecode",
+				"dosfstools",
+				"e2fsprogs",
+				"e2fsprogs-extra",
+				"efibootmgr",
+				"eudev",
+				"eudev-hwids",
+				"fail2ban",
+				"findutils",
+				"findmnt",
+				"gcompat",
+				"gettext",
+				"haveged",
+				"htop",
+				"hvtools",
+				"iproute2",
+				"irqbalance",
+				"iscsi-scst",
+				"kbd-bkeymaps",
+				"libc6-compat",
+				"libusb",
+				"lm-sensors",
+				"logrotate",
+				"lsscsi",
+				"lvm2-extra",
+				"mdadm",
+				"mdadm-misc",
+				"mdadm-udev",
+				"multipath-tools",
+				"ncurses",
+				"ncurses-terminfo",
+				"nfs-utils",
+				"open-iscsi",
+				"openrc",
+				"openssh-client",
+				"openssh-server",
+				"open-vm-tools",
+				"open-vm-tools-deploypkg",
+				"open-vm-tools-guestinfo",
+				"open-vm-tools-static",
+				"open-vm-tools-vmbackup",
+				"procps",
+				"qemu-guest-agent",
+				"rbd-nbd",
+				"sgdisk",
+				"smartmontools",
+				"squashfs-tools",
+				"strace",
+				"tzdata",
+				"util-linux",
+				"vim",
+				"which",
+				"wireguard-tools",
+				"wpa_supplicant",
+				"xfsprogs",
+				"xfsprogs-extra",
+				"xz",
 			},
 		},
 	},
@@ -214,6 +293,25 @@ var BasePackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				"curl", // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
+			},
+		},
+	},
+	RedHatFamily: {
+		ArchCommon: {
+			Common: {
+				"gdisk",                // Yip requires it for partitioning, maybe BasePackages
+				"audit",                // For audit support, check if needed?
+				"cracklib-dicts",       // Password dictionary support
+				"cloud-utils-growpart", // grow partition use. Check if yip still needs it?
+				"device-mapper",        // Device mapper support, needed for lvm and cryptsetup
+				"openssh-server",
+				"openssh-clients",
+				"polkit",
+				"qemu-guest-agent",
+				"systemd", // Basic tool.
+				"systemd-resolved",
+				"which",      // Basic tool. Basepackages?
+				"cryptsetup", // For encrypted partitions support, needed for trusted boot and dracut building
 			},
 		},
 	},
@@ -247,24 +345,6 @@ var BasePackages = PackageMap{
 			},
 			">=24.04": {
 				"systemd-resolved", // For systemd-resolved support, added as a separate package on 24.04
-			},
-		},
-	},
-	RedHatFamily: {
-		ArchCommon: {
-			Common: {
-				"gdisk",                // Yip requires it for partitioning, maybe BasePackages
-				"audit",                // For audit support, check if needed?
-				"cracklib-dicts",       // Password dictionary support
-				"cloud-utils-growpart", // grow partition use. Check if yip still needs it?
-				"device-mapper",        // Device mapper support, needed for lvm and cryptsetup
-				"openssh-server",
-				"openssh-clients",
-				"polkit",
-				"qemu-guest-agent",
-				"systemd-resolved",
-				"which",      // Basic tool. Basepackages?
-				"cryptsetup", // For encrypted partitions support, needed for trusted boot and dracut building
 			},
 		},
 	},
@@ -332,6 +412,15 @@ var GrubPackages = PackageMap{
 			},
 		},
 	},
+	AlpineFamily: {
+		ArchCommon: {
+			Common: {
+				"grub",
+				"grub-efi",
+				"grub-bios",
+			},
+		},
+	},
 }
 
 // SystemdPackages is a map of packages to install for each distro and architecture for systemd-boot (trusted boot) variants
@@ -354,11 +443,22 @@ var SystemdPackages = PackageMap{
 
 // RpiPackages is a map of packages to install for each distro and architecture for Raspberry Pi variants
 // TODO: Actually implement this somehow somewhere lol
+// TODO: Make it a board thing not only rpi
 var RpiPackages = PackageMap{
 	Debian: {
 		ArchAMD64: {
 			Rpi4.String(): {
 				"raspi-firmware",
+			},
+		},
+	},
+	Arch: {
+		ArchARM64: {
+			Rpi3.String(): {
+				"linux-rpi",
+			},
+			Rpi4.String(): {
+				"linux-rpi4",
 			},
 		},
 	},

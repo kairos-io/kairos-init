@@ -60,6 +60,7 @@ func getLatestKernel(l types.KairosLogger) (string, error) {
 }
 
 func GetKairosReleaseStage(sis values.System, _ types.KairosLogger) []schema.Stage {
+	// TODO: Expand tis as this doesnt cover all the current fields
 	return []schema.Stage{
 		{
 			Name: "Write kairos-release",
@@ -153,12 +154,22 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 			return []schema.Stage{}, err
 		}
 
-		stage = append(stage, schema.Stage{
-			Name: "Create new initrd",
-			Commands: []string{
-				fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel),
+		stage = append(stage, []schema.Stage{
+			{
+				Name:     "Create new initrd",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*",
+				Commands: []string{
+					fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel),
+				},
 			},
-		})
+			{
+				Name:     "Create new initrd for Alpine",
+				OnlyIfOs: "Alpine.*",
+				Commands: []string{
+					fmt.Sprintf("mkinitfs -o /boot/initrd %s", kernel),
+				},
+			},
+		}...)
 	}
 
 	return stage, nil
@@ -269,6 +280,23 @@ func GetServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 					"dnf-makecache",
 					"dnf-makecache.timer",
 				},
+			},
+		},
+		{
+			Name:     "Enable services for Alpine family",
+			OnlyIfOs: "Alpine.*",
+			Commands: []string{
+				"rc-update add sshd boot",
+				"rc-update add connman boot ",
+				"rc-update add acpid boot",
+				"rc-update add hwclock boot",
+				"rc-update add syslog boot",
+				"rc-update add udev sysinit",
+				"rc-update add udev-trigger sysinit",
+				"rc-update add cgroups sysinit",
+				"rc-update add ntpd boot",
+				"rc-update add crond",
+				"rc-update add fail2ban",
 			},
 		},
 	}
