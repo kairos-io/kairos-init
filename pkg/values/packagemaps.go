@@ -34,7 +34,6 @@ var CommonPackages = []string{
 	"tar",        // Basic tool.
 	"zstd",       // Compression support for zstd
 	"rsync",      // Install, upgrade, reset use it to sync the files
-	"dbus",       // Basic tool.
 	"lvm2",       // Seems to be used to support rpi3 only
 	"jq",         // No idea why we need it, check if we can drop it?
 	"dosfstools", // For the fat32 partition on EFI systems
@@ -90,6 +89,15 @@ var ImmucorePackages = PackageMap{
 			},
 		},
 	},
+	SUSEFamily: {
+		ArchCommon: {
+			Common: {
+				"dracut",
+				"squashfs",
+				"dhcp-client",
+			},
+		},
+	},
 }
 
 // KernelPackages is a map of packages to install for each distro.
@@ -132,6 +140,13 @@ var KernelPackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				"linux-lts",
+			},
+		},
+	},
+	SUSEFamily: {
+		ArchCommon: {
+			Common: {
+				"kernel-default",
 			},
 		},
 	},
@@ -206,8 +221,43 @@ var BasePackages = PackageMap{
 	SUSEFamily: {
 		ArchCommon: {
 			Common: {
-				"curl",    // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
-				"systemd", // Basic tool.
+				"curl", // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
+				"bash-completion",
+				"conntrack-tools",
+				"cryptsetup",
+				"coreutils",
+				"device-mapper",
+				"fail2ban",
+				"findutils",
+				"growpart",
+				"gptfdisk",
+				"haveged",
+				"htop",
+				"iproute2",
+				"iputils",
+				"issue-generator",
+				"logrotate",
+				"lsscsi",
+				"mdadm",
+				"multipath-tools",
+				// "nfs-utils", // Not available by default, coming from extra repo.
+				// "nohang", // Not available by default, coming from extra repo.
+				"open-iscsi",
+				"openssh",
+				"open-vm-tools",
+				"pigz",
+				"policycoreutils",
+				"polkit",
+				"procps",
+				"qemu-guest-agent", // TODO: Move this to generic model?
+				"strace",
+				"systemd",
+				"systemd-network",
+				"timezone",
+				"tmux",
+				"vim",
+				"which",
+				"tpm2*",
 			},
 		},
 	},
@@ -414,6 +464,36 @@ var GrubPackages = PackageMap{
 			},
 		},
 	},
+	SUSEFamily: {
+		ArchAMD64: {
+			Common: {
+				"grub2-i386-pc",
+				"grub2-x86_64-efi",
+				"kernel-firmware-all",
+				"nethogs",
+				"patch",
+				"shim",
+			},
+		},
+		ArchARM64: {
+			Common: {
+				"bcm43xx-firmware",
+				"grub2-arm64-efi",
+				"iw",
+				"kernel-firmware-ath10k",
+				"kernel-firmware-ath11k",
+				"kernel-firmware-atheros",
+				"kernel-firmware-bluetooth",
+				"kernel-firmware-brcm",
+				"kernel-firmware-iwlwifi",
+				"kernel-firmware-network",
+				"kernel-firmware-realtek",
+				"kernel-firmware-serial",
+				"kernel-firmware-usb-network",
+				"nethogs",
+			},
+		},
+	},
 }
 
 // SystemdPackages is a map of packages to install for each distro and architecture for systemd-boot (trusted boot) variants
@@ -453,6 +533,30 @@ var RpiPackages = PackageMap{
 			},
 			Rpi4.String(): {
 				"linux-rpi4",
+			},
+		},
+	},
+	SUSEFamily: {
+		ArchARM64: {
+			Rpi3.String(): {
+				"raspberrypi-eeprom",
+				"raspberrypi-firmware",
+				"raspberrypi-firmware-dt",
+				"sysconfig",
+				"sysconfig-netconfig",
+				"sysvinit-tools",
+				"wireless-tools",
+				"wpa_supplicant",
+			},
+			Rpi4.String(): {
+				"raspberrypi-eeprom",
+				"raspberrypi-firmware",
+				"raspberrypi-firmware-dt",
+				"sysconfig",
+				"sysconfig-netconfig",
+				"sysvinit-tools",
+				"wireless-tools",
+				"wpa_supplicant",
 			},
 		},
 	},
