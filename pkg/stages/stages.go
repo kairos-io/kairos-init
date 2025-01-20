@@ -127,9 +127,18 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 		},
 		{
 			Name: "Link kernel",
+			If:   fmt.Sprintf("test -f /boot/vmlinuz-%s", kernel),
 			Commands: []string{
 				fmt.Sprintf("depmod -a %s", kernel),
 				fmt.Sprintf("ln -s /boot/vmlinuz-%s /boot/vmlinuz", kernel),
+			},
+		},
+		{
+			Name: "Link kernel for Alpine",
+			If:   "test -f /boot/vmlinuz-lts",
+			Commands: []string{
+				fmt.Sprintf("depmod -a %s", kernel),
+				"ln -s /boot/vmlinuz-lts /boot/vmlinuz",
 			},
 		},
 	}, nil

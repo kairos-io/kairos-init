@@ -353,7 +353,7 @@ var BasePackages = PackageMap{
 
 // GrubPackages is a map of packages to install for each distro and architecture.
 // TODO: Check why some packages we only install on amd64 and not on arm64?? Like neovim???
-// Note: some of the packages seems to be onyl installed here as we dont have any size restraints
+// Note: some of the packages seems to be only installed here as we dont have any size restraints
 // And we dont want to have Trusted Boot have those packages, as we want it small.
 // we should probably move those into a new PackageMap called ExtendedPackages or something like that
 // instead of merging them with grub packages.
