@@ -189,9 +189,9 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 	stages := []schema.Stage{
 		{
-			Name:     "Link grub-editenv to grub2-editenv",
-			OnlyIfOs: "Ubuntu.*|Alpine.*",
-			If:       "test -f /usr/bin/grub-editenv",
+			Name: "Link grub-editenv to grub2-editenv",
+			//OnlyIfOs: "Ubuntu.*|Alpine.*", // Maybe not needed and just checking if the file exists is enough
+			If: "test -f /usr/bin/grub-editenv",
 			Commands: []string{
 				"ln -s /usr/bin/grub-editenv /usr/bin/grub2-editenv",
 			},
