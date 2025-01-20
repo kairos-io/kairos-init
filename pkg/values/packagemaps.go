@@ -211,7 +211,7 @@ var BasePackages = PackageMap{
 			},
 		},
 	},
-	ArchFamily: {
+	AlpineFamily: {
 		ArchCommon: {
 			Common: {
 				"curl", // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
@@ -286,13 +286,6 @@ var BasePackages = PackageMap{
 				"xfsprogs",
 				"xfsprogs-extra",
 				"xz",
-			},
-		},
-	},
-	AlpineFamily: {
-		ArchCommon: {
-			Common: {
-				"curl", // Basic tool. Also needed for netbooting as it is used to download the netboot artifacts. On rockylinux conflicts with curl-minimal
 			},
 		},
 	},
@@ -444,6 +437,7 @@ var SystemdPackages = PackageMap{
 // RpiPackages is a map of packages to install for each distro and architecture for Raspberry Pi variants
 // TODO: Actually implement this somehow somewhere lol
 // TODO: Make it a board thing not only rpi
+// TODO(debian): Needs to run `sed -i 's/^Components: main.*$/& non-free-firmware/' /etc/apt/sources.list.d/debian.sources` before installing the firmware
 var RpiPackages = PackageMap{
 	Debian: {
 		ArchAMD64: {
