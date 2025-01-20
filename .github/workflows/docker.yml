@@ -5,6 +5,9 @@ on:
     branches:
       - 'main'
 
+concurrency:
+  group: build-main-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  cancel-in-progress: true
 jobs:
   dockerImage:
     env:
