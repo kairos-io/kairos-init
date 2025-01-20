@@ -190,7 +190,7 @@ func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 	stages := []schema.Stage{
 		{
 			Name:     "Link grub-editenv to grub2-editenv",
-			OnlyIfOs: "Ubuntu.*",
+			OnlyIfOs: "Ubuntu.*|Alpine.*",
 			If:       "test -f /usr/bin/grub-editenv",
 			Commands: []string{
 				"ln -s /usr/bin/grub-editenv /usr/bin/grub2-editenv",
