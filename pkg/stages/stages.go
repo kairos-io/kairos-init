@@ -187,7 +187,7 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 // GetWorkaroundsStage Returns the workarounds stage
 // It applies some workarounds to the system to fix up inconsistent things or issues on the system
 func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
-	return []schema.Stage{
+	stages := []schema.Stage{
 		{
 			Name:     "Link grub-editenv to grub2-editenv",
 			OnlyIfOs: "Ubuntu.*",
@@ -198,13 +198,22 @@ func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:     "Fixup sudo perms",
-			OnlyIfOs: "Ubuntu.*",
+			OnlyIfOs: "Ubuntu.*|Debian.*",
 			Commands: []string{
 				"chown root:root /usr/bin/sudo",
 				"chmod 4755 /usr/bin/sudo",
 			},
 		},
+		{
+			Name:     "Compress firmware files",
+			OnlyIfOs: "Ubuntu.*",
+			Commands: []string{
+				"find /usr/lib/modules -type f -name \"*.ko\" -execdir zstd --rm -9 {} \\+",
+			},
+		},
 	}
+
+	return stages
 }
 
 func GetCleanupStage(_ values.System, _ types.KairosLogger) []schema.Stage {
@@ -342,6 +351,8 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	yipConsole := console.NewStandardConsole(console.WithLogger(logger))
 
 	data := schema.YipConfig{Stages: map[string][]schema.Stage{}}
+	// Run things before we install packages and framework
+	data.Stages["before-install"] = []schema.Stage{}
 	// Add packages install
 	installStage, err := GetInstallStage(sis, logger)
 	if err != nil {
@@ -352,11 +363,16 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	// Add the framework stage
 	data.Stages["install"] = append(data.Stages["install"], GetInstallFrameworkStage(sis, logger)...)
 
+	// Run things after we install packages and framework
+	data.Stages["after-install"] = []schema.Stage{}
+
 	// Run install first, as kernel and initrd resolution depend on the installed packages
-	err = initExecutor.Run("install", vfs.OSFS, yipConsole, data.ToString())
-	if err != nil {
-		logger.Logger.Error().Msgf("Failed to run the install stage: %s", err)
-		return data, err
+	for _, st := range []string{"before-install", "install", "after-install"} {
+		err = initExecutor.Run(st, vfs.OSFS, yipConsole, data.ToString())
+		if err != nil {
+			logger.Logger.Error().Msgf("Failed to run the %s stage: %s", st, err)
+			return data, err
+		}
 	}
 	return data, nil
 }
@@ -370,6 +386,9 @@ func RunInitStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	yipConsole := console.NewStandardConsole(console.WithLogger(logger))
 
 	data := schema.YipConfig{Stages: map[string][]schema.Stage{}}
+
+	// Run things before we init the system
+	data.Stages["before-init"] = []schema.Stage{}
 
 	data.Stages["init"] = []schema.Stage{}
 	data.Stages["init"] = append(data.Stages["init"], GetKairosReleaseStage(sis, logger)...)
@@ -389,10 +408,15 @@ func RunInitStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data.Stages["init"] = append(data.Stages["init"], GetWorkaroundsStage(sis, logger)...)
 	data.Stages["init"] = append(data.Stages["init"], GetCleanupStage(sis, logger)...)
 
-	err = initExecutor.Run("init", vfs.OSFS, yipConsole, data.ToString())
-	if err != nil {
-		logger.Logger.Error().Msgf("Failed to run the install stage: %s", err)
-		return data, err
+	// Run things after we init the system
+	data.Stages["after-init"] = []schema.Stage{}
+
+	for _, st := range []string{"before-init", "init", "after-init"} {
+		err = initExecutor.Run(st, vfs.OSFS, yipConsole, data.ToString())
+		if err != nil {
+			logger.Logger.Error().Msgf("Failed to run the %s stage: %s", st, err)
+			return data, err
+		}
 	}
 
 	return data, nil
