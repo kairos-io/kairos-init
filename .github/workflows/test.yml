@@ -8,6 +8,7 @@ on:
 
 jobs:
   testing_build_matrix:
+    name: ${{ matrix.base_image }} - ${{ matrix.platform }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -15,11 +16,6 @@ jobs:
         base_image: [ "ubuntu:24.04", "debian:12", "alpine:3.19", "opensuse/leap:15.6:", "rockylinux:9" ]
     steps:
       - uses: actions/checkout@v4
-      - name: Docker Metadata action
-        id: meta
-        uses: docker/metadata-action@v5.6.1
-        with:
-          images: ttl.sh/kairos-${{ matrix.base_image }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@master
         with:
@@ -33,7 +29,6 @@ jobs:
           file: Dockerfile
           platforms: ${{ matrix.platform }}
           push: false
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: kairos-${{ matrix.base_image }}
           build-args: |
             BASE_IMAGE=${{ matrix.base_image }}
