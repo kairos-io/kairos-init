@@ -320,6 +320,25 @@ func GetServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 	}
 }
 
+// GetInstallStandardStage Returns the standard install stage so it installs the standard packages like k3s and provider
+// Not used for now
+func GetInstallStandardStage(sis values.System, logger types.KairosLogger) []schema.Stage {
+	var data []schema.Stage
+	/*
+		if config.DefaultConfig.Variant == "standard" {
+			data = append(data, schema.Stage{
+				Name: "Install standard packages",
+				Commands: []string{
+					"luet install -y k9s-openrc/systemd/k3s",
+					"luet install -y provider-kairos",
+				},
+			})
+		}
+	*/
+
+	return data
+}
+
 // RunAllStages Runs all the stages in the correct order
 func RunAllStages(logger types.KairosLogger) (schema.YipConfig, error) {
 	fullYipConfig := schema.YipConfig{Stages: map[string][]schema.Stage{}}
@@ -362,6 +381,7 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data.Stages["install"] = installStage
 	// Add the framework stage
 	data.Stages["install"] = append(data.Stages["install"], GetInstallFrameworkStage(sis, logger)...)
+	data.Stages["install"] = append(data.Stages["install"], GetInstallStandardStage(sis, logger)...)
 
 	// Run things after we install packages and framework
 	data.Stages["after-install"] = []schema.Stage{}
