@@ -4,6 +4,7 @@ import (
 	"github.com/sanity-io/litter"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/joho/godotenv"
 	"github.com/kairos-io/kairos-init/pkg/values"
@@ -101,6 +102,16 @@ func DetectSystem(l sdkTypes.KairosLogger) values.System {
 
 	// Store the version
 	s.Version = val["VERSION_ID"]
+	if s.Distro == values.Alpine {
+		// We currently only do major.minor for alpine, even if os-release reports also the patch
+		// So for backwards compatibility we will only store the major.minor
+		splittedVersion := strings.Split(s.Version, ".")
+		if len(splittedVersion) == 3 {
+			s.Version = splittedVersion[0] + "." + splittedVersion[1]
+		} else {
+			l.Debugf("Could not split version for alpine, using default as is: %s", s.Version)
+		}
+	}
 
 	// Store the name
 	s.Name = val["PRETTY_NAME"]
