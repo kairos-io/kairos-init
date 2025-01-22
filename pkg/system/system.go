@@ -65,6 +65,9 @@ func DetectSystem(l sdkTypes.KairosLogger) values.System {
 	case values.OpenSUSETumbleweed:
 		s.Distro = values.OpenSUSETumbleweed
 		s.Family = values.SUSEFamily
+	case values.SLES:
+		s.Distro = values.SLES
+		s.Family = values.SUSEFamily
 	}
 
 	// Match architecture

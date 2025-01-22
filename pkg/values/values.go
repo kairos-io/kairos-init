@@ -34,6 +34,7 @@ const (
 	Alpine             Distro = "alpine"
 	OpenSUSELeap       Distro = "opensuse-leap"
 	OpenSUSETumbleweed Distro = "opensuse-tumbleweed"
+	SLES               Distro = "sles"
 )
 
 type Family string

@@ -13,6 +13,7 @@ import (
 	"github.com/twpayne/go-vfs/v5"
 	"os"
 	"sort"
+	"strings"
 )
 
 func getLatestKernel(l types.KairosLogger) (string, error) {
@@ -59,7 +60,7 @@ func getLatestKernel(l types.KairosLogger) (string, error) {
 	return kernelVersion, nil
 }
 
-func GetKairosReleaseStage(sis values.System, _ types.KairosLogger) []schema.Stage {
+func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.Stage {
 	// TODO: Expand tis as this doesnt cover all the current fields
 	// Current missing fields
 	/*
@@ -92,6 +93,24 @@ func GetKairosReleaseStage(sis values.System, _ types.KairosLogger) []schema.Sta
 	*/
 
 	idLike := fmt.Sprintf("kairos-%s-%s-%s", config.DefaultConfig.Variant, sis.Distro.String(), sis.Version)
+	flavor := sis.Distro.String()
+	flavorRelease := sis.Version
+
+	// TODO: Check if this affects sles versions? I dont think so as they are set like registry.suse.com/bci/bci-micro:15.6
+	if strings.Contains(flavor, "opensuse") {
+		// We store the suse version under the flavorRelease for some reason
+		// So opensuse-leap:15.5 will be stored as `leap-15.5` with flavor being plain `opensuse`
+		// Its a bit iffy IMHO but this is done so all opensuse stuff goes under the same repo instead of having
+		// a repo for opensuse-leap and a repo for opensuse-tumbleweed
+		flavorSplitted := strings.Split(flavor, "-")
+		if len(flavorSplitted) == 2 {
+			flavor = flavorSplitted[0]
+			flavorRelease = fmt.Sprintf("%s-%s", flavorSplitted[1], sis.Version)
+		} else {
+			log.Debugf("Failed to split the flavor %s", flavor)
+		}
+	}
+
 	return []schema.Stage{
 		{
 			Name: "Write kairos-release",
@@ -102,8 +121,8 @@ func GetKairosReleaseStage(sis values.System, _ types.KairosLogger) []schema.Sta
 				"KAIROS_VERSION":          config.DefaultConfig.FrameworkVersion, // Move to use the framework version, bump framework to be in sync with Kairos
 				"KAIROS_ARCH":             sis.Arch.String(),
 				"KAIROS_TARGETARCH":       sis.Arch.String(), // What for? Same as ARCH
-				"KAIROS_FLAVOR":           sis.Distro.String(),
-				"KAIROS_FLAVOR_RELEASE":   sis.Version,
+				"KAIROS_FLAVOR":           flavor,
+				"KAIROS_FLAVOR_RELEASE":   flavorRelease,
 				"KAIROS_FAMILY":           sis.Family.String(),
 				"KAIROS_MODEL":            config.DefaultConfig.Model, // NEEDED or it breaks boot!
 				"KAIROS_VARIANT":          config.DefaultConfig.Variant,
@@ -206,7 +225,7 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 		stage = append(stage, []schema.Stage{
 			{
 				Name:     "Create new initrd",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SUSE.*|OpenSUSE.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|OpenSUSE.*",
 				Commands: []string{
 					fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel),
 				},
