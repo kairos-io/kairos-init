@@ -8,6 +8,7 @@ type Config struct {
 	Model            string
 	FrameworkVersion string
 	Variant          string
+	Registry         string
 	TrustedBoot      bool
 }
 

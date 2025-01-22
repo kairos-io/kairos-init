@@ -61,16 +61,55 @@ func getLatestKernel(l types.KairosLogger) (string, error) {
 
 func GetKairosReleaseStage(sis values.System, _ types.KairosLogger) []schema.Stage {
 	// TODO: Expand tis as this doesnt cover all the current fields
+	// Current missing fields
+	/*
+			KAIROS_VERSION_ID="v3.2.4-36-g24ca209-v1.32.0-k3s1"
+			KAIROS_REGISTRY_AND_ORG="quay.io/kairos"
+			KAIROS_RELEASE="v3.2.4-36-g24ca209"
+			KAIROS_IMAGE_LABEL="24.04-standard-amd64-generic-v3.2.4-36-g24ca209-k3sv1.32.0-k3s1"
+			KAIROS_GITHUB_REPO="kairos-io/kairos"
+			KAIROS_SOFTWARE_VERSION_PREFIX="k3s"
+			KAIROS_IMAGE_REPO="quay.io/kairos/ubuntu:24.04-standard-amd64-generic-v3.2.4-36-g24ca209-k3sv1.32.0-k3s1"
+			KAIROS_ARTIFACT="kairos-ubuntu-24.04-standard-amd64-generic-v3.2.4-36-g24ca209-k3sv1.32.0+k3s1"
+			KAIROS_SOFTWARE_VERSION="v1.32.0+k3s1"
+			KAIROS_VERSION="v3.2.4-36-g24ca209-v1.32.0-k3s1"
+			KAIROS_PRETTY_NAME="kairos-standard-ubuntu-24.04 v3.2.4-36-g24ca209-v1.32.0-k3s1"
+
+		VERSION_ID and VERSION are the same
+		RELEASE is the short version of VERSION and VERSION_ID, is it used anywhere?
+
+		IMAGE_REPO is a mix of REGISTRY_AND_ORG and IMAGE_LABEL, useless?
+		ARTIFACT is just the IMAGE_LABEL with the OS and OS VERSION in front, useless?
+		IMAGE_LABEL is again a mix of all the others fields, useless ?
+
+		IMHO, important fields here are:
+		- RELEASE: Shows the version of KAIROS, wel already have this under VERSION field? Maybe we need to duplicate it, urgh
+		- SOFTWARE_VERSION: Shows the version of the software (k3s for example)
+		- REGISTRY_AND_ORG: Shows the registry for the image, useful for upgrades
+
+		Thats it, the rest I would drop it. The rest is just a mix of the other fields and not really useful,
+		if we have the original needed fields we can recreate the rest of the fields if needed so....
+	*/
+
+	idLike := fmt.Sprintf("kairos-%s-%s-%s", config.DefaultConfig.Variant, sis.Distro.String(), sis.Version)
 	return []schema.Stage{
 		{
 			Name: "Write kairos-release",
 			Environment: map[string]string{
-				"KAIROS_VERSION": config.DefaultConfig.FrameworkVersion, // Move to use the framework version
-				"KAIROS_ARCH":    sis.Arch.String(),
-				"KAIROS_FLAVOR":  sis.Distro.String(),
-				"KAIROS_FAMILY":  sis.Family.String(),
-				"KAIROS_MODEL":   config.DefaultConfig.Model, // NEEDED or it breaks boot!
-				"KAIROS_VARIANT": config.DefaultConfig.Variant,
+				"KAIROS_ID":               "kairos",                              // What for?
+				"KAIROS_ID_LIKE":          idLike,                                // What for?
+				"KAIROS_NAME":             idLike,                                // What for? Same as ID_LIKE
+				"KAIROS_VERSION":          config.DefaultConfig.FrameworkVersion, // Move to use the framework version, bump framework to be in sync with Kairos
+				"KAIROS_ARCH":             sis.Arch.String(),
+				"KAIROS_TARGETARCH":       sis.Arch.String(), // What for? Same as ARCH
+				"KAIROS_FLAVOR":           sis.Distro.String(),
+				"KAIROS_FLAVOR_RELEASE":   sis.Version,
+				"KAIROS_FAMILY":           sis.Family.String(),
+				"KAIROS_MODEL":            config.DefaultConfig.Model, // NEEDED or it breaks boot!
+				"KAIROS_VARIANT":          config.DefaultConfig.Variant,
+				"KAIROS_REGISTRY_AND_ORG": config.DefaultConfig.Registry, // Needed for upgrades to search for images
+				"KAIROS_BUG_REPORT_URL":   "https://github.com/kairos-io/kairos/issues",
+				"KAIROS_HOME_URL":         "https://github.com/kairos-io/kairos",
 			},
 			EnvironmentFile: "/etc/kairos-release",
 		},

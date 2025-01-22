@@ -19,6 +19,7 @@ func main() {
 	flag.StringVar(&config.DefaultConfig.Stage, "s", "all", "set the stage to run")
 	flag.StringVar(&config.DefaultConfig.Model, "m", "generic", "model to build for, like generic or rpi4")
 	flag.StringVar(&config.DefaultConfig.Variant, "v", "core", "variant to build (core or standard for k3s flavor) (shorthand: -v)")
+	flag.StringVar(&config.DefaultConfig.Registry, "r", "quay.io/kairos", "registry and org where the image is gonna be pushed. This is mainly used on upgrades to search for available images to upgrade to")
 	flag.StringVar(&trusted, "t", "false", "init the system for Trusted Boot, changes bootloader to systemd")
 	flag.StringVar(&config.DefaultConfig.FrameworkVersion, "f", values.GetFrameworkVersion(), "set the framework version to use")
 	showHelp := flag.Bool("help", false, "show help")
