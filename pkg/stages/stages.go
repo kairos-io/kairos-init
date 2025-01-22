@@ -110,6 +110,7 @@ func GetKairosReleaseStage(sis values.System, _ types.KairosLogger) []schema.Sta
 				"KAIROS_REGISTRY_AND_ORG": config.DefaultConfig.Registry, // Needed for upgrades to search for images
 				"KAIROS_BUG_REPORT_URL":   "https://github.com/kairos-io/kairos/issues",
 				"KAIROS_HOME_URL":         "https://github.com/kairos-io/kairos",
+				"KAIROS_RELEASE":          config.DefaultConfig.FrameworkVersion, // Move to use the framework version, bump framework to be in sync with Kairos, used by upgrades
 			},
 			EnvironmentFile: "/etc/kairos-release",
 		},
