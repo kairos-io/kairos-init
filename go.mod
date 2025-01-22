@@ -2,7 +2,7 @@ module github.com/kairos-io/kairos-init
 
 go 1.23.1
 
-toolchain go1.23.4
+toolchain go1.23.5
 
 require (
 	github.com/hashicorp/go-version v1.7.0
