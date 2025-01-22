@@ -225,7 +225,7 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 		stage = append(stage, []schema.Stage{
 			{
 				Name:     "Create new initrd",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|OpenSUSE.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
 				Commands: []string{
 					fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel),
 				},
