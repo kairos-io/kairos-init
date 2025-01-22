@@ -422,7 +422,7 @@ var GrubPackages = PackageMap{
 				"snmpd",                 // For snmp support, check if needed? Move to BasePackages if so?
 				"squashfs-tools",        // For squashfs support, probably needs to be part of BasePackages
 				//"zfsutils-linux",        // For zfs tools (zfs and zpool), probably needs to be part of BasePackages
-				// Requires a repo add
+				// Requires a repo add for Debian
 			},
 		},
 		ArchARM64: {
@@ -491,6 +491,13 @@ var GrubPackages = PackageMap{
 				"kernel-firmware-serial",
 				"kernel-firmware-usb-network",
 				"nethogs",
+			},
+		},
+	},
+	Ubuntu: {
+		ArchCommon: {
+			Common: {
+				"zfsutils-linux", // For zfs tools (zfs and zpool) We put it here because this package is useless for the Trusted Boot variant and we want to keep that part as ligth as possible
 			},
 		},
 	},
