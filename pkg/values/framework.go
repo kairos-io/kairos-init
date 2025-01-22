@@ -8,7 +8,7 @@ var (
 	gitCommit = "none"
 	// This gets auto updated by renovate on github
 	// renovate: datasource=docker depName=quay.io/kairos/framework versioning=semver
-	frameWorkVersion = "v2.15.3"
+	frameWorkVersion = "v2.15.4"
 )
 
 func GetFrameworkVersion() string {
