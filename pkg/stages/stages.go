@@ -263,13 +263,6 @@ func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 				"chmod 4755 /usr/bin/sudo",
 			},
 		},
-		{
-			Name:     "Compress firmware files",
-			OnlyIfOs: "Ubuntu.*",
-			Commands: []string{
-				"find /usr/lib/modules -type f -name \"*.ko\" -execdir zstd --rm -9 {} \\+",
-			},
-		},
 	}
 
 	return stages
