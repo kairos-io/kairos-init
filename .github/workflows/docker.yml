@@ -12,7 +12,11 @@ jobs:
   dockerImage:
     env:
       REGISTRY: "ttl.sh"
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    name: Build and push Docker image - ${{ matrix.platform }}
+    strategy:
+      matrix:
+        platform: [ "linux/amd64", "linux/arm64" ]
     steps:
       - uses: actions/checkout@v4
       - name: Docker Metadata action
@@ -31,7 +35,7 @@ jobs:
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64, linux/arm64
+          platforms:  ${{ matrix.platform }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

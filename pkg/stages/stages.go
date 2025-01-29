@@ -92,7 +92,6 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		if we have the original needed fields we can recreate the rest of the fields if needed so....
 	*/
 
-	IMAGE_LABEL := ""
 	idLike := fmt.Sprintf("kairos-%s-%s-%s", config.DefaultConfig.Variant, sis.Distro.String(), sis.Version)
 	flavor := sis.Distro.String()
 	flavorRelease := sis.Version
