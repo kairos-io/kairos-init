@@ -117,7 +117,7 @@ func (v *Validator) Validate() error {
 		"KAIROS_IMAGE_LABEL",
 	}
 
-	vals, err := godotenv.Read("/etc/kairos/kairos-release")
+	vals, err := godotenv.Read("/etc/kairos-release")
 	if err != nil {
 		multi = multierror.Append(multi, fmt.Errorf("could not open kairos-release file"))
 	} else {
