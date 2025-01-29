@@ -210,8 +210,8 @@ var BasePackages = PackageMap{
 				"xz-utils",
 				"zerofree",
 			},
-			">=12": {
-				"systemd-cryptsetup", // separated package on bookworm?
+			">=13": {
+				"systemd-cryptsetup", // separated package on testing, so we need to add it on 13 and above
 			},
 		},
 	},
