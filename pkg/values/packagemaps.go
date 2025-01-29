@@ -78,7 +78,7 @@ var ImmucorePackages = PackageMap{
 		},
 	},
 	RedHatFamily: {
-		ArchAMD64: {
+		ArchCommon: {
 			Common: {
 				"dracut",
 				"dracut-live",
