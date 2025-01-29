@@ -3,6 +3,7 @@ package validation
 import (
 	"fmt"
 	"github.com/hashicorp/go-multierror"
+	"github.com/joho/godotenv"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/kairos-io/kairos-init/pkg/values"
@@ -93,6 +94,37 @@ func (v *Validator) Validate() error {
 				v.Log.Logger.Info().Str("service", service).Msg("Found service")
 			}
 
+		}
+	}
+
+	// Validate all needed keys are stored in kairos-release
+	keys := []string{
+		"KAIROS_ID",
+		"KAIROS_ID_LIKE", // Maybe not critical? Same as name below
+		"KAIROS_NAME",
+		"KAIROS_VERSION",
+		"KAIROS_ARCH",
+		"KAIROS_TARGETARCH", // Not critical, same as ARCH above
+		"KAIROS_FLAVOR",
+		"KAIROS_FLAVOR_RELEASE",
+		"KAIROS_FAMILY",
+		"KAIROS_MODEL",
+		"KAIROS_VARIANT",
+		"KAIROS_REGISTRY_AND_ORG",
+		"KAIROS_BUG_REPORT_URL", // Not critical
+		"KAIROS_HOME_URL",       // Not critical
+		"KAIROS_RELEASE",
+		"KAIROS_IMAGE_LABEL",
+	}
+
+	vals, err := godotenv.Read("/etc/kairos/kairos-release")
+	if err != nil {
+		multi = multierror.Append(multi, fmt.Errorf("could not open kairos-release file"))
+	} else {
+		for _, key := range keys {
+			if vals[key] == "" {
+				multi = multierror.Append(multi, fmt.Errorf("key %s not found or empty in kairos-release", key))
+			}
 		}
 	}
 
