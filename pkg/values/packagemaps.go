@@ -64,7 +64,7 @@ var ImmucorePackages = PackageMap{
 		},
 	},
 	Ubuntu: {
-		ArchAMD64: {
+		ArchCommon: {
 			">=22.04": {
 				"dracut-live", // Livenet support for dracut, split into a separate package on 22.04
 			},
