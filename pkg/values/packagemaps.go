@@ -453,7 +453,7 @@ var GrubPackages = PackageMap{
 		},
 	},
 	AlpineFamily: {
-		ArchARM64: {
+		ArchAMD64: {
 			Common: {
 				"grub-bios",
 			},
