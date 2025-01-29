@@ -178,10 +178,24 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 			},
 		},
 		{
+			Name: "Clean current kernel link",
+			If:   "test -f /boot/Image",
+			Commands: []string{
+				"rm /boot/Image",
+			},
+		},
+		{
 			Name: "Clean old kernel link",
 			If:   "test -f /boot/vmlinuz.old",
 			Commands: []string{
 				"rm /boot/vmlinuz.old",
+			},
+		},
+		{
+			Name: "Clean debug kernel",
+			If:   fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
+			Commands: []string{
+				fmt.Sprintf("rm /boot/vmlinux-%s", kernel),
 			},
 		},
 		{
@@ -190,6 +204,14 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 			Commands: []string{
 				fmt.Sprintf("depmod -a %s", kernel),
 				fmt.Sprintf("ln -s /boot/vmlinuz-%s /boot/vmlinuz", kernel),
+			},
+		},
+		{
+			Name: "Link kernel",
+			If:   fmt.Sprintf("test -f /boot/Image-%s", kernel), // On suse arm64 kernel starts with Image
+			Commands: []string{
+				fmt.Sprintf("depmod -a %s", kernel),
+				fmt.Sprintf("ln -s /boot/Image-%s /boot/vmlinuz", kernel),
 			},
 		},
 		{
