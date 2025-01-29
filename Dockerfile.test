@@ -1,5 +1,5 @@
 ARG BASE_IMAGE=ubuntu:24.04
-ARG VALIDATE_IMAGE
+ARG VALIDATE_IMAGE=ubuntu:24.04
 
 FROM golang AS build
 WORKDIR /app
@@ -13,7 +13,7 @@ RUN go build -o /app/kairos-init .
 FROM scratch AS kairos-init
 COPY --from=build /app/kairos-init /kairos-init
 
-# Target to use the validator directly inside a generated image
+# Target to use the validator directly inside a generated image with kairos-init
 FROM ${VALIDATE_IMAGE} AS validate
 ARG MODEL=generic
 ARG VARIANT=core
