@@ -104,7 +104,7 @@ var ImmucorePackages = PackageMap{
 // No arch required here, maybe models will need different packages?
 var KernelPackages = PackageMap{
 	Ubuntu: {
-		ArchAMD64: {
+		ArchCommon: {
 			">=20.04, != 24.10": {
 				// This is a template, so we can replace the version with the actual version of the system
 				"linux-image-generic-hwe-{{.version}}",
