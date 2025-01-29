@@ -13,10 +13,10 @@ concurrency:
 jobs:
   testing_build_matrix:
     name: ${{ matrix.base_image }} - ${{ matrix.platform }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     strategy:
       matrix:
-        platform: [ "linux/amd64" ]
+        platform: [ "linux/amd64", "linux/arm64" ]
         base_image: [ "ubuntu:24.04", "debian:12", "alpine:3.19", "opensuse/leap:15.6", "rockylinux:9" ]
     steps:
       - uses: actions/checkout@v4
