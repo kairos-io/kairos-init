@@ -210,9 +210,6 @@ var BasePackages = PackageMap{
 				"xz-utils",
 				"zerofree",
 			},
-			">=13": {
-				"systemd-cryptsetup", // separated package on testing, so we need to add it on 13 and above
-			},
 		},
 	},
 	SUSEFamily: {
@@ -362,6 +359,9 @@ var BasePackages = PackageMap{
 				"nohang",
 				"polkitd",
 			},
+			">=13": {
+				"systemd-cryptsetup", // separated package on testing, so we need to add it on 13 and above
+			},
 		},
 	},
 	Ubuntu: {
@@ -406,6 +406,17 @@ var BasePackages = PackageMap{
 // instead of merging them with grub packages.
 var GrubPackages = PackageMap{
 	DebianFamily: {
+		ArchCommon: {
+			Common: {
+				"kbd",            // Keyboard configuration
+				"lldpd",          // For lldp support, check if needed?
+				"shim-signed",    // For secure boot support
+				"snmpd",          // For snmp support, check if needed? Move to BasePackages if so?
+				"squashfs-tools", // For squashfs support, probably needs to be part of BasePackages
+				//"zfsutils-linux",        // For zfs tools (zfs and zpool), probably needs to be part of BasePackages
+				// Requires a repo add for Debian
+			},
+		},
 		ArchAMD64: {
 			Common: {
 				"grub2",                 // Basic grub support
@@ -413,13 +424,6 @@ var GrubPackages = PackageMap{
 				"grub-efi-amd64-signed", // For secure boot support
 				"grub-pc-bin",           // Basic grub support for BIOS, probably needed byt AuroraBoot to build hybrid isos?
 				"grub2-common",          // Basic grub support
-				"kbd",                   // Keyboard configuration
-				"lldpd",                 // For lldp support, check if needed?
-				"shim-signed",           // For secure boot support
-				"snmpd",                 // For snmp support, check if needed? Move to BasePackages if so?
-				"squashfs-tools",        // For squashfs support, probably needs to be part of BasePackages
-				//"zfsutils-linux",        // For zfs tools (zfs and zpool), probably needs to be part of BasePackages
-				// Requires a repo add for Debian
 			},
 		},
 		ArchARM64: {
@@ -466,21 +470,25 @@ var GrubPackages = PackageMap{
 		},
 	},
 	SUSEFamily: {
+		ArchCommon: {
+			Common: {
+				"nethogs",
+				"patch",
+				"shim",
+				"iw",
+			},
+		},
 		ArchAMD64: {
 			Common: {
 				"grub2-i386-pc",
 				"grub2-x86_64-efi",
 				"kernel-firmware-all",
-				"nethogs",
-				"patch",
-				"shim",
 			},
 		},
 		ArchARM64: {
 			Common: {
 				"bcm43xx-firmware",
 				"grub2-arm64-efi",
-				"iw",
 				"kernel-firmware-ath10k",
 				"kernel-firmware-ath11k",
 				"kernel-firmware-atheros",
@@ -491,7 +499,6 @@ var GrubPackages = PackageMap{
 				"kernel-firmware-realtek",
 				"kernel-firmware-serial",
 				"kernel-firmware-usb-network",
-				"nethogs",
 			},
 		},
 	},
