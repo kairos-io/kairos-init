@@ -77,7 +77,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 			KAIROS_PRETTY_NAME="kairos-standard-ubuntu-24.04 v3.2.4-36-g24ca209-v1.32.0-k3s1"
 
 		VERSION_ID and VERSION are the same
-		RELEASE is the short version of VERSION and VERSION_ID, is it used anywhere?
+		RELEASE is the short version of VERSION and VERSION_ID, the version without the k3s version
 
 		IMAGE_REPO is a mix of REGISTRY_AND_ORG and IMAGE_LABEL, useless?
 		ARTIFACT is just the IMAGE_LABEL with the OS and OS VERSION in front, useless?
@@ -314,13 +314,6 @@ func GetCleanupStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 }
 
 func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.Stage {
-	var frameworkVersion string
-	// If the framework version is set in the config use that, otherwise use the version from the values which usually its the latest
-	if config.DefaultConfig.FrameworkVersion != "" {
-		frameworkVersion = config.DefaultConfig.FrameworkVersion
-	} else {
-		frameworkVersion = values.GetFrameworkVersion()
-	}
 	return []schema.Stage{
 		{
 			Name: "Create kairos directory",
@@ -336,7 +329,7 @@ func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.St
 			Name: "Install framework",
 			UnpackImages: []schema.UnpackImageConf{
 				{
-					Source: fmt.Sprintf("quay.io/kairos/framework:%s", frameworkVersion),
+					Source: fmt.Sprintf("quay.io/kairos/framework:%s", config.DefaultConfig.FrameworkVersion),
 					Target: "/",
 				},
 			},

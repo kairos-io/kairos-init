@@ -52,6 +52,13 @@ func main() {
 	logger := types.NewKairosLogger("kairos-init", config.DefaultConfig.Level, false)
 	logger.Infof("Starting kairos-init version %s", values.GetVersion())
 	logger.Debug(litter.Sdump(values.GetFullVersion()))
+
+	// If the framework version is set in the config use that, otherwise use the version from the values which usually its the latest
+	if config.DefaultConfig.FrameworkVersion == "" {
+		logger.Logger.Debug().Str("version", values.GetFrameworkVersion()).Msg("Setting framework version from config")
+		config.DefaultConfig.FrameworkVersion = values.GetFrameworkVersion()
+	}
+
 	logger.Debug(litter.Sdump(config.DefaultConfig))
 
 	var err error
