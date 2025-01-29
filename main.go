@@ -64,6 +64,7 @@ func main() {
 			logger.Error(err)
 			os.Exit(1)
 		}
+		logger.Info("System is valid")
 		os.Exit(0)
 	}
 

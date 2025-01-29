@@ -13,11 +13,6 @@ RUN go build -o /app/kairos-init .
 FROM scratch AS kairos-init
 COPY --from=build /app/kairos-init /kairos-init
 
-FROM ${VALIDATE_IMAGE} as validator
-COPY --from=kairos-init /kairos-init /kairos-init
-RUN /kairos-init -l debug -s validate
-RUN rm /kairos-init
-
 FROM ${BASE_IMAGE}
 ARG MODEL=generic
 ARG VARIANT=core
@@ -27,4 +22,5 @@ ARG TRUSTED_BOOT=false
 COPY --from=kairos-init /kairos-init /kairos-init
 RUN /kairos-init -l debug -s install -m "${MODEL}" -v "${VARIANT}" -f "${FRAMEWORK_VERSION}" -t "${TRUSTED_BOOT}"
 RUN /kairos-init -l debug -s init -m "${MODEL}" -v "${VARIANT}" -f "${FRAMEWORK_VERSION}" -t "${TRUSTED_BOOT}"
+RUN /kairos-init -l debug --validate -m "${MODEL}" -v "${VARIANT}" -f "${FRAMEWORK_VERSION}" -t "${TRUSTED_BOOT}"
 RUN rm /kairos-init
