@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/stages"
+	"github.com/kairos-io/kairos-init/pkg/validation"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types"
 	"github.com/mudler/yip/pkg/schema"
@@ -15,6 +16,7 @@ import (
 
 func main() {
 	var trusted string
+	var validate bool
 	flag.StringVar(&config.DefaultConfig.Level, "l", "info", "set the log level")
 	flag.StringVar(&config.DefaultConfig.Stage, "s", "all", "set the stage to run")
 	flag.StringVar(&config.DefaultConfig.Model, "m", "generic", "model to build for, like generic or rpi4")
@@ -22,6 +24,7 @@ func main() {
 	flag.StringVar(&config.DefaultConfig.Registry, "r", "quay.io/kairos", "registry and org where the image is gonna be pushed. This is mainly used on upgrades to search for available images to upgrade to")
 	flag.StringVar(&trusted, "t", "false", "init the system for Trusted Boot, changes bootloader to systemd")
 	flag.StringVar(&config.DefaultConfig.FrameworkVersion, "f", values.GetFrameworkVersion(), "set the framework version to use")
+	flag.BoolVar(&validate, "validate", false, "validate the running os to see if it all the pieces are in place")
 	showHelp := flag.Bool("help", false, "show help")
 
 	// Custom usage function
@@ -53,6 +56,16 @@ func main() {
 
 	var err error
 	var runStages schema.YipConfig
+
+	if validate {
+		validator := validation.NewValidator(logger)
+		err = validator.Validate()
+		if err != nil {
+			logger.Error(err)
+			os.Exit(1)
+		}
+		os.Exit(0)
+	}
 
 	if config.DefaultConfig.Stage != "" {
 		logger.Infof("Running stage %s", config.DefaultConfig.Stage)
