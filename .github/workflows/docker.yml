@@ -1,4 +1,4 @@
-name: docker build
+name: Docker image build
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
     env:
       REGISTRY: "ttl.sh"
     runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
-    name: Build and push Docker image - ${{ matrix.platform }}
+    name: Docker image (${{ matrix.platform }})
     strategy:
       matrix:
         platform: [ "linux/amd64", "linux/arm64" ]
