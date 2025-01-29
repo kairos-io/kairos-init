@@ -71,7 +71,7 @@ var ImmucorePackages = PackageMap{
 		},
 	},
 	Debian: {
-		ArchAMD64: {
+		ArchCommon: {
 			Common: {
 				"dracut-live",
 			},
