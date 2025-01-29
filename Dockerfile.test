@@ -15,21 +15,13 @@ COPY --from=build /app/kairos-init /kairos-init
 
 # Target to use the validator directly inside a generated image with kairos-init
 FROM ${VALIDATE_IMAGE} AS validate
-ARG MODEL=generic
-ARG VARIANT=core
-ARG FRAMEWORK_VERSION=""
-ARG TRUSTED_BOOT=false
 COPY --from=build /app/kairos-init /kairos-init
-RUN /kairos-init -l debug --validate -m "${MODEL}" -v "${VARIANT}" -f "${FRAMEWORK_VERSION}" -t "${TRUSTED_BOOT}"
+RUN /kairos-init -l debug --validate
 
 FROM ${BASE_IMAGE}
-ARG MODEL=generic
-ARG VARIANT=core
-ARG FRAMEWORK_VERSION=""
-ARG TRUSTED_BOOT=false
 
 COPY --from=kairos-init /kairos-init /kairos-init
-RUN /kairos-init -l debug -s install -m "${MODEL}" -v "${VARIANT}" -f "${FRAMEWORK_VERSION}" -t "${TRUSTED_BOOT}"
-RUN /kairos-init -l debug -s init -m "${MODEL}" -v "${VARIANT}" -f "${FRAMEWORK_VERSION}" -t "${TRUSTED_BOOT}"
-RUN /kairos-init -l debug --validate -m "${MODEL}" -v "${VARIANT}" -f "${FRAMEWORK_VERSION}" -t "${TRUSTED_BOOT}"
+RUN /kairos-init -l debug -s install
+RUN /kairos-init -l debug -s init
+RUN /kairos-init -l debug --validate
 RUN rm /kairos-init

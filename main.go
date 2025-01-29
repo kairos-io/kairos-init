@@ -53,10 +53,26 @@ func main() {
 	logger.Infof("Starting kairos-init version %s", values.GetVersion())
 	logger.Debug(litter.Sdump(values.GetFullVersion()))
 
-	// If the framework version is set in the config use that, otherwise use the version from the values which usually its the latest
-	if config.DefaultConfig.FrameworkVersion == "" {
-		logger.Logger.Debug().Str("version", values.GetFrameworkVersion()).Msg("Setting framework version from config")
-		config.DefaultConfig.FrameworkVersion = values.GetFrameworkVersion()
+	// Validate flags are being passed with actual values
+	requiredFlags := []struct {
+		name  string
+		value string
+	}{
+		{"l", config.DefaultConfig.Level},
+		{"s", config.DefaultConfig.Stage},
+		{"m", config.DefaultConfig.Model},
+		{"v", config.DefaultConfig.Variant},
+		{"r", config.DefaultConfig.Registry},
+		{"t", trusted},
+		{"f", config.DefaultConfig.FrameworkVersion},
+	}
+
+	for _, rf := range requiredFlags {
+		if rf.value == "" {
+			fmt.Fprintf(os.Stderr, "Error: -%s flag is required to have a value\n", rf.name)
+			flag.Usage()
+			os.Exit(1)
+		}
 	}
 
 	logger.Debug(litter.Sdump(config.DefaultConfig))
