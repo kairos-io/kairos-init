@@ -202,6 +202,15 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 				fmt.Sprintf("rm /boot/vmlinux-%s", kernel),
 			},
 		},
+		{ // On Fedora, if we dont have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
+			// TODO: Check if this is needed on AlmaLinux/RockyLinux/RedHatLinux
+			Name:     "Copy kernel for Fedora Trusted Boot",
+			OnlyIfOs: "Fedora.*",
+			If:       fmt.Sprintf("test ! -f /boot/vmlinuz-%s && test -f /usr/lib/modules/%s/vmlinuz", kernel, kernel),
+			Commands: []string{
+				fmt.Sprintf("cp /usr/lib/modules/%s/vmlinuz /boot/vmlinuz-%s", kernel, kernel),
+			},
+		},
 		{
 			Name: "Link kernel",
 			If:   fmt.Sprintf("test -f /boot/vmlinuz-%s", kernel),
