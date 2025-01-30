@@ -1,4 +1,4 @@
-name: goreleaser
+name: Release
 
 on:
   push:
@@ -19,7 +19,7 @@ jobs:
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v6
         with:
-          version: latest
+          version: '~> v2'
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -38,6 +38,8 @@ jobs:
           platforms: all
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Login to Quay Registry
+        run: echo ${{ secrets.QUAY_PASSWORD }} | docker login -u ${{ secrets.QUAY_USERNAME }} --password-stdin quay.io
       - name: Build the docker image
         uses: docker/build-push-action@v6
         with:

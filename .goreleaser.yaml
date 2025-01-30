@@ -15,19 +15,6 @@ builds:
     ldflags:
       - -w -s -X "github.com/kairos-io/kairos-init/pkg/values.VERSION={{.Tag}}"
     binary: '{{ .ProjectName }}'
-source:
-  enabled: true
-  name_template: '{{ .ProjectName }}-{{ .Tag }}-source'
-archives:
-  - format: tar.gz
-    name_template: >-
-      {{ .ProjectName }}-
-      {{- title .Os }}-
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
-
 changelog:
   sort: asc
   filters:
