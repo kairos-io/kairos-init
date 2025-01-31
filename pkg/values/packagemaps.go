@@ -153,7 +153,9 @@ var KernelPackages = PackageMap{
 }
 
 // KernelPackagesTrustedBoot Separated kernel package for trusted boot as we dont want to install the same packages on both variants
-// we need to keep teh trusted boot variant as small as possible so we cwant more control over it
+// we need to keep teh trusted boot variant as small as possible so we want more control over it
+// In this case, only Ubuntu has an specific smallest kernel package as its the only distro that supports trusted boot
+// Fedora also works but we havent make it slim yet
 var KernelPackagesTrustedBoot = PackageMap{
 	Debian: {
 		ArchAMD64: {

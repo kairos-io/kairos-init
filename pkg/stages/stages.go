@@ -157,6 +157,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 	}
 
 	// For trusted boot we need to select the correct kernel packages manually
+	// TODO: Have a flag in the config to add the full linux-firmware package?
 	if config.DefaultConfig.TrustedBoot {
 		// TODO: Check for other distros/families
 		if sis.Distro == values.Ubuntu {
@@ -380,8 +381,8 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 				Remove: filteredPkgs,
 			},
 		},
-		{
-			Name:     "Autoremove packages",
+		{ // TODO: Send this upstream to the yip Packages plugin?
+			Name:     "Autoremove packages in Debian family",
 			OnlyIfOs: "Ubuntu.*|Debian.*",
 			Commands: []string{
 				"apt-get autoremove -y",
