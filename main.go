@@ -11,16 +11,18 @@ import (
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/sanity-io/litter"
 	"os"
+	"strings"
 )
 
 func main() {
+	var trusted string
 	var validate bool
 	flag.StringVar(&config.DefaultConfig.Level, "l", "info", "set the log level")
 	flag.StringVar(&config.DefaultConfig.Stage, "s", "all", "set the stage to run")
 	flag.StringVar(&config.DefaultConfig.Model, "m", "generic", "model to build for, like generic or rpi4")
 	flag.StringVar(&config.DefaultConfig.Variant, "v", "core", "variant to build (core or standard for k3s flavor) (shorthand: -v)")
 	flag.StringVar(&config.DefaultConfig.Registry, "r", "quay.io/kairos", "registry and org where the image is gonna be pushed. This is mainly used on upgrades to search for available images to upgrade to")
-	flag.BoolVar(&config.DefaultConfig.TrustedBoot, "t", false, "init the system for Trusted Boot, changes bootloader to systemd")
+	flag.StringVar(&trusted, "t", "false", "init the system for Trusted Boot, changes bootloader to systemd")
 	flag.StringVar(&config.DefaultConfig.FrameworkVersion, "f", values.GetFrameworkVersion(), "set the framework version to use")
 	flag.BoolVar(&validate, "validate", false, "validate the running os to see if it all the pieces are in place")
 	flag.BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips framework. For FIPS 140-2 compliance images")
@@ -37,6 +39,11 @@ func main() {
 	}
 
 	flag.Parse()
+
+	// Set the trusted boot flag to true
+	if strings.ToLower(trusted) == "true" || strings.ToLower(trusted) == "1" {
+		config.DefaultConfig.TrustedBoot = true
+	}
 
 	if *showHelp {
 		flag.Usage()
@@ -57,6 +64,7 @@ func main() {
 		{"m", config.DefaultConfig.Model},
 		{"v", config.DefaultConfig.Variant},
 		{"r", config.DefaultConfig.Registry},
+		{"t", trusted},
 		{"f", config.DefaultConfig.FrameworkVersion},
 	}
 
