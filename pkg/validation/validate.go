@@ -35,9 +35,12 @@ func (v *Validator) Validate() error {
 		"kcrypt-discovery-challenger",
 	}
 
-	if config.DefaultConfig.Variant == "standard" {
-		binaries = append(binaries, "k3s", "agent-provider-kairos", "kairos")
-	}
+	// Not yet as we dont install the k3s stuff ourselves
+	/*
+		if config.DefaultConfig.Variant == "standard" {
+			binaries = append(binaries, "k3s", "agent-provider-kairos", "kairos")
+		}
+	*/
 
 	// Alter path to include our providers path
 	originalPath := os.Getenv("PATH")

@@ -323,6 +323,10 @@ func GetCleanupStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 }
 
 func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.Stage {
+	framework := config.DefaultConfig.FrameworkVersion
+	if config.DefaultConfig.Fips {
+		framework = fmt.Sprintf("%s-fips", framework)
+	}
 	return []schema.Stage{
 		{
 			Name: "Create kairos directory",
@@ -338,7 +342,7 @@ func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.St
 			Name: "Install framework",
 			UnpackImages: []schema.UnpackImageConf{
 				{
-					Source: fmt.Sprintf("quay.io/kairos/framework:%s", config.DefaultConfig.FrameworkVersion),
+					Source: fmt.Sprintf("quay.io/kairos/framework:%s", framework),
 					Target: "/",
 				},
 			},

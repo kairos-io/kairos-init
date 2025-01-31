@@ -10,6 +10,7 @@ type Config struct {
 	Variant          string
 	Registry         string
 	TrustedBoot      bool
+	Fips             bool
 }
 
 var DefaultConfig = Config{}
