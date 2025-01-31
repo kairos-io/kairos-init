@@ -152,6 +152,48 @@ var KernelPackages = PackageMap{
 	},
 }
 
+// KernelPackagesTrustedBoot Separated kernel package for trusted boot as we dont want to install the same packages on both variants
+// we need to keep teh trusted boot variant as small as possible so we cwant more control over it
+var KernelPackagesTrustedBoot = PackageMap{
+	Debian: {
+		ArchAMD64: {
+			Common: {
+				"linux-image-amd64",
+				"firmware-linux-free",
+			},
+		},
+		ArchARM64: {
+			Common: {
+				"linux-image-arm64",
+				"firmware-linux-free",
+			},
+		},
+	},
+	RedHatFamily: {
+		ArchCommon: {
+			Common: {
+				"kernel",
+				"kernel-modules",
+				"kernel-modules-extra",
+			},
+		},
+	},
+	AlpineFamily: {
+		ArchCommon: {
+			Common: {
+				"linux-lts",
+			},
+		},
+	},
+	SUSEFamily: {
+		ArchCommon: {
+			Common: {
+				"kernel-default",
+			},
+		},
+	},
+}
+
 // BasePackages is a map of packages to install for each distro and architecture.
 // This comprises the base packages that are needed for the system to work on a Kairos system
 var BasePackages = PackageMap{
@@ -600,30 +642,30 @@ func PackageListToTemplate(packages []string, params map[string]string, l sdkTyp
 
 func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 	mergedPkgs := CommonPackages
-	systemVersion, err := semver.NewVersion(s.Version)
-	if err != nil {
-		return nil, err
-	}
 
 	// Go over all packages maps
 	filteredPackages := []VersionMap{
-		BasePackages[s.Distro][ArchCommon],   // Common packages to both arches
-		BasePackages[s.Family][ArchCommon],   // Common packages to both arches by family
-		BasePackages[s.Distro][s.Arch],       // Specific packages for the arch
-		BasePackages[s.Family][s.Arch],       // Specific packages for the arch by family
-		KernelPackages[s.Distro][ArchCommon], // Common kernel packages to both arches
-		KernelPackages[s.Family][ArchCommon], // Common kernel packages to both arches by family
-		KernelPackages[s.Distro][s.Arch],     // Specific kernel packages for the arch
-		KernelPackages[s.Family][s.Arch],     // Specific kernel packages for the arch by family
+		BasePackages[s.Distro][ArchCommon], // Common packages to both arches
+		BasePackages[s.Family][ArchCommon], // Common packages to both arches by family
+		BasePackages[s.Distro][s.Arch],     // Specific packages for the arch
+		BasePackages[s.Family][s.Arch],     // Specific packages for the arch by family
 	}
 
 	if config.DefaultConfig.TrustedBoot {
+		filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][ArchCommon]) // Common kernel packages to both arches
+		filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][ArchCommon]) // Common kernel packages to both arches by family
+		filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][s.Arch])     // Specific kernel packages for the arch
+		filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][s.Arch])     // Specific kernel packages for the arch by family
 		// Install only systemd-boot packages
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Distro][ArchCommon])
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Family][ArchCommon])
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Distro][s.Arch])
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Family][s.Arch])
 	} else {
+		filteredPackages = append(filteredPackages, KernelPackages[s.Distro][ArchCommon]) // Common kernel packages to both arches
+		filteredPackages = append(filteredPackages, KernelPackages[s.Family][ArchCommon]) // Common kernel packages to both arches by family
+		filteredPackages = append(filteredPackages, KernelPackages[s.Distro][s.Arch])     // Specific kernel packages for the arch
+		filteredPackages = append(filteredPackages, KernelPackages[s.Family][s.Arch])     // Specific kernel packages for the arch by family
 		// install grub and immucore packages
 		filteredPackages = append(filteredPackages, GrubPackages[s.Distro][ArchCommon])
 		filteredPackages = append(filteredPackages, GrubPackages[s.Family][ArchCommon])
@@ -635,15 +677,27 @@ func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 		filteredPackages = append(filteredPackages, ImmucorePackages[s.Family][s.Arch])
 	}
 
+	mergedPkgs = append(mergedPkgs, FilterPackagesOnConstraint(s, l, filteredPackages)...)
+
+	return mergedPkgs, nil
+}
+
+// FilterPackagesOnConstraint filters the packages based on the system version and the constraints in the package map
+func FilterPackagesOnConstraint(s System, l sdkTypes.KairosLogger, pkgsToFilter []VersionMap) []string {
 	// Go over each list of packages
-	for _, packages := range filteredPackages {
+	var pkgs []string
+	systemVersion, err := semver.NewVersion(s.Version)
+	if err != nil {
+		return pkgs
+	}
+	for _, packages := range pkgsToFilter {
 		// for each package map, check if the version matches the constraint
 		for constraint, values := range packages {
 			// Add them if they are common
 			l.Logger.Debug().Str("constraint", constraint).Str("version", systemVersion.String()).Msg("Checking constraint")
 			if constraint == Common {
 				l.Logger.Debug().Strs("packages", values).Msg("Adding common packages")
-				mergedPkgs = append(mergedPkgs, values...)
+				pkgs = append(pkgs, values...)
 				continue
 			}
 			semverConstraint, err := semver.NewConstraint(constraint)
@@ -654,10 +708,9 @@ func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 			// Also add them if the constraint matches
 			if semverConstraint.Check(systemVersion) {
 				l.Logger.Debug().Strs("packages", values).Msg("Constraint matches, adding packages")
-				mergedPkgs = append(mergedPkgs, values...)
+				pkgs = append(pkgs, values...)
 			}
 		}
 	}
-
-	return mergedPkgs, nil
+	return pkgs
 }

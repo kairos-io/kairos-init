@@ -12,6 +12,8 @@ import (
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/twpayne/go-vfs/v5"
 	"os"
+	"os/exec"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -153,6 +155,35 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		logger.Logger.Error().Msgf("Failed to parse the packages: %s", err)
 		return []schema.Stage{}, err
 	}
+
+	// For trusted boot we need to select the correct kernel packages manually
+	if config.DefaultConfig.TrustedBoot {
+		// TODO: Check for other distros/families
+		if sis.Distro == values.Ubuntu {
+			exec.Command("apt-get", "update").Run()
+			out, err := exec.Command("apt-cache", "search", "linux-image").CombinedOutput()
+			if err != nil {
+				logger.Logger.Error().Msgf("Failed to get the kernel packages: %s", err)
+				return []schema.Stage{}, err
+			}
+			// Get the latest kernel image and modules version
+			// package is in format linux-image-5.4.0-104-generic
+			// modules are in format linux-modules-5.4.0-104-generic
+			// we need to extract the number only
+			re, _ := regexp.Compile(`linux-image-(\d+\.\d+\.\d+-\d+)-generic`)
+			if re.Match(out) {
+				match := re.FindStringSubmatch(string(out))
+				logger.Logger.Debug().Str("kernel", match[1]).Msg("Found the kernel package")
+				finalMergedPkgs = append(finalMergedPkgs, fmt.Sprintf("linux-image-%s-generic", match[1]))
+				finalMergedPkgs = append(finalMergedPkgs, fmt.Sprintf("linux-modules-%s-generic", match[1]))
+			} else {
+				logger.Logger.Error().Err(err).Msgf("Failed to get the kernel packages")
+				logger.Logger.Debug().Str("output", string(out)).Msgf("Failed to get the kernel packages")
+				return []schema.Stage{}, err
+			}
+		}
+	}
+
 	// TODO(rhel): Add zfs packages? Currently we add the repos to alma+rocky but we don't install the packages so?
 	return []schema.Stage{
 		{
@@ -303,8 +334,8 @@ func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 	return stages
 }
 
-func GetCleanupStage(_ values.System, _ types.KairosLogger) []schema.Stage {
-	return []schema.Stage{
+func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
+	stages := []schema.Stage{
 		{
 			Name: "Remove dbus machine-id",
 			If:   "test -f /var/lib/dbus/machine-id",
@@ -320,6 +351,44 @@ func GetCleanupStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 			},
 		},
 	}
+
+	var pkgs []values.VersionMap
+
+	if config.DefaultConfig.TrustedBoot {
+		// Try to remove as many packages as possible that are not needed
+		pkgs = append(pkgs, values.ImmucorePackages[sis.Distro][values.ArchCommon])
+		pkgs = append(pkgs, values.ImmucorePackages[sis.Family][values.ArchCommon])
+		pkgs = append(pkgs, values.ImmucorePackages[sis.Distro][sis.Arch])
+		pkgs = append(pkgs, values.ImmucorePackages[sis.Family][sis.Arch])
+		pkgs = append(pkgs, values.GrubPackages[sis.Distro][values.ArchCommon])
+		pkgs = append(pkgs, values.GrubPackages[sis.Family][values.ArchCommon])
+		pkgs = append(pkgs, values.GrubPackages[sis.Distro][sis.Arch])
+		pkgs = append(pkgs, values.GrubPackages[sis.Family][sis.Arch])
+	} else {
+		// Now that initramfs is built we can drop those packages
+		pkgs = append(pkgs, values.ImmucorePackages[sis.Distro][values.ArchCommon])
+		pkgs = append(pkgs, values.ImmucorePackages[sis.Family][values.ArchCommon])
+		pkgs = append(pkgs, values.ImmucorePackages[sis.Distro][sis.Arch])
+		pkgs = append(pkgs, values.ImmucorePackages[sis.Family][sis.Arch])
+	}
+
+	filteredPkgs := values.FilterPackagesOnConstraint(sis, l, pkgs)
+	stages = append(stages, []schema.Stage{
+		{
+			Name: "Remove uneeded packages",
+			Packages: schema.Packages{
+				Remove: filteredPkgs,
+			},
+		},
+		{
+			Name:     "Autoremove packages",
+			OnlyIfOs: "Ubuntu.*|Debian.*",
+			Commands: []string{
+				"apt-get autoremove -y",
+			},
+		},
+	}...)
+	return stages
 }
 
 func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.Stage {
