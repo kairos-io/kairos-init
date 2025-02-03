@@ -10,7 +10,7 @@ var (
 	// renovate: datasource=docker depName=quay.io/kairos/framework
 	frameWorkVersion = "v2.15.11"
 	// renovate: datasource=docker
-	providerPackage = "quay.io/kairos/packages:provider-kairos-system-2.9.1"
+	providerPackage = "quay.io/kairos/packages:provider-kairos-system-2.9.2"
 )
 
 func GetFrameworkVersion() string {
