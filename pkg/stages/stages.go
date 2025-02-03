@@ -116,27 +116,66 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 	// We are not doing the k3s software version here
 	imageLabel := fmt.Sprintf("%s-%s-%s-%s-%s", flavorRelease, config.DefaultConfig.Variant, sis.Arch.String(), config.DefaultConfig.Model, config.DefaultConfig.FrameworkVersion)
 
+	env := map[string]string{
+		"KAIROS_ID":               "kairos",                              // What for?
+		"KAIROS_ID_LIKE":          idLike,                                // What for?
+		"KAIROS_NAME":             idLike,                                // What for? Same as ID_LIKE
+		"KAIROS_VERSION":          config.DefaultConfig.FrameworkVersion, // Move to use the framework version, bump framework to be in sync with Kairos
+		"KAIROS_ARCH":             sis.Arch.String(),
+		"KAIROS_TARGETARCH":       sis.Arch.String(), // What for? Same as ARCH
+		"KAIROS_FLAVOR":           flavor,
+		"KAIROS_FLAVOR_RELEASE":   flavorRelease,
+		"KAIROS_FAMILY":           sis.Family.String(),
+		"KAIROS_MODEL":            config.DefaultConfig.Model, // NEEDED or it breaks boot!
+		"KAIROS_VARIANT":          config.DefaultConfig.Variant.String(),
+		"KAIROS_REGISTRY_AND_ORG": config.DefaultConfig.Registry, // Needed for upgrades to search for images
+		"KAIROS_BUG_REPORT_URL":   "https://github.com/kairos-io/kairos/issues",
+		"KAIROS_HOME_URL":         "https://github.com/kairos-io/kairos",
+		"KAIROS_RELEASE":          config.DefaultConfig.FrameworkVersion, // Move to use the framework version, bump framework to be in sync with Kairos, used by upgrades
+		"KAIROS_IMAGE_LABEL":      imageLabel,                            // Used by raw image creation...very bad
+	}
+
+	// Get SOFTWARE_VERSION from the k3s/k0s version
+	if config.DefaultConfig.Variant == config.StandardVariant {
+		log.Logger.Debug().Msg("Getting the k8s version for the kairos-release stage")
+		var k8sVersion string
+
+		switch config.DefaultConfig.KubernetesProvider {
+		case config.K3sProvider:
+			out, err := exec.Command("k3s", "--version").CombinedOutput()
+			if err != nil {
+				log.Logger.Error().Msgf("Failed to get the k3s version: %s", err)
+			}
+			// 2 lines in this format:
+			// k3s version v1.21.4+k3s1 (3781f4b7)
+			// go version go1.16.5
+			// We need the first line
+			re := regexp.MustCompile(`k3s version v(\d+\.\d+\.\d+\+k3s\d+)`)
+			if re.MatchString(string(out)) {
+				match := re.FindStringSubmatch(string(out))
+				k8sVersion = match[1]
+			} else {
+				log.Logger.Error().Msgf("Failed to parse the k3s version: %s", string(out))
+			}
+		case config.K0sProvider:
+			out, err := exec.Command("k0s", "version").CombinedOutput()
+			if err != nil {
+				log.Logger.Error().Msgf("Failed to get the k0s version: %s", err)
+			}
+			k8sVersion = strings.TrimSpace(string(out))
+		}
+
+		log.Logger.Debug().Str("k8sVersion", k8sVersion).Msg("Got the k8s version")
+		env["KAIROS_SOFTWARE_VERSION"] = k8sVersion
+		env["KAIROS_SOFTWARE_VERSION_PREFIX"] = string(config.DefaultConfig.KubernetesProvider)
+	}
+
+	log.Logger.Debug().Interface("env", env).Msg("Kairos release stage")
+
 	return []schema.Stage{
 		{
-			Name: "Write kairos-release",
-			Environment: map[string]string{
-				"KAIROS_ID":               "kairos",                              // What for?
-				"KAIROS_ID_LIKE":          idLike,                                // What for?
-				"KAIROS_NAME":             idLike,                                // What for? Same as ID_LIKE
-				"KAIROS_VERSION":          config.DefaultConfig.FrameworkVersion, // Move to use the framework version, bump framework to be in sync with Kairos
-				"KAIROS_ARCH":             sis.Arch.String(),
-				"KAIROS_TARGETARCH":       sis.Arch.String(), // What for? Same as ARCH
-				"KAIROS_FLAVOR":           flavor,
-				"KAIROS_FLAVOR_RELEASE":   flavorRelease,
-				"KAIROS_FAMILY":           sis.Family.String(),
-				"KAIROS_MODEL":            config.DefaultConfig.Model, // NEEDED or it breaks boot!
-				"KAIROS_VARIANT":          config.DefaultConfig.Variant.String(),
-				"KAIROS_REGISTRY_AND_ORG": config.DefaultConfig.Registry, // Needed for upgrades to search for images
-				"KAIROS_BUG_REPORT_URL":   "https://github.com/kairos-io/kairos/issues",
-				"KAIROS_HOME_URL":         "https://github.com/kairos-io/kairos",
-				"KAIROS_RELEASE":          config.DefaultConfig.FrameworkVersion, // Move to use the framework version, bump framework to be in sync with Kairos, used by upgrades
-				"KAIROS_IMAGE_LABEL":      imageLabel,                            // Used by raw image creation...very bad
-			},
+			Name:            "Write kairos-release",
+			Environment:     env,
 			EnvironmentFile: "/etc/kairos-release",
 		},
 	}
