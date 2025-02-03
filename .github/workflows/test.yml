@@ -12,12 +12,23 @@ concurrency:
 
 jobs:
   testing_build_matrix:
-    name: ${{ matrix.platform }} - ${{ matrix.base_image }}
+    name: ${{ matrix.platform }} - ${{ matrix.base_image }} - ${{ matrix.variant }} - ${{ matrix.kubernetes_provider }}
     runs-on: ${{ matrix.platform == 'linux/arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     strategy:
       matrix:
+        variant: [ "core" ]
+        kubernetes_provider: [ "k3s"]
         platform: [ "linux/amd64", "linux/arm64" ]
         base_image: [ "ubuntu:20.04", "ubuntu:24.04", "debian:12", "alpine:3.19", "alpine:3.21", "opensuse/leap:15.6", "opensuse/tumbleweed", "rockylinux:9" ]
+        include:
+          - platform: "linux/amd64"
+            base_image: "ubuntu:22.04"
+            variant: "standard"
+            kubernetes_provider: "k3s"
+          - platform: "linux/amd64"
+            base_image: "ubuntu:22.04"
+            variant: "standard"
+            kubernetes_provider: "k0s"
     steps:
       - uses: actions/checkout@v4
       - name: Set up QEMU
@@ -36,3 +47,5 @@ jobs:
           tags: kairos-${{ matrix.base_image }}
           build-args: |
             BASE_IMAGE=${{ matrix.base_image }}
+            VARIANT=${{ matrix.variant }}
+            KUBERNETES_PROVIDER=${{ matrix.kubernetes_provider }}
