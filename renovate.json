@@ -21,7 +21,7 @@
     {
       "customType": "regex",
       "fileMatch": [
-        "^pkg/values/framework\\.go$"
+        "^pkg/values/versions\\.go$"
       ],
       "matchStrings": [
         "frameWorkVersion\\s*=\\s*\"(?<currentValue>v[^\"]+)\""
@@ -33,7 +33,7 @@
     {
       "customType": "regex",
       "fileMatch": [
-        "^pkg/values/framework\\.go$"
+        "^pkg/values/versions\\.go$"
       ],
       "matchStrings": [
         "providerPackage\\s*=\\s*\"(?<depName>quay\\.io/kairos/packages):(?<currentValue>provider-kairos-system-[^\"]+)\""
