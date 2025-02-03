@@ -143,6 +143,18 @@ func (v *Validator) Validate() error {
 		}
 	}
 
+	if config.DefaultConfig.Variant == "standard" {
+		if vals["KAIROS_VARIANT"] != "standard" {
+			multi = multierror.Append(multi, fmt.Errorf("KAIROS_VARIANT is not standard"))
+		}
+		if vals["KAIROS_SOFTWARE_VERSION"] == "" {
+			multi = multierror.Append(multi, fmt.Errorf("KAIROS_SOFTWARE_VERSION is empty"))
+		}
+		if vals["KAIROS_SOFTWARE_VERSION_PREFIX"] == "" {
+			multi = multierror.Append(multi, fmt.Errorf("KAIROS_SOFTWARE_VERSION_PREFIX is empty"))
+		}
+	}
+
 	// Check if initrd contains the necessary binaries
 	// Do it at the ends as its the slowest check
 	if !config.DefaultConfig.TrustedBoot {
