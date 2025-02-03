@@ -7,8 +7,10 @@ var (
 	// gitCommit is the git sha1 + dirty if build from a dirty git.
 	gitCommit = "none"
 	// This gets auto updated by renovate on github
-	// renovate: datasource=docker depName=quay.io/kairos/framework versioning=semver
+	// renovate: datasource=docker depName=quay.io/kairos/framework
 	frameWorkVersion = "v2.15.11"
+	// renovate: datasource=docker depName=quay.io/kairos/packages
+	providerPackage = "quay.io/kairos/packages:provider-kairos-system-2.9.1"
 )
 
 func GetFrameworkVersion() string {
@@ -29,7 +31,7 @@ type BuildInfo struct {
 	GoVersion string `json:"go_version,omitempty"`
 }
 
-// Get returns build info.
+// GetFullVersion returns the full build info.
 func GetFullVersion() BuildInfo {
 	v := BuildInfo{
 		Version:   GetVersion(),

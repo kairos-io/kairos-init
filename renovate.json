@@ -29,6 +29,17 @@
       "depNameTemplate": "quay.io/kairos/framework",
       "datasourceTemplate": "docker",
       "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^pkg/values/framework\\.go$"
+      ],
+      "matchStrings": [
+        "providerPackage\\s*=\\s*\"(?<depName>quay\\.io/kairos/packages):(?<currentValue>provider-kairos-system-[^\"]+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "regex:^provider-kairos-system-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
     }
   ]
 }
