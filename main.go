@@ -17,10 +17,14 @@ import (
 func main() {
 	var trusted string
 	var validate bool
+	var variant string
+	var ksProvider string
+
 	flag.StringVar(&config.DefaultConfig.Level, "l", "info", "set the log level")
 	flag.StringVar(&config.DefaultConfig.Stage, "s", "all", "set the stage to run")
 	flag.StringVar(&config.DefaultConfig.Model, "m", "generic", "model to build for, like generic or rpi4")
-	flag.StringVar(&config.DefaultConfig.Variant, "v", "core", "variant to build (core or standard for k3s flavor) (shorthand: -v)")
+	flag.StringVar(&variant, "v", "core", "variant to build (core or standard for k3s flavor) (shorthand: -v)")
+	flag.StringVar(&ksProvider, "k", "k3s", "Kubernetes provider (shorthand: -k)")
 	flag.StringVar(&config.DefaultConfig.Registry, "r", "quay.io/kairos", "registry and org where the image is gonna be pushed. This is mainly used on upgrades to search for available images to upgrade to")
 	flag.StringVar(&trusted, "t", "false", "init the system for Trusted Boot, changes bootloader to systemd")
 	flag.StringVar(&config.DefaultConfig.FrameworkVersion, "f", values.GetFrameworkVersion(), "set the framework version to use")
@@ -50,11 +54,36 @@ func main() {
 		os.Exit(0)
 	}
 
+	if variant == "" {
+		// Set default variant
+		config.DefaultConfig.Variant = config.CoreVariant
+	} else {
+		// Try to load the variant
+		err := config.DefaultConfig.Variant.FromString(variant)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+			os.Exit(1)
+		}
+	}
+
+	if ksProvider == "" {
+		// Set default variant
+		config.DefaultConfig.KubernetesProvider = config.K3sProvider
+	} else {
+		// Try to load the variant
+		err := config.DefaultConfig.KubernetesProvider.FromString(ksProvider)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
+			os.Exit(1)
+		}
+	}
+
 	logger := types.NewKairosLogger("kairos-init", config.DefaultConfig.Level, false)
 	logger.Infof("Starting kairos-init version %s", values.GetVersion())
 	logger.Debug(litter.Sdump(values.GetFullVersion()))
 
 	// Validate flags are being passed with actual values
+	// We dont care about variant and provider as we are setting that to a default value if value passed is empty
 	requiredFlags := []struct {
 		name  string
 		value string
@@ -62,7 +91,6 @@ func main() {
 		{"l", config.DefaultConfig.Level},
 		{"s", config.DefaultConfig.Stage},
 		{"m", config.DefaultConfig.Model},
-		{"v", config.DefaultConfig.Variant},
 		{"r", config.DefaultConfig.Registry},
 		{"t", trusted},
 		{"f", config.DefaultConfig.FrameworkVersion},

@@ -17,6 +17,10 @@ func GetFrameworkVersion() string {
 	return frameWorkVersion
 }
 
+func GetProviderPackage() string {
+	return providerPackage
+}
+
 func GetVersion() string {
 	return version
 }

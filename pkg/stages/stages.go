@@ -130,7 +130,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 				"KAIROS_FLAVOR_RELEASE":   flavorRelease,
 				"KAIROS_FAMILY":           sis.Family.String(),
 				"KAIROS_MODEL":            config.DefaultConfig.Model, // NEEDED or it breaks boot!
-				"KAIROS_VARIANT":          config.DefaultConfig.Variant,
+				"KAIROS_VARIANT":          config.DefaultConfig.Variant.String(),
 				"KAIROS_REGISTRY_AND_ORG": config.DefaultConfig.Registry, // Needed for upgrades to search for images
 				"KAIROS_BUG_REPORT_URL":   "https://github.com/kairos-io/kairos/issues",
 				"KAIROS_HOME_URL":         "https://github.com/kairos-io/kairos",
@@ -420,6 +420,182 @@ func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.St
 	}
 }
 
+// GetInstallProviderAndKubernetes will install the provider and kubernetes packages
+func GetInstallProviderAndKubernetes(_ values.System, _ types.KairosLogger) []schema.Stage {
+	var data []schema.Stage
+
+	// If its core we dont do anything here
+	if config.DefaultConfig.Variant.String() == "core" {
+		return data
+	}
+
+	data = append(data, []schema.Stage{
+		{
+			Name: "Install Provider packages",
+			UnpackImages: []schema.UnpackImageConf{
+				{
+					Source: values.GetProviderPackage(),
+					Target: "/",
+				},
+			},
+		},
+	}...)
+
+	switch config.DefaultConfig.KubernetesProvider {
+	case config.K3sProvider:
+		cmd := "INSTALL_K3S_BIN_DIR=/usr/bin INSTALL_K3S_SKIP_ENABLE=true INSTALL_K3S_SKIP_SELINUX_RPM=true"
+		// Append version if any, otherwise default to latest
+		if config.DefaultConfig.KubernetesVersion != "" {
+			cmd = fmt.Sprintf("INSTALL_K3S_VERSION=v%s %s", config.DefaultConfig.KubernetesVersion, cmd)
+		}
+		data = append(data, []schema.Stage{
+			{
+				Name: "Install Kubernetes packages",
+				Commands: []string{
+					"curl -sfL https://get.k3s.io > installer.sh",
+					"chmod +x installer.sh",
+					fmt.Sprintf("%s sh installer.sh", cmd),
+					fmt.Sprintf("%s sh installer.sh agent", cmd),
+				},
+			},
+		}...)
+	case config.K0sProvider:
+		cmd := "sh installer.sh"
+		// Append version if any, otherwise default to latest
+		if config.DefaultConfig.KubernetesVersion != "" {
+			cmd = fmt.Sprintf("K0S_VERSION=%s %s", config.DefaultConfig.KubernetesVersion, cmd)
+		}
+		data = append(data, []schema.Stage{
+			{
+				Name: "Install Kubernetes packages",
+				Commands: []string{
+					"curl -sfL https://get.k0s.sh > installer.sh",
+					"chmod +x installer.sh",
+					cmd,
+					"rm installer.sh",
+					"mv /usr/local/bin/k0s /usr/bin/k0s",
+				},
+			},
+			{
+				Name: "Create k0s services for systemd",
+				If:   `[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]`,
+				Files: []schema.File{
+					{
+						Path:        "/etc/systemd/system/k0scontroller.service",
+						Permissions: 0644,
+						Owner:       0,
+						Group:       0,
+						Content: `[Unit]
+Description=k0s - Zero Friction Kubernetes
+Documentation=https://docs.k0sproject.io
+ConditionFileIsExecutable=/usr/bin/k0s
+
+After=network-online.target 
+Wants=network-online.target 
+
+[Service]
+StartLimitInterval=5
+StartLimitBurst=10
+ExecStart=/usr/bin/k0s controller
+
+RestartSec=10
+Delegate=yes
+KillMode=process
+LimitCORE=infinity
+TasksMax=infinity
+TimeoutStartSec=0
+LimitNOFILE=999999
+Restart=always
+
+[Install]
+WantedBy=multi-user.target`,
+					},
+					{
+						Path:        "/etc/systemd/system/k0sworker.service",
+						Permissions: 0644,
+						Owner:       0,
+						Group:       0,
+						Content: `[Unit]
+Description=k0s - Zero Friction Kubernetes
+Documentation=https://docs.k0sproject.io
+ConditionFileIsExecutable=/usr/bin/k0s
+
+After=network-online.target 
+Wants=network-online.target 
+
+[Service]
+StartLimitInterval=5
+StartLimitBurst=10
+ExecStart=/usr/bin/k0s worker
+
+RestartSec=10
+Delegate=yes
+KillMode=process
+LimitCORE=infinity
+TasksMax=infinity
+TimeoutStartSec=0
+LimitNOFILE=999999
+Restart=always
+
+[Install]
+WantedBy=multi-user.target`,
+					},
+				},
+			},
+			{
+				Name: "Create k0s services for openrc",
+				If:   `[ -f "/sbin/openrc" ]`,
+				Files: []schema.File{
+					{
+						Path:        "/etc/init.d/k0scontroller",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content: `#!/sbin/openrc-run
+supervisor=supervise-daemon
+description="k0s - Zero Friction Kubernetes"
+command=/usr/bin/k0s
+command_args="'controller' "
+name=$(basename $(readlink -f $command))
+supervise_daemon_args="--stdout /var/log/${name}.log --stderr /var/log/${name}.err"
+
+: "${rc_ulimit=-n 1048576 -u unlimited}"
+depend() { 
+	need cgroups 
+	need net 
+	use dns 
+	after firewall
+}`,
+					},
+					{
+						Path:        "/etc/init.d/k0sworker",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content: `#!/sbin/openrc-run
+supervisor=supervise-daemon
+description="k0s - Zero Friction Kubernetes"
+command=/usr/bin/k0s
+command_args="'worker' "
+name=$(basename $(readlink -f $command))
+supervise_daemon_args="--stdout /var/log/${name}.log --stderr /var/log/${name}.err"
+
+: "${rc_ulimit=-n 1048576 -u unlimited}"
+depend() { 
+	need cgroups 
+	need net 
+	use dns 
+	after firewall
+}`,
+					},
+				},
+			},
+		}...)
+	}
+
+	return data
+}
+
 func GetServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 	return []schema.Stage{
 		{
@@ -474,25 +650,6 @@ func GetServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 	}
 }
 
-// GetInstallStandardStage Returns the standard install stage so it installs the standard packages like k3s and provider
-// Not used for now
-func GetInstallStandardStage(sis values.System, logger types.KairosLogger) []schema.Stage {
-	var data []schema.Stage
-	/*
-		if config.DefaultConfig.Variant == "standard" {
-			data = append(data, schema.Stage{
-				Name: "Install standard packages",
-				Commands: []string{
-					"luet install -y k9s-openrc/systemd/k3s",
-					"luet install -y provider-kairos",
-				},
-			})
-		}
-	*/
-
-	return data
-}
-
 // RunAllStages Runs all the stages in the correct order
 func RunAllStages(logger types.KairosLogger) (schema.YipConfig, error) {
 	fullYipConfig := schema.YipConfig{Stages: map[string][]schema.Stage{}}
@@ -535,7 +692,7 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data.Stages["install"] = installStage
 	// Add the framework stage
 	data.Stages["install"] = append(data.Stages["install"], GetInstallFrameworkStage(sis, logger)...)
-	data.Stages["install"] = append(data.Stages["install"], GetInstallStandardStage(sis, logger)...)
+	data.Stages["install"] = append(data.Stages["install"], GetInstallProviderAndKubernetes(sis, logger)...)
 
 	// Run things after we install packages and framework
 	data.Stages["after-install"] = []schema.Stage{}

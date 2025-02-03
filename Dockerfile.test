@@ -1,6 +1,7 @@
 ARG BASE_IMAGE=ubuntu:24.04
 ARG VALIDATE_IMAGE=ubuntu:24.04
 
+
 FROM golang AS build
 WORKDIR /app
 COPY go.mod go.sum .
@@ -19,9 +20,13 @@ COPY --from=build /app/kairos-init /kairos-init
 RUN /kairos-init -l debug --validate
 
 FROM ${BASE_IMAGE}
+ARG VARIANT=core
+ARG MODEL=generic
+ARG TRUSTED_BOOT=false
+ARG K3S_PROVIDER=k3s
 
 COPY --from=kairos-init /kairos-init /kairos-init
-RUN /kairos-init -l debug -s install
-RUN /kairos-init -l debug -s init
-RUN /kairos-init -l debug --validate
+RUN /kairos-init -l debug -s install -m "${MODEL}" -v "${VARIANT}" -t "${TRUSTED_BOOT}" -k "${K3S_PROVIDER}"
+RUN /kairos-init -l debug -s init -m "${MODEL}" -v "${VARIANT}" -t "${TRUSTED_BOOT}" -k "${K3S_PROVIDER}"
+RUN /kairos-init -l debug --validate -m "${MODEL}" -v "${VARIANT}" -t "${TRUSTED_BOOT}" -k "${K3S_PROVIDER}"
 RUN rm /kairos-init

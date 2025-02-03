@@ -35,12 +35,15 @@ func (v *Validator) Validate() error {
 		"kcrypt-discovery-challenger",
 	}
 
-	// Not yet as we dont install the k3s stuff ourselves
-	/*
-		if config.DefaultConfig.Variant == "standard" {
-			binaries = append(binaries, "k3s", "agent-provider-kairos", "kairos")
+	if config.DefaultConfig.Variant == "standard" {
+		binaries = append(binaries, "agent-provider-kairos", "kairos")
+		if config.DefaultConfig.KubernetesProvider == config.K3sProvider {
+			binaries = append(binaries, "k3s")
 		}
-	*/
+		if config.DefaultConfig.KubernetesProvider == config.K0sProvider {
+			binaries = append(binaries, "k0s")
+		}
+	}
 
 	// Alter path to include our providers path
 	originalPath := os.Getenv("PATH")
@@ -88,6 +91,15 @@ func (v *Validator) Validate() error {
 			"kairos-reset",
 			"kairos-webui",
 			"kairos",
+		}
+
+		if config.DefaultConfig.Variant == "standard" {
+			switch config.DefaultConfig.KubernetesProvider {
+			case config.K3sProvider:
+				services = append(services, "k3s", "k3s-agent")
+			case config.K0sProvider:
+				services = append(services, "k0scontroller", "k0sworker")
+			}
 		}
 		for _, service := range services {
 			_, err := os.Stat(fmt.Sprintf("/etc/systemd/system/%s.service", service))
