@@ -25,6 +25,7 @@ func main() {
 	flag.StringVar(&config.DefaultConfig.Model, "m", "generic", "model to build for, like generic or rpi4")
 	flag.StringVar(&variant, "v", "core", "variant to build (core or standard for k3s flavor) (shorthand: -v)")
 	flag.StringVar(&ksProvider, "k", "k3s", "Kubernetes provider (shorthand: -k)")
+	flag.StringVar(&config.DefaultConfig.KubernetesVersion, "k8sversion", "latest", "Kubernetes version for provider")
 	flag.StringVar(&config.DefaultConfig.Registry, "r", "quay.io/kairos", "registry and org where the image is gonna be pushed. This is mainly used on upgrades to search for available images to upgrade to")
 	flag.StringVar(&trusted, "t", "false", "init the system for Trusted Boot, changes bootloader to systemd")
 	flag.StringVar(&config.DefaultConfig.FrameworkVersion, "f", values.GetFrameworkVersion(), "set the framework version to use")
@@ -76,6 +77,11 @@ func main() {
 			fmt.Fprintf(os.Stderr, "%s\n", err.Error())
 			os.Exit(1)
 		}
+	}
+
+	if config.DefaultConfig.KubernetesVersion == "latest" {
+		// Set default variant
+		config.DefaultConfig.KubernetesVersion = ""
 	}
 
 	logger := types.NewKairosLogger("kairos-init", config.DefaultConfig.Level, false)
