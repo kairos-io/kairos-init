@@ -60,7 +60,11 @@ func (v *Validator) Validate() error {
 	// Restore the path
 	_ = os.Setenv("PATH", originalPath)
 
-	for _, f := range []string{"/boot/initrd", "/boot/vmlinuz"} {
+	checkfiles := []string{"/boot/vmlinuz"}
+	if !config.DefaultConfig.TrustedBoot {
+		checkfiles = append(checkfiles, "/boot/initrd")
+	}
+	for _, f := range checkfiles {
 		s, err := os.Lstat(f)
 		if err != nil {
 			multi = multierror.Append(multi, fmt.Errorf("file missing %s", f))
