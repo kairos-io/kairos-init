@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   testing_build_matrix:
-    name: ${{ matrix.platform }} - ${{ matrix.base_image }}${{ matrix.variant == 'standard' && ' - ' || '' }}${{ matrix.variant == 'standard' && matrix.kubernetes_provider || '' }}
+    name: ${{ matrix.platform }} - ${{ matrix.base_image }}${{ matrix.variant == 'standard' && ' - ' || '' }}${{ matrix.variant == 'standard' && matrix.kubernetes_provider || '' }}${{ matrix.variant == 'standard' && matrix.kubernetes_version || '' }}
     runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     strategy:
       matrix:
@@ -25,10 +25,12 @@ jobs:
             base_image: "ubuntu:22.04"
             variant: "standard"
             kubernetes_provider: "k3s"
+            kubernetes_version: "v1.32.1+k3s1"
           - platform: "amd64"
             base_image: "ubuntu:22.04"
             variant: "standard"
             kubernetes_provider: "k0s"
+            kubernetes_version: "v1.32.1+k0s.0"
     steps:
       - uses: actions/checkout@v4
       - name: Set up QEMU
