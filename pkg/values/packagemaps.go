@@ -247,6 +247,7 @@ var BasePackages = PackageMap{
 				"snapd",
 				"systemd", // Basic tool.
 				"systemd-timesyncd",
+				"systemd-sysv", // provides reboot and shutdown commands. like what? they are just symlinks to systemctl lol
 				"xauth",
 				"xclip",
 				"xdg-user-dirs",
