@@ -58,7 +58,6 @@ var ImmucorePackages = PackageMap{
 				"dracut-network",    // Network-legacy support for dracut
 				"isc-dhcp-common",   // Network-legacy support for dracut, basic tools
 				"isc-dhcp-client",   // Network-legacy support for dracut, basic tools
-				"systemd-sysv",      // No idea, drop it?
 				"cloud-guest-utils", // This brings growpart, so we can resize the partitions
 			},
 		},
