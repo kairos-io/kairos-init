@@ -2,7 +2,7 @@ module github.com/kairos-io/kairos-init
 
 go 1.23.1
 
-toolchain go1.23.5
+toolchain go1.23.6
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1
