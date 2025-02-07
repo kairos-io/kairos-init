@@ -601,6 +601,36 @@ var KernelPackagesModels = ModelPackageMap{
 			},
 		},
 	},
+	Ubuntu: {
+		ArchARM64: {
+			Rpi3: {
+				Common: {
+					"linux-raspi",
+				},
+				"20.04": {"linux-firmware-raspi2"},
+				"22.04": {"linux-firmware-raspi", "inux-modules-extra-raspi"},
+				">=20.04, != 24.10": {
+					// This is a template, so we can replace the version with the actual version of the system
+					"linux-image-generic-hwe-{{.version}}",
+				},
+				// Somehow 24.10 uses the 22.04 hwe kernel
+				"24.10": {"linux-image-generic-hwe-24.04"},
+			},
+			Rpi4: {
+				Common: {
+					"linux-raspi",
+				},
+				"20.04": {"linux-firmware-raspi2"},
+				"22.04": {"linux-firmware-raspi", "inux-modules-extra-raspi"},
+				">=20.04, != 24.10": {
+					// This is a template, so we can replace the version with the actual version of the system
+					"linux-image-generic-hwe-{{.version}}",
+				},
+				// Somehow 24.10 uses the 22.04 hwe kernel
+				"24.10": {"linux-image-generic-hwe-24.04"},
+			},
+		},
+	},
 	SUSEFamily: {
 		ArchARM64: {
 			Rpi3: {
@@ -628,6 +658,16 @@ var KernelPackagesModels = ModelPackageMap{
 					"wireless-tools",
 					"wpa_supplicant",
 				},
+			},
+		},
+	},
+	AlpineFamily: {
+		ArchARM64: {
+			Rpi3: {
+				Common: {"linux-lts"},
+			},
+			Rpi4: {
+				Common: {"linux-lts"},
 			},
 		},
 	},
