@@ -62,4 +62,4 @@ jobs:
           tags: ${{ steps.metadata.outputs.tags }}
           sources: |
             ttl.sh/kairos:${{ github.sha }}-arm64
-            ttl.sh/kairos${{ github.sha }}-amd64
+            ttl.sh/kairos:${{ github.sha }}-amd64
