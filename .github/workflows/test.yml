@@ -15,6 +15,7 @@ jobs:
     name: ${{ matrix.platform }} - ${{ matrix.base_image }}${{ matrix.variant == 'standard' && ' - ' || '' }}${{ matrix.variant == 'standard' && matrix.kubernetes_provider || '' }}${{ matrix.variant == 'standard' && matrix.kubernetes_version || '' }}
     runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     strategy:
+      fail-fast: false
       matrix:
         variant: [ "core" ]
         kubernetes_provider: [ "k3s"]
