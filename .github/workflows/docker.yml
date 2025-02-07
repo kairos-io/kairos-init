@@ -19,6 +19,7 @@ jobs:
         uses: docker/build-push-action@v6
         id: build-linux-amd64
         with:
+          provenance: false
           context: .
           file: Dockerfile
           platforms: linux/amd64
@@ -34,6 +35,7 @@ jobs:
         uses: docker/build-push-action@v6
         id: build-linux-amr64
         with:
+          provenance: false
           context: .
           file: Dockerfile
           platforms: linux/arm64
