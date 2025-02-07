@@ -586,6 +586,15 @@ var KernelPackagesModels = ModelPackageMap{
 		ArchAMD64: {
 			Rpi4: {
 				Common: {
+					"linux-image-arm64",
+					"firmware-linux-free",
+					"raspi-firmware",
+				},
+			},
+			Rpi3: {
+				Common: {
+					"linux-image-arm64",
+					"firmware-linux-free",
 					"raspi-firmware",
 				},
 			},
