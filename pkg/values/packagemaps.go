@@ -617,7 +617,7 @@ var KernelPackagesModels = ModelPackageMap{
 					"linux-raspi",
 				},
 				"20.04": {"linux-firmware-raspi2"},
-				"22.04": {"linux-firmware-raspi", "inux-modules-extra-raspi"},
+				"22.04": {"linux-firmware-raspi", "linux-modules-extra-raspi"},
 				">=20.04, != 24.10": {
 					// This is a template, so we can replace the version with the actual version of the system
 					"linux-image-generic-hwe-{{.version}}",
@@ -630,7 +630,7 @@ var KernelPackagesModels = ModelPackageMap{
 					"linux-raspi",
 				},
 				"20.04": {"linux-firmware-raspi2"},
-				"22.04": {"linux-firmware-raspi", "inux-modules-extra-raspi"},
+				"22.04": {"linux-firmware-raspi", "linux-modules-extra-raspi"},
 				">=20.04, != 24.10": {
 					// This is a template, so we can replace the version with the actual version of the system
 					"linux-image-generic-hwe-{{.version}}",
