@@ -583,7 +583,7 @@ var SystemdPackages = PackageMap{
 // TODO(debian): Needs to run `sed -i 's/^Components: main.*$/& non-free-firmware/' /etc/apt/sources.list.d/debian.sources` before installing the firmware for RPI devices
 var KernelPackagesModels = ModelPackageMap{
 	Debian: {
-		ArchAMD64: {
+		ArchARM64: {
 			Rpi4: {
 				Common: {
 					"linux-image-arm64",
