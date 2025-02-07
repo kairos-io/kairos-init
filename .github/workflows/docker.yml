@@ -1,7 +1,6 @@
 name: Docker image build
 
 on:
-  pull_request: 
   push:
     branches:
       - 'main'
@@ -54,7 +53,7 @@ jobs:
       - uses: docker/metadata-action@v5
         id: metadata
         with:
-          images: ttl.sh/kairos-init
+          images: quay.io/kairos/kairos-init
       - uses: int128/docker-manifest-create-action@v2
         id: build
         with:
