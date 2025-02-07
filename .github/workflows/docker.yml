@@ -9,30 +9,56 @@ concurrency:
   group: build-main-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 jobs:
-  dockerImage:
-    env:
-      REGISTRY: "ttl.sh"
-    runs-on: "ubuntu-24.04"
-    name: Docker image
+  build-linux-amd64:
+    runs-on: 'ubuntu-24.04'
     steps:
       - uses: actions/checkout@v4
-      - name: Docker Metadata action
-        id: meta
-        uses: docker/metadata-action@v5.6.1
-        with:
-          images: ttl.sh/kairos-init
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@master
-        with:
-          platforms: all
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build the docker image
         uses: docker/build-push-action@v6
+        id: build-linux-amd64
         with:
           context: .
           file: Dockerfile
-          platforms: linux/amd64, linux/arm64
+          platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ttl.sh/kairos:${{ github.sha }}-amd64
+  build-linux-arm64:
+    runs-on: 'ubuntu-24.04-arm'
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build the docker image
+        uses: docker/build-push-action@v6
+        id: build-linux-amr64
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/arm64
+          push: true
+          tags: ttl.sh/kairos:${{ github.sha }}-arm64
+  build:
+    needs:
+      - build-linux-amd64
+      - build-linux-arm64
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+      - uses: docker/metadata-action@v5
+        id: metadata
+        with:
+          images: quay.io/kairos/kairos-init
+      - uses: int128/docker-manifest-create-action@v2
+        id: build
+        with:
+          index-annotations: ${{ steps.metadata.outputs.labels }}
+          tags: ${{ steps.metadata.outputs.tags }}
+          sources: |
+            ttl.sh/kairos:${{ github.sha }}-arm64
+            ttl.sh/kairos:${{ github.sha }}-amd64
