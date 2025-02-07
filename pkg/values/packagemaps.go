@@ -45,7 +45,13 @@ var CommonPackages = []string{
 // So we can refer to the package maps by the distro or family
 type DistroFamilyInterface interface{}
 
+// PackageMap is a map of packages to install for each distro and architecture plus a VersionMap to filter on
 type PackageMap map[DistroFamilyInterface]map[Architecture]VersionMap
+
+// ModelPackageMap is a map of packages to install for each distro, architecture and model plus a VersionMap to filter on
+type ModelPackageMap map[DistroFamilyInterface]map[Architecture]map[Model]VersionMap
+
+// VersionMap is a map of a constraint to a list of packages
 type VersionMap map[string][]string
 
 // ImmucorePackages are the minimum set of packages that immucore needs.
@@ -243,7 +249,6 @@ var BasePackages = PackageMap{
 				"publicsuffix",
 				"python3-pynvim",
 				"shared-mime-info",
-				"snapd",
 				"systemd", // Basic tool.
 				"systemd-timesyncd",
 				"systemd-sysv", // provides reboot and shutdown commands. like what? they are just symlinks to systemctl lol
@@ -573,49 +578,54 @@ var SystemdPackages = PackageMap{
 	},
 }
 
-// RpiPackages is a map of packages to install for each distro and architecture for Raspberry Pi variants
-// TODO: Actually implement this somehow somewhere lol
-// TODO: Make it a board thing not only rpi
-// TODO(debian): Needs to run `sed -i 's/^Components: main.*$/& non-free-firmware/' /etc/apt/sources.list.d/debian.sources` before installing the firmware
-var RpiPackages = PackageMap{
+// KernelPackagesModels is a map of packages to install for each distro and architecture for models that are not generic
+// Usually its just kernels and firmware packages that are model specific
+// TODO(debian): Needs to run `sed -i 's/^Components: main.*$/& non-free-firmware/' /etc/apt/sources.list.d/debian.sources` before installing the firmware for RPI devices
+var KernelPackagesModels = ModelPackageMap{
 	Debian: {
 		ArchAMD64: {
-			Rpi4.String(): {
-				"raspi-firmware",
+			Rpi4: {
+				Common: {
+					"raspi-firmware",
+				},
 			},
 		},
 	},
 	Arch: {
 		ArchARM64: {
-			Rpi3.String(): {
-				"linux-rpi",
+			Rpi3: {
+				Common: {"linux-rpi"},
 			},
-			Rpi4.String(): {
-				"linux-rpi4",
+			Rpi4: {
+				Common: {"linux-rpi4"},
 			},
 		},
 	},
 	SUSEFamily: {
 		ArchARM64: {
-			Rpi3.String(): {
-				"raspberrypi-eeprom",
-				"raspberrypi-firmware",
-				"raspberrypi-firmware-dt",
-				"sysconfig",
-				"sysconfig-netconfig",
-				"sysvinit-tools",
-				"wireless-tools",
-				"wpa_supplicant",
+			Rpi3: {
+				Common: {
+					"raspberrypi-eeprom",
+					"raspberrypi-firmware",
+					"raspberrypi-firmware-dt",
+					"sysconfig",
+					"sysconfig-netconfig",
+					"sysvinit-tools",
+					"wireless-tools",
+					"wpa_supplicant",
+				},
 			},
-			Rpi4.String(): {
-				"raspberrypi-eeprom",
-				"raspberrypi-firmware",
-				"raspberrypi-firmware-dt",
-				"sysconfig",
-				"sysconfig-netconfig",
-				"sysvinit-tools",
-				"wireless-tools",
-				"wpa_supplicant",
+			Rpi4: {
+				Common: {
+					"raspberrypi-eeprom",
+					"raspberrypi-firmware",
+					"raspberrypi-firmware-dt",
+					"sysconfig",
+					"sysconfig-netconfig",
+					"sysvinit-tools",
+					"wireless-tools",
+					"wpa_supplicant",
+				},
 			},
 		},
 	},
@@ -652,22 +662,40 @@ func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 		BasePackages[s.Distro][s.Arch],     // Specific packages for the arch
 		BasePackages[s.Family][s.Arch],     // Specific packages for the arch by family
 	}
-
+	// If trusted boot is enabled, we need to install the trusted boot packages
 	if config.DefaultConfig.TrustedBoot {
-		filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][ArchCommon]) // Common kernel packages to both arches
-		filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][ArchCommon]) // Common kernel packages to both arches by family
-		filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][s.Arch])     // Specific kernel packages for the arch
-		filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+		// Kernel packages by model
+		if config.DefaultConfig.Model == Generic.String() {
+			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][ArchCommon]) // Common kernel packages to both arches
+			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][ArchCommon]) // Common kernel packages to both arches by family
+			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][s.Arch])     // Specific kernel packages for the arch
+			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+		} else {
+			// Get specific packages for the model
+			// TODO: No support for trusted boot on models yet, so this part is probably useless for now?
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][ArchCommon][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][ArchCommon][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][s.Arch][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][s.Arch][Model(config.DefaultConfig.Model)])
+		}
 		// Install only systemd-boot packages
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Distro][ArchCommon])
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Family][ArchCommon])
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Distro][s.Arch])
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Family][s.Arch])
 	} else {
-		filteredPackages = append(filteredPackages, KernelPackages[s.Distro][ArchCommon]) // Common kernel packages to both arches
-		filteredPackages = append(filteredPackages, KernelPackages[s.Family][ArchCommon]) // Common kernel packages to both arches by family
-		filteredPackages = append(filteredPackages, KernelPackages[s.Distro][s.Arch])     // Specific kernel packages for the arch
-		filteredPackages = append(filteredPackages, KernelPackages[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+		if config.DefaultConfig.Model == Generic.String() {
+			filteredPackages = append(filteredPackages, KernelPackages[s.Distro][ArchCommon]) // Common kernel packages to both arches
+			filteredPackages = append(filteredPackages, KernelPackages[s.Family][ArchCommon]) // Common kernel packages to both arches by family
+			filteredPackages = append(filteredPackages, KernelPackages[s.Distro][s.Arch])     // Specific kernel packages for the arch
+			filteredPackages = append(filteredPackages, KernelPackages[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+		} else {
+			// Get specific packages for the model
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][ArchCommon][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][ArchCommon][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][s.Arch][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][s.Arch][Model(config.DefaultConfig.Model)])
+		}
 		// install grub and immucore packages
 		filteredPackages = append(filteredPackages, GrubPackages[s.Distro][ArchCommon])
 		filteredPackages = append(filteredPackages, GrubPackages[s.Family][ArchCommon])

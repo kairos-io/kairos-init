@@ -60,6 +60,7 @@ const (
 	Generic Model = "generic"
 	Rpi3    Model = "rpi3"
 	Rpi4    Model = "rpi4"
+	AgxOrin Model = "agx-orin"
 )
 
 type System struct {
