@@ -61,5 +61,5 @@ jobs:
           index-annotations: ${{ steps.metadata.outputs.labels }}
           tags: ${{ steps.metadata.outputs.tags }}
           sources: |
-            ttl.sh/kairos@${{ needs.build-linux-amd64.outputs.digest }}
-            ttl.sh/kairos@${{ needs.build-linux-arm64.outputs.digest }}
+            ttl.sh/kairos:${{ github.sha }}-arm64
+            ttl.sh/kairos${{ github.sha }}-amd64
