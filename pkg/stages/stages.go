@@ -735,6 +735,19 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data := schema.YipConfig{Stages: map[string][]schema.Stage{}}
 	// Run things before we install packages and framework
 	data.Stages["before-install"] = []schema.Stage{}
+
+	// On Rpi3 and Rpi4 we need to enable the non-free repository for Debian to get the firmware
+	if config.DefaultConfig.Model == values.Rpi3.String() || config.DefaultConfig.Model == values.Rpi4.String() {
+		data.Stages["before-install"] = append(data.Stages["before-install"], []schema.Stage{
+			{
+				Name:     "Enable non-free repository",
+				OnlyIfOs: "Debian.*",
+				Commands: []string{
+					"sed -i 's/^Components: main.*$/& non-free-firmware/' /etc/apt/sources.list.d/debian.sources",
+				},
+			},
+		}...)
+	}
 	// Add packages install
 	installStage, err := GetInstallStage(sis, logger)
 	if err != nil {

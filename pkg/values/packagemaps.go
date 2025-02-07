@@ -605,6 +605,7 @@ var KernelPackagesModels = ModelPackageMap{
 		ArchARM64: {
 			Rpi3: {
 				Common: {
+					"kernel-default",
 					"raspberrypi-eeprom",
 					"raspberrypi-firmware",
 					"raspberrypi-firmware-dt",
@@ -617,6 +618,7 @@ var KernelPackagesModels = ModelPackageMap{
 			},
 			Rpi4: {
 				Common: {
+					"kernel-default",
 					"raspberrypi-eeprom",
 					"raspberrypi-firmware",
 					"raspberrypi-firmware-dt",
