@@ -274,8 +274,8 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 			},
 		},
 		{
-			Name: "Link kernel for Nvidia AGX Orin", // Nvidia AGX Orin has the kernel in the Image file directly
-			If:   "test ! -L /boot/Image",           // If its not a symlink then its the kernel so link it to our expected location
+			Name: "Link kernel for Nvidia AGX Orin",              // Nvidia AGX Orin has the kernel in the Image file directly
+			If:   "test -e /boot/Image && test ! -L /boot/Image", // If its not a symlink then its the kernel so link it to our expected location
 			Commands: []string{
 				"ln -s /boot/Image /boot/vmlinuz",
 			},
