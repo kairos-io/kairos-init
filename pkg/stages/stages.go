@@ -253,8 +253,8 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 			},
 		},
 		{
-			Name: "Clean current kernel link",
-			If:   "test -f /boot/Image",
+			Name: "Clean current kernel link if its a symlink",
+			If:   "test -L /boot/Image",
 			Commands: []string{
 				"rm /boot/Image",
 			},
@@ -273,6 +273,13 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 				fmt.Sprintf("rm /boot/vmlinux-%s", kernel),
 			},
 		},
+		{
+			Name: "Link kernel for Nvidia AGX Orin", // Nvidia AGX Orin has the kernel in the Image file directly
+			If:   "test ! -L /boot/Image",           // If its not a symlink then its the kernel so link it to our expected location
+			Commands: []string{
+				"ln -s /boot/Image /boot/vmlinuz",
+			},
+		},
 		{ // On Fedora, if we dont have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
 			// TODO: Check if this is needed on AlmaLinux/RockyLinux/RedHatLinux
 			Name:     "Copy kernel for Fedora Trusted Boot",
@@ -286,7 +293,6 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 			Name: "Link kernel",
 			If:   fmt.Sprintf("test -f /boot/vmlinuz-%s", kernel),
 			Commands: []string{
-				fmt.Sprintf("depmod -a %s", kernel),
 				fmt.Sprintf("ln -s /boot/vmlinuz-%s /boot/vmlinuz", kernel),
 			},
 		},
@@ -294,7 +300,6 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 			Name: "Link kernel",
 			If:   fmt.Sprintf("test -f /boot/Image-%s", kernel), // On suse arm64 kernel starts with Image
 			Commands: []string{
-				fmt.Sprintf("depmod -a %s", kernel),
 				fmt.Sprintf("ln -s /boot/Image-%s /boot/vmlinuz", kernel),
 			},
 		},
@@ -302,7 +307,6 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 			Name: "Link kernel for Alpine",
 			If:   "test -f /boot/vmlinuz-lts",
 			Commands: []string{
-				fmt.Sprintf("depmod -a %s", kernel),
 				"ln -s /boot/vmlinuz-lts /boot/vmlinuz",
 			},
 		},
@@ -333,6 +337,7 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 				Name:     "Create new initrd",
 				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
 				Commands: []string{
+					fmt.Sprintf("depmod -a %s", kernel),
 					fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel),
 				},
 			},
@@ -340,6 +345,7 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 				Name:     "Create new initrd for Alpine",
 				OnlyIfOs: "Alpine.*",
 				Commands: []string{
+					fmt.Sprintf("depmod -a %s", kernel),
 					fmt.Sprintf("mkinitfs -o /boot/initrd %s", kernel),
 				},
 			},
