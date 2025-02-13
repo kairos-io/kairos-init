@@ -498,7 +498,7 @@ func GetInstallProviderAndKubernetes(_ values.System, _ types.KairosLogger) []sc
 		cmd := "INSTALL_K3S_BIN_DIR=/usr/bin INSTALL_K3S_SKIP_ENABLE=true INSTALL_K3S_SKIP_SELINUX_RPM=true"
 		// Append version if any, otherwise default to latest
 		if config.DefaultConfig.KubernetesVersion != "" {
-			cmd = fmt.Sprintf("INSTALL_K3S_VERSION=v%s %s", config.DefaultConfig.KubernetesVersion, cmd)
+			cmd = fmt.Sprintf("INSTALL_K3S_VERSION=%s %s", config.DefaultConfig.KubernetesVersion, cmd)
 		}
 		data = append(data, []schema.Stage{
 			{
