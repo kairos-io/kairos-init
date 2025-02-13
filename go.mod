@@ -10,7 +10,7 @@ require (
 	github.com/joho/godotenv v1.5.1
 	github.com/kairos-io/kairos-sdk v0.7.3
 	github.com/mudler/yip v1.14.1
-	github.com/sanity-io/litter v1.5.6
+	github.com/sanity-io/litter v1.5.7
 	github.com/twpayne/go-vfs/v5 v5.0.4
 )
 
