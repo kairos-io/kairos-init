@@ -375,6 +375,20 @@ func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 				"chmod 4755 /usr/bin/sudo",
 			},
 		},
+		{
+			Name:            "Create lock dir for alpine",
+			OnlyIfOs:        "Alpine.*",
+			OnlyIfOsVersion: ">3.19",
+			If:              "test ! -d /var/lock",
+			Directories: []schema.Directory{
+				{
+					Path:        "/var/lock/",
+					Permissions: 0777,
+					Owner:       0,
+					Group:       0,
+				},
+			},
+		},
 	}
 
 	return stages
