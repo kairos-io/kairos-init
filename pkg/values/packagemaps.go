@@ -39,6 +39,7 @@ var CommonPackages = []string{
 	"dosfstools", // For the fat32 partition on EFI systems
 	"e2fsprogs",  // mkfs support for ext2/3/4
 	"parted",     // Partitioning support, check if we need it anymore
+	"logrotate",  // Log rotation support
 }
 
 // DistroFamilyInterface is an interface to get the value of a distro or family
@@ -279,7 +280,6 @@ var BasePackages = PackageMap{
 				"iproute2",
 				"iputils",
 				"issue-generator",
-				"logrotate",
 				"lsscsi",
 				"mdadm",
 				"multipath-tools",
