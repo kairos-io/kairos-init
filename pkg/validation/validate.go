@@ -159,6 +159,14 @@ func (v *Validator) Validate() error {
 		}
 	}
 
+	ExpectedDirs := []string{"/var/lock"}
+
+	for _, dir := range ExpectedDirs {
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			multi = multierror.Append(multi, fmt.Errorf("directory %s does not exist", dir))
+		}
+	}
+
 	// Check if initrd contains the necessary binaries
 	// Do it at the ends as its the slowest check
 	if !config.DefaultConfig.TrustedBoot {

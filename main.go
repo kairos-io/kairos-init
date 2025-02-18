@@ -31,6 +31,7 @@ func main() {
 	flag.StringVar(&config.DefaultConfig.FrameworkVersion, "f", values.GetFrameworkVersion(), "set the framework version to use")
 	flag.BoolVar(&validate, "validate", false, "validate the running os to see if it all the pieces are in place")
 	flag.BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips framework. For FIPS 140-2 compliance images")
+	flag.StringVar(&config.DefaultConfig.KairosVersion, "version", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
 	showHelp := flag.Bool("help", false, "show help")
 
 	// Custom usage function
@@ -100,6 +101,7 @@ func main() {
 		{"r", config.DefaultConfig.Registry},
 		{"t", trusted},
 		{"f", config.DefaultConfig.FrameworkVersion},
+		{"version", config.DefaultConfig.KairosVersion},
 	}
 
 	for _, rf := range requiredFlags {

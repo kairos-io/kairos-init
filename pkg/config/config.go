@@ -15,6 +15,7 @@ type Config struct {
 	Fips               bool
 	KubernetesProvider KubernetesProvider
 	KubernetesVersion  string
+	KairosVersion      string
 }
 
 var DefaultConfig = Config{}
