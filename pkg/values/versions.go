@@ -8,7 +8,7 @@ var (
 	gitCommit = "none"
 	// This gets auto updated by renovate on github
 	// renovate: datasource=docker depName=quay.io/kairos/framework
-	frameWorkVersion = "v2.15.14"
+	frameWorkVersion = "v2.16.0"
 	// renovate: datasource=docker
 	providerPackage = "quay.io/kairos/packages:provider-kairos-system-2.9.2"
 )
