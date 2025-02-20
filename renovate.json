@@ -40,6 +40,50 @@
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "regex:^provider-kairos-system-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^pkg/values/versions\\.go$"
+      ],
+      "matchStrings": [
+        "edgeVpnPackage\\s*=\\s*\"(?<depName>quay\\.io/kairos/packages):(?<currentValue>edgevpn-utils-[^\"]+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "regex:^edgevpn-utils-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^pkg/values/versions\\.go$"
+      ],
+      "matchStrings": [
+        "k9sPackage\\s*=\\s*\"(?<depName>quay\\.io/kairos/packages):(?<currentValue>k9s-utils-[^\"]+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "regex:^k9s-utils-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^pkg/values/versions\\.go$"
+      ],
+      "matchStrings": [
+        "nerdctlPackage\\s*=\\s*\"(?<depName>quay\\.io/kairos/packages):(?<currentValue>nerdctl-utils-[^\"]+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "regex:^nerdctl-utils-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^pkg/values/versions\\.go$"
+      ],
+      "matchStrings": [
+        "kubeVipPackage\\s*=\\s*\"(?<depName>quay\\.io/kairos/packages):(?<currentValue>kube-vip-utils-[^\"]+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "regex:^kube-vip-utils-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
     }
   ]
 }

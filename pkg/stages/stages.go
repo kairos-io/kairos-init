@@ -474,25 +474,13 @@ func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.St
 }
 
 // GetInstallProviderAndKubernetes will install the provider and kubernetes packages
-func GetInstallProviderAndKubernetes(_ values.System, _ types.KairosLogger) []schema.Stage {
+func GetInstallProviderAndKubernetes(sis values.System, _ types.KairosLogger) []schema.Stage {
 	var data []schema.Stage
 
 	// If its core we dont do anything here
 	if config.DefaultConfig.Variant.String() == "core" {
 		return data
 	}
-
-	data = append(data, []schema.Stage{
-		{
-			Name: "Install Provider packages",
-			UnpackImages: []schema.UnpackImageConf{
-				{
-					Source: values.GetProviderPackage(),
-					Target: "/",
-				},
-			},
-		},
-	}...)
 
 	switch config.DefaultConfig.KubernetesProvider {
 	case config.K3sProvider:
@@ -645,6 +633,55 @@ depend() {
 			},
 		}...)
 	}
+
+	// Install provider + k8s utils
+	data = append(data, []schema.Stage{
+		{
+			Name: "Install Provider packages",
+			UnpackImages: []schema.UnpackImageConf{
+				{
+					Source: values.GetProviderPackage(sis.Arch.String()),
+					Target: "/",
+				},
+			},
+		},
+		{
+			Name: "Install Edgevpn packages",
+			UnpackImages: []schema.UnpackImageConf{
+				{
+					Source: values.GetEdgeVPNPackage(sis.Arch.String()),
+					Target: "/",
+				},
+			},
+		},
+		{
+			Name: "Install K9s packages",
+			UnpackImages: []schema.UnpackImageConf{
+				{
+					Source: values.GetK9sPackage(sis.Arch.String()),
+					Target: "/",
+				},
+			},
+		},
+		{
+			Name: "Install Nerdctl packages",
+			UnpackImages: []schema.UnpackImageConf{
+				{
+					Source: values.GetNerdctlPackage(sis.Arch.String()),
+					Target: "/",
+				},
+			},
+		},
+		{
+			Name: "Install Kube-vip packages",
+			UnpackImages: []schema.UnpackImageConf{
+				{
+					Source: values.GetKubeVipPackage(sis.Arch.String()),
+					Target: "/",
+				},
+			},
+		},
+	}...)
 
 	return data
 }
