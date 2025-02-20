@@ -52,3 +52,4 @@ jobs:
             BASE_IMAGE=${{ matrix.base_image }}
             VARIANT=${{ matrix.variant }}
             KUBERNETES_PROVIDER=${{ matrix.kubernetes_provider }}
+            VERSION=${{ github.sha }}
