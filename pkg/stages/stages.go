@@ -114,13 +114,13 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 	}
 	// "24.04-standard-amd64-generic-v3.2.4-36-g24ca209-k3sv1.32.0-k3s1"
 	// We are not doing the k3s software version here
-	imageLabel := fmt.Sprintf("%s-%s-%s-%s-%s", flavorRelease, config.DefaultConfig.Variant, sis.Arch.String(), config.DefaultConfig.Model, config.DefaultConfig.KairosVersion)
+	imageLabel := fmt.Sprintf("%s-%s-%s-%s-%s", flavorRelease, config.DefaultConfig.Variant, sis.Arch.String(), config.DefaultConfig.Model, config.DefaultConfig.KairosVersion.String())
 
 	env := map[string]string{
 		"KAIROS_ID":                "kairos", // What for?
 		"KAIROS_ID_LIKE":           idLike,   // What for?
 		"KAIROS_NAME":              idLike,   // What for? Same as ID_LIKE
-		"KAIROS_VERSION":           config.DefaultConfig.KairosVersion,
+		"KAIROS_VERSION":           config.DefaultConfig.KairosVersion.String(),
 		"KAIROS_ARCH":              sis.Arch.String(),
 		"KAIROS_TARGETARCH":        sis.Arch.String(), // What for? Same as ARCH
 		"KAIROS_FLAVOR":            flavor,
@@ -131,7 +131,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_REGISTRY_AND_ORG":  config.DefaultConfig.Registry, // Needed for upgrades to search for images
 		"KAIROS_BUG_REPORT_URL":    "https://github.com/kairos-io/kairos/issues",
 		"KAIROS_HOME_URL":          "https://github.com/kairos-io/kairos",
-		"KAIROS_RELEASE":           config.DefaultConfig.KairosVersion,
+		"KAIROS_RELEASE":           config.DefaultConfig.KairosVersion.String(),
 		"KAIROS_IMAGE_LABEL":       imageLabel,                            // Used by raw image creation...very bad
 		"KAIROS_FRAMEWORK_VERSION": config.DefaultConfig.FrameworkVersion, // Just for info, could be dropped
 	}

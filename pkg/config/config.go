@@ -1,6 +1,9 @@
 package config
 
-import "fmt"
+import (
+	"fmt"
+	semver "github.com/hashicorp/go-version"
+)
 
 // Config is the struct to track the config of the init image
 // So we can access it from anywhere
@@ -15,7 +18,7 @@ type Config struct {
 	Fips               bool
 	KubernetesProvider KubernetesProvider
 	KubernetesVersion  string
-	KairosVersion      string
+	KairosVersion      semver.Version
 }
 
 var DefaultConfig = Config{}
