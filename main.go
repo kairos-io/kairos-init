@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/stages"
 	"github.com/kairos-io/kairos-init/pkg/validation"
@@ -19,6 +20,8 @@ func main() {
 	var validate bool
 	var variant string
 	var ksProvider string
+	var version string
+	var err error
 
 	flag.StringVar(&config.DefaultConfig.Level, "l", "info", "set the log level")
 	flag.StringVar(&config.DefaultConfig.Stage, "s", "all", "set the stage to run")
@@ -31,7 +34,7 @@ func main() {
 	flag.StringVar(&config.DefaultConfig.FrameworkVersion, "f", values.GetFrameworkVersion(), "set the framework version to use")
 	flag.BoolVar(&validate, "validate", false, "validate the running os to see if it all the pieces are in place")
 	flag.BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips framework. For FIPS 140-2 compliance images")
-	flag.StringVar(&config.DefaultConfig.KairosVersion, "version", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
+	flag.StringVar(&version, "version", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
 	showHelp := flag.Bool("help", false, "show help")
 
 	// Custom usage function
@@ -101,20 +104,30 @@ func main() {
 		{"r", config.DefaultConfig.Registry},
 		{"t", trusted},
 		{"f", config.DefaultConfig.FrameworkVersion},
-		{"version", config.DefaultConfig.KairosVersion},
+		{"version", version},
 	}
 
 	for _, rf := range requiredFlags {
 		if rf.value == "" {
-			fmt.Fprintf(os.Stderr, "Error: -%s flag is required to have a value\n", rf.name)
+			fmt.Fprintf(os.Stderr, "Error: %s flag is required to have a value\n", rf.name)
 			flag.Usage()
 			os.Exit(1)
 		}
 	}
 
+	// Parse the version number
+	sv, err := semver.NewSemver(version)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %s\n", err.Error())
+		flag.Usage()
+		os.Exit(1)
+	}
+
+	config.DefaultConfig.KairosVersion = *sv
+	litter.Config.HideZeroValues = true
+	litter.Config.HidePrivateFields = false
 	logger.Debug(litter.Sdump(config.DefaultConfig))
 
-	var err error
 	var runStages schema.YipConfig
 
 	if validate {
