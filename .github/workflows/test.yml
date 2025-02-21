@@ -34,6 +34,10 @@ jobs:
             kubernetes_version: "v1.32.1+k0s.0"
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get version for docker build
+        run:  echo "VERSION=$(git describe --tags --dirty )" >> $GITHUB_ENV
       - name: Set up QEMU
         uses: docker/setup-qemu-action@master
         with:
@@ -52,4 +56,4 @@ jobs:
             BASE_IMAGE=${{ matrix.base_image }}
             VARIANT=${{ matrix.variant }}
             KUBERNETES_PROVIDER=${{ matrix.kubernetes_provider }}
-            VERSION=${{ github.sha }}
+            VERSION=${{ env.VERSION }}
