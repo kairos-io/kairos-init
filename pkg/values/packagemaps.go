@@ -57,6 +57,7 @@ type VersionMap map[string][]string
 
 // ImmucorePackages are the minimum set of packages that immucore needs.
 // Otherwise you wont be able to build the initrd with immucore on it.
+// This packages are removed afterwards, so we can keep the image as small as possible
 var ImmucorePackages = PackageMap{
 	DebianFamily: {
 		ArchCommon: {
@@ -606,7 +607,7 @@ var KernelPackagesModels = ModelPackageMap{
 				Common: {"linux-rpi"},
 			},
 			Rpi4: {
-				Common: {"linux-rpi4"},
+				Common: {"linux-rpi"},
 			},
 		},
 	},
@@ -673,10 +674,10 @@ var KernelPackagesModels = ModelPackageMap{
 	AlpineFamily: {
 		ArchARM64: {
 			Rpi3: {
-				Common: {"linux-lts"},
+				Common: {"linux-rpi"},
 			},
 			Rpi4: {
-				Common: {"linux-lts"},
+				Common: {"linux-rpi"},
 			},
 		},
 	},

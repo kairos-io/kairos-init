@@ -311,6 +311,13 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 				"ln -s /boot/vmlinuz-lts /boot/vmlinuz",
 			},
 		},
+		{
+			Name: "Link kernel for Alpine RPI",
+			If:   "test -f /boot/vmlinuz-rpi",
+			Commands: []string{
+				"ln -s /boot/vmlinuz-rpi /boot/vmlinuz",
+			},
+		},
 	}, nil
 }
 
