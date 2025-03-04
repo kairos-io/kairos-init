@@ -63,3 +63,58 @@ The image conversion is currently split in two different phases:
  - Install: This stage installs all the necessary packages to run Kairos. This includes the kernel, bootloader, framework, etc.
  - Init: This stage initializes the system, like setting up the kernel, configuring the services, generating the initramfs, etc.
 
+
+## Extending stages with custom actions
+
+This allows to load stage expansions from a dir in the filesystem to expand the default stages with custom logic.
+
+The structure is as follows:
+
+We got a base dir which is `/tmp/kairos-init/` (this is the default, but you can override it using the `KAIROS_INIT_EXPANSIONS_DIR` env var)
+
+You can drop your custom [yip files](https://github.com/mudler/yip) and as usual, they will be loaded and executed in lexicographic order.
+
+So for example, if we have:
+ - /tmp/kairos-init/10-foo.yaml
+ - /tmp/kairos-init/20-bar.yaml
+ - /tmp/kairos-init/30-baz.yaml
+
+The files will be loaded in the following order:
+ - 10-foo.yaml
+ - 20-bar.yaml
+ - 30-baz.yaml
+
+The files are loaded using the yip library, so you can use all the features of [yip]((https://github.com/mudler/yip)) to expand the stages.
+
+The current stages available are:
+- before-install: Good for adding extra repos and such.
+- install: Good for installing packages and such.
+- after-install: Do some cleanup of packages, add extra packages, add different kernels and remove the kairos default one, etc.
+- before-init: Good for adding some dracut modules for example to be added to the initramfs.
+- init: Anything that configures the system, security hardening for example.
+- after-init: Good for rebuilding the initramfs, or adding a different initramfs like a kdump one, add grub configs or branding, etc.
+
+So for example, if we were to add an extra repo for zfs and install the package we could do the following:
+
+`/tmp/kairos-init/10-zfs.yaml`
+```yaml
+stages:
+  after-install:
+    - files:
+        - path: /etc/apt/sources.list.d/zfs.list
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            deb http://deb.debian.org/debian bookworm-backports main contrib
+            deb-src http://deb.debian.org/debian bookworm-backports main contrib
+    - packages:
+        install:
+          - "zfs-dkms"
+          - "zfsutils-linux"
+        refresh: true
+```
+
+This would run the `before-install` and `install` stages as normal, but then on the `after-install` stage it would add the zfs repo and install the zfs packages.
+
+
