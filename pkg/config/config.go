@@ -19,6 +19,7 @@ type Config struct {
 	KubernetesProvider KubernetesProvider
 	KubernetesVersion  string
 	KairosVersion      semver.Version
+	Extensions         bool
 }
 
 var DefaultConfig = Config{}

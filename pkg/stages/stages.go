@@ -793,6 +793,9 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 			},
 		}...)
 	}
+	// Add extensions from disk
+	data.Stages["before-install"] = append(data.Stages["before-install"], GetStageExtensions("before-install", logger)...)
+
 	// Add packages install
 	installStage, err := GetInstallStage(sis, logger)
 	if err != nil {
@@ -804,8 +807,14 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data.Stages["install"] = append(data.Stages["install"], GetInstallFrameworkStage(sis, logger)...)
 	data.Stages["install"] = append(data.Stages["install"], GetInstallProviderAndKubernetes(sis, logger)...)
 
+	// Add extensions from disk
+	data.Stages["install"] = append(data.Stages["install"], GetStageExtensions("install", logger)...)
+
 	// Run things after we install packages and framework
 	data.Stages["after-install"] = []schema.Stage{}
+
+	// Add extensions from disk
+	data.Stages["after-install"] = append(data.Stages["after-install"], GetStageExtensions("after-install", logger)...)
 
 	// Run install first, as kernel and initrd resolution depend on the installed packages
 	for _, st := range []string{"before-install", "install", "after-install"} {
@@ -831,6 +840,9 @@ func RunInitStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	// Run things before we init the system
 	data.Stages["before-init"] = []schema.Stage{}
 
+	// Add extensions from disk
+	data.Stages["before-init"] = append(data.Stages["before-init"], GetStageExtensions("before-init", logger)...)
+
 	data.Stages["init"] = []schema.Stage{}
 	data.Stages["init"] = append(data.Stages["init"], GetKairosReleaseStage(sis, logger)...)
 	kernelStage, err := GetKernelStage(sis, logger)
@@ -849,8 +861,14 @@ func RunInitStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data.Stages["init"] = append(data.Stages["init"], GetWorkaroundsStage(sis, logger)...)
 	data.Stages["init"] = append(data.Stages["init"], GetCleanupStage(sis, logger)...)
 
+	// Add extensions from disk
+	data.Stages["init"] = append(data.Stages["init"], GetStageExtensions("init", logger)...)
+
 	// Run things after we init the system
 	data.Stages["after-init"] = []schema.Stage{}
+
+	// Add extensions from disk
+	data.Stages["after-init"] = append(data.Stages["after-init"], GetStageExtensions("after-init", logger)...)
 
 	for _, st := range []string{"before-init", "init", "after-init"} {
 		err = initExecutor.Run(st, vfs.OSFS, yipConsole, data.ToString())
