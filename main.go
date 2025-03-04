@@ -35,7 +35,7 @@ func main() {
 	flag.BoolVar(&validate, "validate", false, "validate the running os to see if it all the pieces are in place")
 	flag.BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips framework. For FIPS 140-2 compliance images")
 	flag.StringVar(&version, "version", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
-	flag.BoolVar(&config.DefaultConfig.Extensions, "extensions", false, "enable extensions mode")
+	flag.BoolVar(&config.DefaultConfig.Extensions, "stage-extensions", false, "enable stage extensions mode")
 	showHelp := flag.Bool("help", false, "show help")
 
 	// Custom usage function
