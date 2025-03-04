@@ -51,10 +51,16 @@ There is several switches that you can use to customize the behavior of kairos-i
  - `-m`: model to build for, like generic or rpi4/rpi3/etc.. (default: generic)
  - `-t`: init the system for Trusted Boot artifact, changes bootloader to systemd. This is only available for the generic model and defaults to using SecureBoot if not enabled.
  - `-v`: variant to build (core or standard for k3s flavor)(default: core)
+ - `--fips`: enable FIPS mode (default: false)
+ - `--version`: set the Kairos version to use for the built artifact. This is for you to track the version of the image you are building for upgrades and such.
+ - `-k`: Kubernetes provider to use, currently supports k3s and k3os (default: k3s)
+ - `--k8s-version`: set the Kubernetes version to use for the given provider (default: latest)
+- `--extensions`: enable the loading of stage expansions from a dir in the filesystem to expand the default stages with custom logic. See below for more details.
 
 There is also two switches to help you build the image:
- - `-d`: set the log level (default: info). You can choose between info, warn, error, debug for a more verbose output. Remember to use the docker switch `--progress=plain` to see the output correctly.
+ - `-l`: set the log level (default: info). You can choose between info, warn, error, debug for a more verbose output. Remember to use the docker switch `--progress=plain` to see the output correctly.
  - `-s`: set the stage to run (default: all). You can choose between all, install and init to run only a specific stage of the process. Useful if you need to customize the image after the packages are installed but before the system is initialized, like adding modules to initramfs or adding extra packages or scripts.
+ - `--validate`: run the validation of the image. This runs a series of tests to validate that the image conforms to the Kairos needs. This has to be run after running the install and init stages.
 
 
 ## Stages
@@ -67,6 +73,8 @@ The image conversion is currently split in two different phases:
 ## Extending stages with custom actions
 
 This allows to load stage expansions from a dir in the filesystem to expand the default stages with custom logic.
+
+You can enable this feature by using the `--extensions` flag
 
 The structure is as follows:
 

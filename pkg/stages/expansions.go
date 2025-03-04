@@ -29,6 +29,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-sdk/types"
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/sanity-io/litter"
@@ -39,6 +40,10 @@ import (
 // It loads the expansions from a dir in the filesystem, loads all files and only selects the proper stage to be returned
 func GetStageExpansions(stage string, logger types.KairosLogger) []schema.Stage {
 	var data []schema.Stage
+	// If extensions are not enabled, return empty
+	if !config.DefaultConfig.Extensions {
+		return data
+	}
 
 	dir := os.Getenv("KAIROS_INIT_EXPANSIONS_DIR")
 	if dir == "" {
