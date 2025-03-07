@@ -75,7 +75,6 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 			KAIROS_IMAGE_REPO="quay.io/kairos/ubuntu:24.04-standard-amd64-generic-v3.2.4-36-g24ca209-k3sv1.32.0-k3s1"
 			KAIROS_ARTIFACT="kairos-ubuntu-24.04-standard-amd64-generic-v3.2.4-36-g24ca209-k3sv1.32.0+k3s1"
 			KAIROS_SOFTWARE_VERSION="v1.32.0+k3s1"
-			KAIROS_VERSION="v3.2.4-36-g24ca209-v1.32.0-k3s1"
 			KAIROS_PRETTY_NAME="kairos-standard-ubuntu-24.04 v3.2.4-36-g24ca209-v1.32.0-k3s1"
 
 		VERSION_ID and VERSION are the same
@@ -321,7 +320,7 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 	}, nil
 }
 
-func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage, error) {
+func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stage, error) {
 	stage := []schema.Stage{
 		{
 			Name: "Remove all initrds",
@@ -338,6 +337,28 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 		if err != nil {
 			logger.Logger.Error().Msgf("Failed to get the latest kernel: %s", err)
 			return []schema.Stage{}, err
+		}
+
+		if config.DefaultConfig.Fips {
+			// Add dracut fips support
+			if sys.Distro == values.Ubuntu {
+				return nil, fmt.Errorf("FIPS is not supported on Ubuntu without a PRO account and extra packages. See https://canonical-ubuntu-pro-client.readthedocs-hosted.com/en/latest/tutorials/create_a_fips_docker_image.html for more info")
+			}
+			stage = append(stage, []schema.Stage{
+				{
+					Name:     "Add fips support to initramfs",
+					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+					Files: []schema.File{
+						{
+							Path:        "/etc/dracut.conf.d/kairos-fips.conf",
+							Owner:       0,
+							Group:       0,
+							Permissions: 0644,
+							Content:     "omit_dracutmodules+=\" iscsi iscsiroot \"\nadd_dracutmodules+=\" fips \"\n",
+						},
+					},
+				},
+			}...)
 		}
 
 		stage = append(stage, []schema.Stage{
