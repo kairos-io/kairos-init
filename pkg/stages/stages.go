@@ -63,41 +63,28 @@ func getLatestKernel(l types.KairosLogger) (string, error) {
 }
 
 func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.Stage {
-	// TODO: Expand tis as this doesnt cover all the current fields
+	// TODO: Expand tis as this doesn't cover all the current fields
 	// Current missing fields
 	/*
 			KAIROS_VERSION_ID="v3.2.4-36-g24ca209-v1.32.0-k3s1"
-			KAIROS_REGISTRY_AND_ORG="quay.io/kairos"
-			KAIROS_RELEASE="v3.2.4-36-g24ca209"
-			KAIROS_IMAGE_LABEL="24.04-standard-amd64-generic-v3.2.4-36-g24ca209-k3sv1.32.0-k3s1"
 			KAIROS_GITHUB_REPO="kairos-io/kairos"
-			KAIROS_SOFTWARE_VERSION_PREFIX="k3s"
 			KAIROS_IMAGE_REPO="quay.io/kairos/ubuntu:24.04-standard-amd64-generic-v3.2.4-36-g24ca209-k3sv1.32.0-k3s1"
 			KAIROS_ARTIFACT="kairos-ubuntu-24.04-standard-amd64-generic-v3.2.4-36-g24ca209-k3sv1.32.0+k3s1"
-			KAIROS_SOFTWARE_VERSION="v1.32.0+k3s1"
 			KAIROS_PRETTY_NAME="kairos-standard-ubuntu-24.04 v3.2.4-36-g24ca209-v1.32.0-k3s1"
 
-		VERSION_ID and VERSION are the same
-		RELEASE is the short version of VERSION and VERSION_ID, the version without the k3s version
-
-		IMAGE_REPO is a mix of REGISTRY_AND_ORG and IMAGE_LABEL, useless?
+		VERSION_ID and VERSION are the same, needed ?
+		RELEASE is the short version of VERSION and VERSION_ID, the version without the k3s version needed?
 		ARTIFACT is just the IMAGE_LABEL with the OS and OS VERSION in front, useless?
-		IMAGE_LABEL is again a mix of all the others fields, useless ?
+		GITHUB_REPO is the repo where the image is stored, not really needed?
+		PRETTY_NAME is the same as the ID_LIKE but different? needed?
 
-		IMHO, important fields here are:
-		- RELEASE: Shows the version of KAIROS, wel already have this under VERSION field? Maybe we need to duplicate it, urgh
-		- SOFTWARE_VERSION: Shows the version of the software (k3s for example)
-		- REGISTRY_AND_ORG: Shows the registry for the image, useful for upgrades
-
-		Thats it, the rest I would drop it. The rest is just a mix of the other fields and not really useful,
-		if we have the original needed fields we can recreate the rest of the fields if needed so....
 	*/
 
 	idLike := fmt.Sprintf("kairos-%s-%s-%s", config.DefaultConfig.Variant, sis.Distro.String(), sis.Version)
 	flavor := sis.Distro.String()
 	flavorRelease := sis.Version
 
-	// TODO: Check if this affects sles versions? I dont think so as they are set like registry.suse.com/bci/bci-micro:15.6
+	// TODO: Check if this affects sles versions? I don't think so as they are set like registry.suse.com/bci/bci-micro:15.6
 	if strings.Contains(flavor, "opensuse") {
 		// We store the suse version under the flavorRelease for some reason
 		// So opensuse-leap:15.5 will be stored as `leap-15.5` with flavor being plain `opensuse`
@@ -131,8 +118,9 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_BUG_REPORT_URL":    "https://github.com/kairos-io/kairos/issues",
 		"KAIROS_HOME_URL":          "https://github.com/kairos-io/kairos",
 		"KAIROS_RELEASE":           config.DefaultConfig.KairosVersion.String(),
-		"KAIROS_IMAGE_LABEL":       imageLabel,                            // Used by raw image creation...very bad
-		"KAIROS_FRAMEWORK_VERSION": config.DefaultConfig.FrameworkVersion, // Just for info, could be dropped
+		"KAIROS_IMAGE_LABEL":       imageLabel,                                   // Used by raw image creation...very bad
+		"KAIROS_FRAMEWORK_VERSION": config.DefaultConfig.FrameworkVersion,        // Just for info, could be dropped
+		"KAIROS_FIPS":              fmt.Sprintf("%t", config.DefaultConfig.Fips), // Was the image built with FIPS support?
 	}
 
 	// Get SOFTWARE_VERSION from the k3s/k0s version
@@ -200,7 +188,13 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 	if config.DefaultConfig.TrustedBoot {
 		// TODO: Check for other distros/families
 		if sis.Distro == values.Ubuntu {
-			exec.Command("apt-get", "update").Run()
+			// First update the package list so we can search for the kernel packages properly
+			err = exec.Command("apt-get", "update").Run()
+			if err != nil {
+				logger.Logger.Error().Msgf("Failed to update the package list: %s", err)
+				return []schema.Stage{}, err
+			}
+
 			out, err := exec.Command("apt-cache", "search", "linux-image").CombinedOutput()
 			if err != nil {
 				logger.Logger.Error().Msgf("Failed to get the kernel packages: %s", err)
@@ -280,7 +274,7 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 				"ln -s /boot/Image /boot/vmlinuz",
 			},
 		},
-		{ // On Fedora, if we dont have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
+		{ // On Fedora, if we don't have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
 			// TODO: Check if this is needed on AlmaLinux/RockyLinux/RedHatLinux
 			Name:     "Copy kernel for Fedora Trusted Boot",
 			OnlyIfOs: "Fedora.*",
@@ -457,13 +451,13 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 	filteredPkgs := values.FilterPackagesOnConstraint(sis, l, pkgs)
 	stages = append(stages, []schema.Stage{
 		{
-			Name: "Remove uneeded packages",
+			Name: "Remove unneeded packages",
 			Packages: schema.Packages{
 				Remove: filteredPkgs,
 			},
 		},
 		{ // TODO: Send this upstream to the yip Packages plugin?
-			Name:     "Autoremove packages in Debian family",
+			Name:     "Auto remove packages in Debian family",
 			OnlyIfOs: "Ubuntu.*|Debian.*",
 			Commands: []string{
 				"apt-get autoremove -y",
