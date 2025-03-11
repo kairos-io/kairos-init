@@ -170,6 +170,12 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 }
 
 func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Stage, error) {
+	// Fips + ubuntu fails early and redirect to our Example
+	if sis.Distro == values.Ubuntu && config.DefaultConfig.Fips {
+		return nil, fmt.Errorf("FIPS is not supported on Ubuntu without a PRO account and extra packages.\n" +
+			"See https://github.com/kairos-io/kairos/blob/master/examples/builds/ubuntu-fips/Dockerfile for an example on how to build it")
+	}
+
 	// Get the packages
 	packages, err := values.GetPackages(sis, logger)
 	if err != nil {
@@ -335,9 +341,6 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 
 		if config.DefaultConfig.Fips {
 			// Add dracut fips support
-			if sys.Distro == values.Ubuntu {
-				return nil, fmt.Errorf("FIPS is not supported on Ubuntu without a PRO account and extra packages. See https://canonical-ubuntu-pro-client.readthedocs-hosted.com/en/latest/tutorials/create_a_fips_docker_image.html for more info")
-			}
 			stage = append(stage, []schema.Stage{
 				{
 					Name:     "Add fips support to initramfs",
