@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   testing_build_matrix:
-    name: ${{ matrix.platform }} - ${{ matrix.base_image }}${{ matrix.variant == 'standard' && ' - ' || '' }}${{ matrix.variant == 'standard' && matrix.kubernetes_provider || '' }}${{ matrix.variant == 'standard' && matrix.kubernetes_version || '' }}
+    name: ${{ matrix.platform }} - ${{ matrix.base_image }}${{ matrix.variant == 'standard' && ' - ' || '' }}${{ matrix.variant == 'standard' && matrix.kubernetes_provider || '' }}${{ matrix.variant == 'standard' && matrix.kubernetes_version || '' }}${{ matrix.fips == true && ' - FIPS' || '' }}
     runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
@@ -32,6 +32,10 @@ jobs:
             variant: "standard"
             kubernetes_provider: "k0s"
             kubernetes_version: "v1.32.1+k0s.0"
+          - platform: "amd64"
+            base_image: "fedora:40"
+            variant: "core"
+            fips: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,3 +61,4 @@ jobs:
             VARIANT=${{ matrix.variant }}
             KUBERNETES_PROVIDER=${{ matrix.kubernetes_provider }}
             VERSION=${{ env.VERSION }}
+            FIPS=${{ matrix.fips || false }}
