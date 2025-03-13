@@ -565,12 +565,16 @@ var GrubPackages = PackageMap{
 // TODO: Check why some packages we only install on amd64 and not on arm64?? Like kmod???
 var SystemdPackages = PackageMap{
 	Ubuntu: {
+		ArchAMD64: {
+			">=24.04": {
+				"iucode-tool",
+			},
+		},
 		ArchCommon: {
 			Common: {
 				"systemd",
 			},
 			">=24.04": {
-				"iucode-tool",
 				"kmod",
 				"linux-base",
 				"systemd-boot", // Trusted boot support, it was split as a package on 24.04
