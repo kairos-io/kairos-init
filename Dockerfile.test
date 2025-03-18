@@ -25,7 +25,7 @@ ARG MODEL=generic
 ARG TRUSTED_BOOT=false
 ARG KUBERNETES_PROVIDER=k3s
 ARG KUBERNETES_VERSION=latest
-ARG VERSION=latest
+ARG VERSION=v0.0.1
 ARG FIPS=false
 
 COPY --from=kairos-init /kairos-init /kairos-init
