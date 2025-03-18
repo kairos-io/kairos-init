@@ -166,10 +166,10 @@ func main() {
 	litter.Config.HidePrivateFields = true
 	// I would say lets save the stages to a file for debugging and future use
 	// we don't fail if we cant write the file
-	if config.DefaultConfig.Stage == "" {
-		_ = os.WriteFile(fmt.Sprintf("/etc/kairos/kairos-init-%s.yaml", config.DefaultConfig.Stage), []byte(runStages.ToString()), 0644)
+	if config.DefaultConfig.Stage == "all" {
+		_ = os.WriteFile("/etc/kairos/kairos-init-all-stage.yaml", []byte(runStages.ToString()), 0644)
 	} else {
-		_ = os.WriteFile("/etc/kairos/kairos-init.yaml", []byte(runStages.ToString()), 0644)
+		_ = os.WriteFile(fmt.Sprintf("/etc/kairos/kairos-init-%s-stage.yaml", config.DefaultConfig.Stage), []byte(runStages.ToString()), 0644)
 	}
 
 }

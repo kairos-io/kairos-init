@@ -774,15 +774,21 @@ func RunAllStages(logger types.KairosLogger) (schema.YipConfig, error) {
 		return installStage, err
 	}
 
-	fullYipConfig.Stages["install"] = installStage.Stages["install"]
-	// Add packages install
+	// Add all stages to the full yip config
+	for stageName, stages := range installStage.Stages {
+		fullYipConfig.Stages[stageName] = append(fullYipConfig.Stages[stageName], stages...)
+	}
 
 	initStage, err := RunInitStage(logger)
 	if err != nil {
 		logger.Logger.Error().Msgf("Failed to run the init stage: %s", err)
 		return fullYipConfig, err
 	}
-	fullYipConfig.Stages["init"] = initStage.Stages["init"]
+
+	// Add all stages to the full yip config
+	for stageName, stages := range initStage.Stages {
+		fullYipConfig.Stages[stageName] = append(fullYipConfig.Stages[stageName], stages...)
+	}
 
 	return fullYipConfig, nil
 }
