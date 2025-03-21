@@ -424,7 +424,7 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name: "truncate /etc/hostname",
+			Name: "truncate hostname",
 			If:   "test -f /etc/hostname",
 			Commands: []string{
 				"truncate -s 0 /etc/hostname",
