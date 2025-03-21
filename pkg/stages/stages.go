@@ -2,6 +2,12 @@ package stages
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"regexp"
+	"sort"
+	"strings"
+
 	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/system"
@@ -11,11 +17,6 @@ import (
 	"github.com/mudler/yip/pkg/executor"
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/twpayne/go-vfs/v5"
-	"os"
-	"os/exec"
-	"regexp"
-	"sort"
-	"strings"
 )
 
 func getLatestKernel(l types.KairosLogger) (string, error) {
@@ -423,10 +424,10 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name: "remove hostname",
+			Name: "truncate /etc/hostname",
 			If:   "test -f /etc/hostname",
 			Commands: []string{
-				"rm /etc/hostname",
+				"truncate -s 0 /etc/hostname",
 			},
 		},
 	}
