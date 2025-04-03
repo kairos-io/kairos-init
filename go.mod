@@ -1,14 +1,12 @@
 module github.com/kairos-io/kairos-init
 
-go 1.23.6
-
-toolchain go1.24.2
+go 1.24.2
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.7.0
 	github.com/joho/godotenv v1.5.1
-	github.com/kairos-io/kairos-sdk v0.8.0
+	github.com/kairos-io/kairos-sdk v0.8.1
 	github.com/mudler/yip v1.16.0
 	github.com/sanity-io/litter v1.5.8
 	github.com/twpayne/go-vfs/v5 v5.0.4
@@ -110,7 +108,7 @@ require (
 	go.opentelemetry.io/otel/metric v1.34.0 // indirect
 	go.opentelemetry.io/otel/trace v1.34.0 // indirect
 	golang.org/x/crypto v0.36.0 // indirect
-	golang.org/x/net v0.35.0 // indirect
+	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sync v0.12.0 // indirect
 	golang.org/x/sys v0.31.0 // indirect
 	golang.org/x/text v0.23.0 // indirect
