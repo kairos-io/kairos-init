@@ -13,9 +13,9 @@ var (
 	// The packages below get auto updated by renovate on github
 	// We built those under github.com/kairos/packages
 	// renovate: datasource=docker depName=quay.io/kairos/framework
-	frameWorkVersion = "v2.18.3"
+	frameWorkVersion = "v2.19.0"
 	// renovate: datasource=docker
-	providerPackage = "quay.io/kairos/packages:provider-kairos-system-2.10.2"
+	providerPackage = "quay.io/kairos/packages:provider-kairos-system-2.10.3"
 	// renovate: datasource=docker
 	edgeVpnPackage = "quay.io/kairos/packages:edgevpn-utils-0.30.2"
 	// renovate: datasource=docker
