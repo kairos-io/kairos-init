@@ -19,11 +19,11 @@ var (
 	// renovate: datasource=docker
 	edgeVpnPackage = "quay.io/kairos/packages:edgevpn-utils-0.30.2"
 	// renovate: datasource=docker
-	k9sPackage = "quay.io/kairos/packages:k9s-utils-0.40.11"
+	k9sPackage = "quay.io/kairos/packages:k9s-utils-0.50.0"
 	// renovate: datasource=docker
 	nerdctlPackage = "quay.io/kairos/packages:nerdctl-utils-2.0.4"
 	// renovate: datasource=docker
-	kubeVipPackage = "quay.io/kairos/packages:kube-vip-utils-0.8.9"
+	kubeVipPackage = "quay.io/kairos/packages:kube-vip-utils-0.8.10"
 )
 
 func GetFrameworkVersion() string {
