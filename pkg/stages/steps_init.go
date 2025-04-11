@@ -127,27 +127,38 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 			log.Debugf("Failed to split the flavor %s", flavor)
 		}
 	}
+
+	// Back compat with old images
+	// Before this we enforced the version to be vX.Y.Z
+	// But now the version just cant be whatever semver version
+	// The problem is that the upgrade checker uses a semver parses that marks anything without a v an invalid version :sob:
+	// So now we need to enforce this forever
+	release := config.DefaultConfig.KairosVersion.String()
+	if release[0] != 'v' {
+		release = fmt.Sprintf("v%s", release)
+	}
+
 	// "24.04-standard-amd64-generic-v3.2.4-36-g24ca209-k3sv1.32.0-k3s1"
 	// We are not doing the k3s software version here
-	imageLabel := fmt.Sprintf("%s-%s-%s-%s-%s", flavorRelease, config.DefaultConfig.Variant, sis.Arch.String(), config.DefaultConfig.Model, config.DefaultConfig.KairosVersion.String())
+	imageLabel := fmt.Sprintf("%s-%s-%s-%s-%s", flavorRelease, config.DefaultConfig.Variant, sis.Arch.String(), config.DefaultConfig.Model, release)
 
 	env := map[string]string{
 		"KAIROS_ID":                "kairos", // What for?
 		"KAIROS_ID_LIKE":           idLike,   // What for?
 		"KAIROS_NAME":              idLike,   // What for? Same as ID_LIKE
-		"KAIROS_VERSION":           config.DefaultConfig.KairosVersion.String(),
+		"KAIROS_VERSION":           release,
 		"KAIROS_ARCH":              sis.Arch.String(),
 		"KAIROS_TARGETARCH":        sis.Arch.String(), // What for? Same as ARCH
-		"KAIROS_FLAVOR":            flavor,
-		"KAIROS_FLAVOR_RELEASE":    flavorRelease,
+		"KAIROS_FLAVOR":            flavor,            // This should be in os-release as ID
+		"KAIROS_FLAVOR_RELEASE":    flavorRelease,     // This should be in os-release as VERSION_ID
 		"KAIROS_FAMILY":            sis.Family.String(),
-		"KAIROS_MODEL":             config.DefaultConfig.Model, // NEEDED or it breaks boot!
-		"KAIROS_VARIANT":           config.DefaultConfig.Variant.String(),
-		"KAIROS_REGISTRY_AND_ORG":  config.DefaultConfig.Registry, // Needed for upgrades to search for images
+		"KAIROS_MODEL":             config.DefaultConfig.Model,            // NEEDED or it breaks boot!
+		"KAIROS_VARIANT":           config.DefaultConfig.Variant.String(), // TODO: Fully drop variant
+		"KAIROS_REGISTRY_AND_ORG":  config.DefaultConfig.Registry,         // Needed for upgrades to search for images
 		"KAIROS_BUG_REPORT_URL":    "https://github.com/kairos-io/kairos/issues",
 		"KAIROS_HOME_URL":          "https://github.com/kairos-io/kairos",
-		"KAIROS_RELEASE":           config.DefaultConfig.KairosVersion.String(),
-		"KAIROS_IMAGE_LABEL":       imageLabel,                                   // Used by raw image creation...very bad
+		"KAIROS_RELEASE":           release,
+		"KAIROS_IMAGE_LABEL":       imageLabel,                                   // Used by raw image creation...very bad. DROP once aurora builds the image names with the other entries
 		"KAIROS_FRAMEWORK_VERSION": config.DefaultConfig.FrameworkVersion,        // Just for info, could be dropped
 		"KAIROS_FIPS":              fmt.Sprintf("%t", config.DefaultConfig.Fips), // Was the image built with FIPS support?
 	}
