@@ -160,7 +160,6 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 
 		VERSION_ID and VERSION are the same, needed ?
 		RELEASE is the short version of VERSION and VERSION_ID, the version without the k3s version needed?
-		ARTIFACT is just the IMAGE_LABEL with the OS and OS VERSION in front, useless?
 		GITHUB_REPO is the repo where the image is stored, not really needed?
 		PRETTY_NAME is the same as the ID_LIKE but different? needed?
 
@@ -195,10 +194,6 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		release = fmt.Sprintf("v%s", release)
 	}
 
-	// "24.04-standard-amd64-generic-v3.2.4-36-g24ca209-k3sv1.32.0-k3s1"
-	// We are not doing the k3s software version here
-	imageLabel := fmt.Sprintf("%s-%s-%s-%s-%s", flavorRelease, config.DefaultConfig.Variant, sis.Arch.String(), config.DefaultConfig.Model, release)
-
 	env := map[string]string{
 		"KAIROS_ID":                "kairos", // What for?
 		"KAIROS_ID_LIKE":           idLike,   // What for?
@@ -215,7 +210,6 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_BUG_REPORT_URL":    "https://github.com/kairos-io/kairos/issues",
 		"KAIROS_HOME_URL":          "https://github.com/kairos-io/kairos",
 		"KAIROS_RELEASE":           release,
-		"KAIROS_IMAGE_LABEL":       imageLabel,                                   // Used by raw image creation...very bad. DROP once aurora builds the image names with the other entries
 		"KAIROS_FRAMEWORK_VERSION": config.DefaultConfig.FrameworkVersion,        // Just for info, could be dropped
 		"KAIROS_FIPS":              fmt.Sprintf("%t", config.DefaultConfig.Fips), // Was the image built with FIPS support?
 	}
