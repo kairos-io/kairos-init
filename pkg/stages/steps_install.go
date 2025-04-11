@@ -803,9 +803,46 @@ TimeoutStopSec=10s
 [Install]
 WantedBy=multi-user.target`,
 				},
+				{
+					Path:        "/etc/systemd/system/kairos-interactive.service",
+					Permissions: 0755,
+					Owner:       0,
+					Group:       0,
+					Content: `[Unit]
+Description=kairos interactive-installer
+After=multi-user.target
+[Service]
+## Dont mark it as running until it finishes
+Type=oneshot
+# input/output to tty as its interactive
+# otherwise it will be silent and with no input
+StandardInput=tty
+StandardOutput=tty
+LimitNOFILE=49152
+ExecStartPre=-/bin/sh -c "dmesg -D"
+TTYPath=/dev/tty1
+RemainAfterExit=yes
+# Stop systemd messages on tty
+ExecStartPre=-/usr/bin/kill -SIGRTMIN+21 1
+ExecStart=/usr/bin/kairos-agent interactive-install --shell
+# Start systemd messages on tty
+ExecStartPost=-/usr/bin/kill -SIGRTMIN+20 1
+TimeoutStopSec=10s
+# Restart if it fails, like user doing control+c
+Restart=on-failure
+[Install]
+WantedBy=multi-user.target`,
+				},
 			},
 		},
 	}...)
 
 	return data
+}
+
+// GetInstallKairosBinariesStage directly installs the kairos binaries from the remote location
+// TODO: Ideally this should be able to be done wiht a yip plugin
+// Something like InstallFromGithubRelease
+func GetInstallKairosBinariesStage(_ types.KairosLogger) error {
+	return nil
 }

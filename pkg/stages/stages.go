@@ -49,6 +49,12 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 		return schema.YipConfig{}, err
 	}
 
+	// Bring kairos binaries
+	err = GetInstallKairosBinariesStage(logger)
+	if err != nil {
+		return schema.YipConfig{}, err
+	}
+
 	sis := system.DetectSystem(logger)
 	initExecutor := executor.NewExecutor(executor.WithLogger(logger))
 	yipConsole := console.NewStandardConsole(console.WithLogger(logger))
