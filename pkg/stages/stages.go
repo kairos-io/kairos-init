@@ -43,6 +43,12 @@ func RunAllStages(logger types.KairosLogger) (schema.YipConfig, error) {
 // This is good if we are doing the init in layers as this will allow us to run the install stage and cache that then run
 // the init stage later so we can cache the install stage which is usually the longest
 func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
+	// Copy the configs in the system
+	err := GetInstallOemCloudConfigs(logger)
+	if err != nil {
+		return schema.YipConfig{}, err
+	}
+
 	sis := system.DetectSystem(logger)
 	initExecutor := executor.NewExecutor(executor.WithLogger(logger))
 	yipConsole := console.NewStandardConsole(console.WithLogger(logger))
@@ -73,8 +79,15 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 		return data, err
 	}
 	data.Stages["install"] = installStage
-	// Add the framework stage
-	data.Stages["install"] = append(data.Stages["install"], GetInstallFrameworkStage(sis, logger)...)
+	// Add the branding files
+	data.Stages["install"] = append(data.Stages["install"], GetInstallBrandingStage(sis, logger)...)
+	// Add the bootargs file
+	data.Stages["install"] = append(data.Stages["install"], GetInstallGrubBootArgsStage(sis, logger)...)
+	// Add the services
+	data.Stages["install"] = append(data.Stages["install"], GetInstallServicesStage(sis, logger)...)
+	// Add the misc files
+	data.Stages["install"] = append(data.Stages["install"], GetInstallMiscellaneousFilesStage(sis, logger)...)
+	// Add the provider and kubernetes
 	data.Stages["install"] = append(data.Stages["install"], GetInstallProviderAndKubernetes(sis, logger)...)
 
 	// Add extensions from disk

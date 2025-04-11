@@ -1,0 +1,6 @@
+name: "Fix home directory permissions (kairos issue #2797)"
+stages:
+  network.after:
+    - name: "Fix home dir ownership"
+      commands:
+        - "/usr/bin/fix-home-dir-ownership"
