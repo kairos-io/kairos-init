@@ -82,7 +82,7 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 		}
 
 		if sys.Distro == values.RockyLinux || sys.Distro == values.AlmaLinux || sys.Distro == values.RedHat {
-			// On Rocky and AlmaLinux we need to use the plain network modulegit status
+			// On Rocky and AlmaLinux we need to use the plain network module
 			logger.Logger.Debug().Str("distro", string(sys.Distro)).Str("version", sys.Version).Msg("Using the plain network module and disabling sysext")
 			networkModule = "network"
 		}
