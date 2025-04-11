@@ -1,8 +1,12 @@
 package stages
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"embed"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -843,6 +847,96 @@ WantedBy=multi-user.target`,
 // GetInstallKairosBinariesStage directly installs the kairos binaries from the remote location
 // TODO: Ideally this should be able to be done wiht a yip plugin
 // Something like InstallFromGithubRelease
-func GetInstallKairosBinariesStage(_ types.KairosLogger) error {
+// In some distros, this needs to run after the packages are installed due to the ca-certificates package
+// being installed later, as we are using https
+func GetInstallKairosBinariesStage(sis values.System, l types.KairosLogger) error {
+	var fips string
+	targetDir := "/usr/bin"
+	arch := sis.Arch.String()
+
+	if config.DefaultConfig.Fips {
+		fips = "-fips"
+	}
+
+	// Download the kairos-agent binary
+	url := fmt.Sprintf("https://github.com/kairos-io/kairos-agent/releases/download/%s/kairos-agent-%s-Linux-%s%s.tar.gz", values.GetAgentVersion(), values.GetAgentVersion(), arch, fips)
+	binaryName := "kairos-agent"
+
+	err := downloadAndExtractBinaryInMemory(l, url, binaryName, targetDir)
+	if err != nil {
+		return err
+	}
+	// Download the immucore binary
+	url = fmt.Sprintf("https://github.com/kairos-io/immucore/releases/download/%s/immucore-%s-Linux-%s%s.tar.gz", values.GetImmucoreVersion(), values.GetImmucoreVersion(), arch, fips)
+	binaryName = "immucore"
+	err = downloadAndExtractBinaryInMemory(l, url, binaryName, targetDir)
+	if err != nil {
+		return err
+	}
+
 	return nil
+}
+
+func downloadAndExtractBinaryInMemory(l types.KairosLogger, url, binaryName, targetDir string) error {
+	// Perform the HTTP GET request
+	l.Logger.Debug().Str("url", url).Msg("Downloading file")
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to download file: %w", err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("failed to download file: status code %d", resp.StatusCode)
+	}
+
+	// Create a gzip reader directly from the response body
+	gzReader, err := gzip.NewReader(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to create gzip reader: %w", err)
+	}
+	defer gzReader.Close()
+
+	// Create a tar reader from the gzip reader
+	tarReader := tar.NewReader(gzReader)
+
+	// Extract the binary
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("failed to read tar archive: %w", err)
+		}
+
+		// Check if the current file is the binary we want
+		if filepath.Base(header.Name) == binaryName {
+			targetPath := filepath.Join(targetDir, binaryName)
+
+			// Create the target file
+			outFile, err := os.Create(targetPath)
+			if err != nil {
+				return fmt.Errorf("failed to create target file: %w", err)
+			}
+			defer outFile.Close()
+
+			// Copy the binary content to the target file
+			_, err = io.Copy(outFile, tarReader)
+			if err != nil {
+				return fmt.Errorf("failed to extract binary: %w", err)
+			}
+
+			// Make the binary executable
+			err = os.Chmod(targetPath, 0755)
+			if err != nil {
+				return fmt.Errorf("failed to set executable permissions: %w", err)
+			}
+
+			l.Logger.Debug().Str("target", targetPath).Str("name", binaryName).Msg("Binary extracted")
+			return nil
+		}
+	}
+
+	return fmt.Errorf("binary %s not found in archive", binaryName)
 }
