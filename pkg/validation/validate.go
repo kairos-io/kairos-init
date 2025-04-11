@@ -31,7 +31,7 @@ func (v *Validator) Validate() error {
 		"kairos-agent",
 		"sudo",
 		"less",
-		"kcrypt",
+		//	"kcrypt",
 		"kcrypt-discovery-challenger",
 	}
 

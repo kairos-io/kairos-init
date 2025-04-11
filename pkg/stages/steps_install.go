@@ -874,6 +874,23 @@ func GetInstallKairosBinariesStage(sis values.System, l types.KairosLogger) erro
 		return err
 	}
 
+	// Download the immucore binary
+	url = fmt.Sprintf("https://github.com/kairos-io/kcrypt-challenger/releases/download/%s/kcrypt-discovery-challenger-%s-Linux-%s%s.tar.gz", values.GetKcryptChallengerVersion(), values.GetKcryptChallengerVersion(), arch, fips)
+	binaryName = "kcrypt-discovery-challenger"
+	targetDir = "/system/discovery/"
+	// if the directory does not exist, create it
+	if _, err := os.Stat(targetDir); os.IsNotExist(err) {
+		err = os.MkdirAll(targetDir, 0755)
+		if err != nil {
+			l.Logger.Error().Err(err).Str("dir", targetDir).Msg("Failed to create directory")
+			return err
+		}
+	}
+	err = downloadAndExtractBinaryInMemory(l, url, binaryName, targetDir)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
