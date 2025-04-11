@@ -60,9 +60,66 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 			}...)
 		}
 
-		// TODO: Add kairos-network and kairos-sysext here from packages directly
-		// In fact, it maybe be time to drop those packages and just use the dracut modules as we can add the exact modules we need
-		// based on the distro and version
+		// Add proper network and systemd-sysext if needed
+		// We default to systemd-networkd and sysext enbled and if its ubuntu <= 22.04 we need to use the plain network module and
+		// disable sysext as they are not supported in those versions
+		networkModule := "systemd-networkd"
+		sysextModule := true
+
+		if sys.Distro == values.Ubuntu {
+			constraint, _ := semver.NewConstraint("<=22.04")
+			ver, err := semver.NewVersion(sys.Version)
+			if err != nil {
+				logger.Logger.Error().Msgf("Failed to parse the version %s: %s", sys.Version, err)
+				return []schema.Stage{}, err
+			}
+			// If its <= 22.04 we need to use the plain network module and disable sysext
+			if constraint.Check(ver) {
+				logger.Logger.Debug().Str("distro", string(sys.Distro)).Str("version", sys.Version).Msg("Using the plain network module and disabling sysext")
+				networkModule = "network"
+				sysextModule = false
+			}
+		}
+
+		if sys.Distro == values.RockyLinux || sys.Distro == values.AlmaLinux || sys.Distro == values.RedHat {
+			// On Rocky and AlmaLinux we need to use the plain network module
+			logger.Logger.Debug().Str("distro", string(sys.Distro)).Str("version", sys.Version).Msg("Using the plain network module and disabling sysext")
+			networkModule = "network"
+		}
+
+		stage = append(stage, []schema.Stage{
+			{
+				Name:     "Add proper network module to initramfs",
+				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+				Files: []schema.File{
+					{
+						Path:        "/etc/dracut.conf.d/kairos-network.conf",
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     fmt.Sprintf("add_dracutmodules+=\" %s \"\n", networkModule),
+					},
+				},
+			},
+		}...)
+
+		if sysextModule {
+			stage = append(stage, []schema.Stage{
+				{
+					Name:     "Add proper sysext module to initramfs",
+					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+					Files: []schema.File{
+						{
+							Path:        "/etc/dracut.conf.d/kairos-sysext.conf",
+							Owner:       0,
+							Group:       0,
+							Permissions: 0644,
+							Content:     fmt.Sprintf("add_dracutmodules+=\" systemd-sysext \"\n"),
+						},
+					},
+				},
+			}...)
+		}
 
 		stage = append(stage, []schema.Stage{
 			{
@@ -455,7 +512,7 @@ func getLatestKernel(l types.KairosLogger) (string, error) {
 			// Parse the directory name as a semver version
 			version, err = semver.NewVersion(dir.Name())
 			if err != nil {
-				l.Logger.Debug().Err(err).Msgf("Failed to parse the version %s as semver", dir.Name())
+				l.Logger.Debug().Err(err).Str("version", dir.Name()).Msg("Failed to parse the version as semver, will use the full name instead")
 				continue
 			}
 			versions = append(versions, version)
