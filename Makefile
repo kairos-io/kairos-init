@@ -4,7 +4,7 @@ IMMUCORE_VERSION := v0.9.4
 KCRYPT_CHALLENGER_VERSION := v0.11.1
 ARCH := $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
 BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger
-OUTPUT_DIR := pkg/binaries/assets
+OUTPUT_DIR := pkg/bundled/binaries
 
 # URLs for binaries
 kairos-agent_URL := https://github.com/kairos-io/kairos-agent/releases/download/$(AGENT_VERSION)/kairos-agent-$(AGENT_VERSION)-Linux-$(ARCH).tar.gz

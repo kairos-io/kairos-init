@@ -3,7 +3,6 @@ package stages
 import (
 	"archive/tar"
 	"compress/gzip"
-	"embed"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,15 +11,12 @@ import (
 	"path/filepath"
 	"regexp"
 
-	"github.com/kairos-io/kairos-init/pkg/binaries"
+	"github.com/kairos-io/kairos-init/pkg/bundled"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types"
 	"github.com/mudler/yip/pkg/schema"
 )
-
-//go:embed cloudconfigs/*
-var embeddedConfigs embed.FS
 
 // This file contains the stages for the install process
 
@@ -340,7 +336,7 @@ depend() {
 // TODO: Make them first class yip files in code and just dump them into the system?
 // That way they can be set as a normal yip stage maybe? a yip stage that dumps the yip stage lol
 func GetInstallOemCloudConfigs(l types.KairosLogger) error {
-	files, err := embeddedConfigs.ReadDir("cloudconfigs")
+	files, err := bundled.EmbeddedConfigs.ReadDir("cloudconfigs")
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to read embedded files")
 		return err
@@ -349,7 +345,7 @@ func GetInstallOemCloudConfigs(l types.KairosLogger) error {
 	// Extract each file
 	for _, file := range files {
 		if !file.IsDir() {
-			data, err := embeddedConfigs.ReadFile(filepath.Join("cloudconfigs", file.Name()))
+			data, err := bundled.EmbeddedConfigs.ReadFile(filepath.Join("cloudconfigs", file.Name()))
 			if err != nil {
 				l.Logger.Error().Err(err).Str("file", file.Name()).Msg("Failed to read embedded file")
 				continue
@@ -855,19 +851,19 @@ func GetInstallKairosBinariesStage(sis values.System, l types.KairosLogger) erro
 	// TODO: Fips?
 
 	// write the embedded binaries to the system
-	err := os.WriteFile("/usr/bin/kairos-agent", binaries.EmbeddedAgent, 0755)
+	err := os.WriteFile("/usr/bin/kairos-agent", bundled.EmbeddedAgent, 0755)
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to write kairos-agent")
 		return err
 	}
-	err = os.WriteFile("/system/discovery/kcrypt-discovery-challenger", binaries.EmbeddedKcryptChallenger, 0755)
+	err = os.WriteFile("/system/discovery/kcrypt-discovery-challenger", bundled.EmbeddedKcryptChallenger, 0755)
 
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to write kcrypt-discovery-challenger")
 		return err
 	}
 
-	err = os.WriteFile("/usr/bin/immucore", binaries.EmbeddedImmucore, 0755)
+	err = os.WriteFile("/usr/bin/immucore", bundled.EmbeddedImmucore, 0755)
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to write immucore")
 		return err
