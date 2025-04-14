@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 
+	"github.com/kairos-io/kairos-init/pkg/binaries"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types"
@@ -850,44 +851,25 @@ WantedBy=multi-user.target`,
 // In some distros, this needs to run after the packages are installed due to the ca-certificates package
 // being installed later, as we are using https
 func GetInstallKairosBinariesStage(sis values.System, l types.KairosLogger) error {
-	var fips string
-	targetDir := "/usr/bin"
-	arch := sis.Arch.String()
+	// TODO: If versions are provided, download and install those
+	// TODO: Fips?
 
-	if config.DefaultConfig.Fips {
-		fips = "-fips"
-	}
-
-	// Download the kairos-agent binary
-	url := fmt.Sprintf("https://github.com/kairos-io/kairos-agent/releases/download/%s/kairos-agent-%s-Linux-%s%s.tar.gz", values.GetAgentVersion(), values.GetAgentVersion(), arch, fips)
-	binaryName := "kairos-agent"
-
-	err := downloadAndExtractBinaryInMemory(l, url, binaryName, targetDir)
+	// write the embedded binaries to the system
+	err := os.WriteFile("/usr/bin/kairos-agent", binaries.EmbeddedAgent, 0755)
 	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write kairos-agent")
 		return err
 	}
-	// Download the immucore binary
-	url = fmt.Sprintf("https://github.com/kairos-io/immucore/releases/download/%s/immucore-%s-Linux-%s%s.tar.gz", values.GetImmucoreVersion(), values.GetImmucoreVersion(), arch, fips)
-	binaryName = "immucore"
-	err = downloadAndExtractBinaryInMemory(l, url, binaryName, targetDir)
+	err = os.WriteFile("/system/discovery/kcrypt-discovery-challenger", binaries.EmbeddedKcryptChallenger, 0755)
+
 	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write kcrypt-discovery-challenger")
 		return err
 	}
 
-	// Download the immucore binary
-	url = fmt.Sprintf("https://github.com/kairos-io/kcrypt-challenger/releases/download/%s/kcrypt-discovery-challenger-%s-Linux-%s%s.tar.gz", values.GetKcryptChallengerVersion(), values.GetKcryptChallengerVersion(), arch, fips)
-	binaryName = "kcrypt-discovery-challenger"
-	targetDir = "/system/discovery/"
-	// if the directory does not exist, create it
-	if _, err := os.Stat(targetDir); os.IsNotExist(err) {
-		err = os.MkdirAll(targetDir, 0755)
-		if err != nil {
-			l.Logger.Error().Err(err).Str("dir", targetDir).Msg("Failed to create directory")
-			return err
-		}
-	}
-	err = downloadAndExtractBinaryInMemory(l, url, binaryName, targetDir)
+	err = os.WriteFile("/usr/bin/immucore", binaries.EmbeddedImmucore, 0755)
 	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write immucore")
 		return err
 	}
 

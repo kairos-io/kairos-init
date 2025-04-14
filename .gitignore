@@ -1,2 +1,4 @@
 # Added by goreleaser init:
 dist/
+# binaries dir, not tracked, only on build
+pkg/binaries/assets/
