@@ -1,9 +1,8 @@
 ARG BASE_IMAGE=ubuntu:24.04
 ARG VALIDATE_IMAGE=ubuntu:24.04
-ARG TARGETARCH
-
 
 FROM golang AS build
+ARG TARGETARCH
 WORKDIR /app
 COPY go.mod go.sum .
 RUN go mod download
