@@ -856,16 +856,26 @@ func GetInstallKairosBinariesStage(sis values.System, l types.KairosLogger) erro
 		l.Logger.Error().Err(err).Msg("Failed to write kairos-agent")
 		return err
 	}
-	err = os.WriteFile("/system/discovery/kcrypt-discovery-challenger", bundled.EmbeddedKcryptChallenger, 0755)
-
-	if err != nil {
-		l.Logger.Error().Err(err).Msg("Failed to write kcrypt-discovery-challenger")
-		return err
-	}
 
 	err = os.WriteFile("/usr/bin/immucore", bundled.EmbeddedImmucore, 0755)
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to write immucore")
+		return err
+	}
+
+	// Check if dir exists and create it if not
+	if _, err = os.Stat("/system/discovery/"); os.IsNotExist(err) {
+		err = os.MkdirAll("/system/discovery/", 0755)
+		if err != nil {
+			l.Logger.Error().Err(err).Msg("Failed to create directory")
+			return err
+		}
+	}
+
+	err = os.WriteFile("/system/discovery/kcrypt-discovery-challenger", bundled.EmbeddedKcryptChallenger, 0755)
+
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write kcrypt-discovery-challenger")
 		return err
 	}
 
