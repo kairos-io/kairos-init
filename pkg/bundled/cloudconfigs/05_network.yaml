@@ -1,0 +1,94 @@
+name: "Default network configuration"
+stages:
+  rootfs.before:
+    - name: "Enable systemd-network config files for DHCP"  # Needed if systemd-networkd runs in the initramfs!
+      if: '[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+      directories:
+        - path: "/etc/systemd/network/"  # doesnt exist on initramfs
+          permissions: 0775
+          owner: 0
+          group: 0
+      files:
+        - path: /etc/systemd/network/20-dhcp.network
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            [Match]
+            Name=en*
+            [Network]
+            DHCP=yes
+            [DHCP]
+            ClientIdentifier=mac
+        - path: /etc/systemd/network/20-dhcp-legacy.network
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            [Match]
+            Name=eth*
+            [Network]
+            DHCP=yes
+            [DHCP]
+            ClientIdentifier=mac
+      commands:
+        - networkctl reload  # make sure it reloads our config files
+  initramfs:
+    - name: "Enable systemd-network config files for DHCP"
+      if: '[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+      files:
+        - path: /etc/systemd/network/20-dhcp.network
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            [Match]
+            Name=en*
+            [Network]
+            DHCP=yes
+            [DHCP]
+            ClientIdentifier=mac
+        - path: /etc/systemd/network/20-dhcp-legacy.network
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            [Match]
+            Name=eth*
+            [Network]
+            DHCP=yes
+            [DHCP]
+            ClientIdentifier=mac
+      commands:
+        - networkctl reload  # make sure it reloads our config files
+    - name: "Disable NetworkManager and wicked"
+      if: '[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+      systemctl:
+        disable:
+          - NetworkManager
+          - wicked
+    - name: "Enable systemd-network and systemd-resolved"
+      if: '[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+      systemctl:
+        enable:
+          - systemd-networkd
+          - systemd-resolved
+    - name: "Link /etc/resolv.conf to systemd resolv.conf"
+      if: '[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] && [ -f /etc/hosts ]'
+      commands:
+        - rm /etc/resolv.conf
+        - ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+  boot:
+    - name: "Reload systemd-networkd config"
+      if: '[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+      commands:
+        - networkctl reload  # make sure it reloads our config files
+  fs:
+    - name: "Reload systemd-networkd config"
+      if: '[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+      commands:
+        - networkctl reload  # make sure it reloads our config files
+#     dns:
+#      path: /etc/resolv.conf
+#      nameservers:
+#      - 8.8.8.8
