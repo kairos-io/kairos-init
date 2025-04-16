@@ -133,7 +133,6 @@ func (v *Validator) Validate() error {
 		"KAIROS_BUG_REPORT_URL", // Not critical
 		"KAIROS_HOME_URL",       // Not critical
 		"KAIROS_RELEASE",
-		"KAIROS_IMAGE_LABEL",
 	}
 
 	vals, err := godotenv.Read("/etc/kairos-release")
