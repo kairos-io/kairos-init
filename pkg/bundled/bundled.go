@@ -2,7 +2,6 @@ package bundled
 
 import (
 	"embed"
-	_ "embed"
 )
 
 //go:embed binaries/kairos-agent

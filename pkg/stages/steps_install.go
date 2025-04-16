@@ -516,38 +516,25 @@ func InstallKairosMiscellaneousFilesStage(sis values.System, l types.KairosLogge
 				},
 			},
 		},
-		{
-			Name:     "Install reconcile script",
-			OnlyIfOs: "alpine",
-			Files: []schema.File{
-				{
-					Path:        "/usr/sbin/cos-setup-reconcile",
-					Permissions: 0755,
-					Owner:       0,
-					Group:       0,
-					Content:     bundled.ReconcileScript,
-				},
-			},
-		},
 	}...)
 
 	if sis.Family.String() == "alpine" {
-		immucoreFiles, err := bundled.EmbeddedAlpineInit.ReadFile("immucore.files")
+		immucoreFiles, err := bundled.EmbeddedAlpineInit.ReadFile("alpineInit/immucore.files")
 		if err != nil {
 			l.Logger.Error().Err(err).Str("file", "immucore.files").Msg("Failed to read embedded file")
 			return nil, err
 		}
-		initramfsInit, err := bundled.EmbeddedAlpineInit.ReadFile("initramfs-init")
+		initramfsInit, err := bundled.EmbeddedAlpineInit.ReadFile("alpineInit/initramfs-init")
 		if err != nil {
 			l.Logger.Error().Err(err).Str("file", "initramfs-init").Msg("Failed to read embedded file")
 			return nil, err
 		}
-		mkinitfsConf, err := bundled.EmbeddedAlpineInit.ReadFile("mkinitfs.conf")
+		mkinitfsConf, err := bundled.EmbeddedAlpineInit.ReadFile("alpineInit/mkinitfs.conf")
 		if err != nil {
 			l.Logger.Error().Err(err).Str("file", "mkinitfs.conf").Msg("Failed to read embedded file")
 			return nil, err
 		}
-		tpmModules, err := bundled.EmbeddedAlpineInit.ReadFile("tpm.modules")
+		tpmModules, err := bundled.EmbeddedAlpineInit.ReadFile("alpineInit/tpm.modules")
 		if err != nil {
 			l.Logger.Error().Err(err).Str("file", "tpm.modules").Msg("Failed to read embedded file")
 			return nil, err
@@ -555,8 +542,19 @@ func InstallKairosMiscellaneousFilesStage(sis values.System, l types.KairosLogge
 
 		data = append(data, []schema.Stage{
 			{
-				Name:     "Install Alpine initrd scripts",
-				OnlyIfOs: "alpine",
+				Name: "Install reconcile script",
+				Files: []schema.File{
+					{
+						Path:        "/usr/sbin/cos-setup-reconcile",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.ReconcileScript,
+					},
+				},
+			},
+			{
+				Name: "Install Alpine initrd scripts",
 				Files: []schema.File{
 					{
 						Path:        "/etc/mkinitfs/features.d/immucore.files",
