@@ -15,7 +15,7 @@ var (
 	// renovate: datasource=docker depName=quay.io/kairos/framework
 	frameWorkVersion = "v2.18.3"
 	// renovate: datasource=docker
-	providerPackage = "quay.io/kairos/packages:provider-kairos-system-2.10.0"
+	providerPackage = "quay.io/kairos/packages:provider-kairos-system-2.10.4"
 	// renovate: datasource=docker
 	edgeVpnPackage = "quay.io/kairos/packages:edgevpn-utils-0.30.2"
 	// renovate: datasource=docker
