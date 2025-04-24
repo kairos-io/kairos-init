@@ -176,6 +176,8 @@ github.com/kairos-io/kairos-sdk v0.8.0 h1:bK6F+RJ3bhkEA8YddkpUUXsRW7X/6wwZhgmpaV
 github.com/kairos-io/kairos-sdk v0.8.0/go.mod h1:zvdtoHoQb4B++HJ7QKItYqmPIK3H0B782tRH7W84wKE=
 github.com/kairos-io/kairos-sdk v0.8.1 h1:e4BRX5zkwp6cDYqEAYZOKUKdryEq3+Zi1skqyHMI6gg=
 github.com/kairos-io/kairos-sdk v0.8.1/go.mod h1:+8n8VBTe9XAvjZCpm8rk6IRdXeMKgqyQpqHq/Kr+L9o=
+github.com/kairos-io/kairos-sdk v0.9.0 h1:Bcpf3nUwGvzreIdXBIZZRnS2LDPs496C0Reo+dpbkMs=
+github.com/kairos-io/kairos-sdk v0.9.0/go.mod h1:O3si3aCkYsOyjjLF2jKKTKUYW9948WcB7xR0ivKbB6M=
 github.com/kendru/darwin/go/depgraph v0.0.0-20230809052043-4d1c7e9d1767 h1:Ds6xHRvL0yjG4kZD05leRKt70mM18Fjt0+B5gIqqe1g=
 github.com/kendru/darwin/go/depgraph v0.0.0-20230809052043-4d1c7e9d1767/go.mod h1:VOfm8h1NySetVlpHDSnbpCMsvCgYaU+YDn4XezUy2+4=
 github.com/kevinburke/ssh_config v1.2.0 h1:x584FjTGwHzMwvHx18PXxbBVzfnxogHaAReU4gf13a4=
@@ -382,6 +384,8 @@ golang.org/x/sys v0.12.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.16.0/go.mod h1:/VUhepiaJMQUp4+oa/7Zr1D23ma6VTLIYjOOTFZPUcA=
 golang.org/x/sys v0.31.0 h1:ioabZlmFYtWhL+TRYpcnNlLwhyxaM9kWTDEmfnprqik=
 golang.org/x/sys v0.31.0/go.mod h1:BJP2sWEmIv4KK5OTEluFJCKSidICx8ciO85XgH3Ak8k=
+golang.org/x/sys v0.32.0 h1:s77OFDvIQeibCmezSnk/q6iAfkdiQaJi4VzroCFrN20=
+golang.org/x/sys v0.32.0/go.mod h1:BJP2sWEmIv4KK5OTEluFJCKSidICx8ciO85XgH3Ak8k=
 golang.org/x/term v0.0.0-20201126162022-7de9c90e9dd1/go.mod h1:bj7SfCRtBDWHUb9snDiAeCFNEtKQo2Wmx5Cou7ajbmo=
 golang.org/x/term v0.30.0 h1:PQ39fJZ+mfadBm0y5WlL4vlM7Sx1Hgf13sMIY2+QS9Y=
 golang.org/x/term v0.30.0/go.mod h1:NYYFdzHoI5wRh/h5tDMdMqCqPJZEuNqVR5xJLd/n67g=
