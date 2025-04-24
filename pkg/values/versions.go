@@ -13,17 +13,17 @@ var (
 	// The packages below get auto updated by renovate on github
 	// We built those under github.com/kairos/packages
 	// renovate: datasource=docker depName=quay.io/kairos/framework
-	frameWorkVersion = "v2.20.0"
+	frameWorkVersion = "v2.21.0"
 	// renovate: datasource=docker
 	providerPackage = "quay.io/kairos/packages:provider-kairos-system-2.10.3"
 	// renovate: datasource=docker
 	edgeVpnPackage = "quay.io/kairos/packages:edgevpn-utils-0.30.2"
 	// renovate: datasource=docker
-	k9sPackage = "quay.io/kairos/packages:k9s-utils-0.50.0"
+	k9sPackage = "quay.io/kairos/packages:k9s-utils-0.50.4"
 	// renovate: datasource=docker
 	nerdctlPackage = "quay.io/kairos/packages:nerdctl-utils-2.0.4"
 	// renovate: datasource=docker
-	kubeVipPackage = "quay.io/kairos/packages:kube-vip-utils-0.8.10"
+	kubeVipPackage = "quay.io/kairos/packages:kube-vip-utils-0.9.0"
 	// renovate: datasource=github-releases depName=kairos-io/kairos-agent
 	agentVersion = "v2.20.3"
 	// renovate: datasource=github-releases depName=kairos-io/immucore
