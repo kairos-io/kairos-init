@@ -84,6 +84,58 @@
       ],
       "datasourceTemplate": "docker",
       "versioningTemplate": "regex:^kube-vip-utils-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)$"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^Makefile$"
+      ],
+      "matchStrings": [
+        "AGENT_VERSION\\s*:=\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "depNameTemplate": "kairos-agent",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "lookupNameTemplate": "kairos-io/kairos-agent"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^Makefile$"
+      ],
+      "matchStrings": [
+        "IMMUCORE_VERSION\\s*:=\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "depNameTemplate": "immucore",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "lookupNameTemplate": "kairos-io/immucore"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^Makefile$"
+      ],
+      "matchStrings": [
+        "KCRYPT_VERSION\\s*:=\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "depNameTemplate": "kcrypt",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "lookupNameTemplate": "kairos-io/kcrypt"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^Makefile$"
+      ],
+      "matchStrings": [
+        "KCRYPT_CHALLENGER_VERSION\\s*:=\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "depNameTemplate": "kcrypt-challenger",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "lookupNameTemplate": "kairos-io/kcrypt-challenger"
     }
   ]
 }

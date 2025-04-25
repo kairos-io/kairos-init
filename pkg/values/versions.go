@@ -24,25 +24,7 @@ var (
 	nerdctlPackage = "quay.io/kairos/packages:nerdctl-utils-2.0.4"
 	// renovate: datasource=docker
 	kubeVipPackage = "quay.io/kairos/packages:kube-vip-utils-0.9.0"
-	// renovate: datasource=github-releases depName=kairos-io/kairos-agent
-	agentVersion = "v2.20.3"
-	// renovate: datasource=github-releases depName=kairos-io/immucore
-	immucoreVersion = "v0.9.4"
-	// renovate: datasource=github-releases depName=kairos-io/kcrypt-challenger
-	kcryptChallengerVersion = "v0.11.1"
 )
-
-func GetAgentVersion() string {
-	return agentVersion
-}
-
-func GetImmucoreVersion() string {
-	return immucoreVersion
-}
-
-func GetKcryptChallengerVersion() string {
-	return kcryptChallengerVersion
-}
 
 func GetFrameworkVersion() string {
 	return frameWorkVersion
