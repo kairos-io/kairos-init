@@ -117,19 +117,6 @@
         "^Makefile$"
       ],
       "matchStrings": [
-        "KCRYPT_VERSION\\s*:=\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
-      ],
-      "depNameTemplate": "kcrypt",
-      "datasourceTemplate": "github-releases",
-      "versioningTemplate": "semver",
-      "lookupNameTemplate": "kairos-io/kcrypt"
-    },
-    {
-      "customType": "regex",
-      "fileMatch": [
-        "^Makefile$"
-      ],
-      "matchStrings": [
         "KCRYPT_CHALLENGER_VERSION\\s*:=\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
       ],
       "depNameTemplate": "kcrypt-challenger",

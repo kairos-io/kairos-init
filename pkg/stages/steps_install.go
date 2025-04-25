@@ -448,13 +448,6 @@ func GetInstallKairosBinaries(_ values.System, l types.KairosLogger) error {
 		return err
 	}
 
-	err = os.WriteFile("/usr/bin/kcrypt", bundled.EmbeddedKcrypt, 0755)
-
-	if err != nil {
-		l.Logger.Error().Err(err).Msg("Failed to write kcrypt")
-		return err
-	}
-
 	// Check if dir exists and create it if not
 	if _, err = os.Stat("/system/discovery/"); os.IsNotExist(err) {
 		err = os.MkdirAll("/system/discovery/", 0755)

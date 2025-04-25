@@ -10,9 +10,6 @@ var EmbeddedAgent []byte
 //go:embed binaries/immucore
 var EmbeddedImmucore []byte
 
-//go:embed binaries/kcrypt
-var EmbeddedKcrypt []byte
-
 //go:embed binaries/kcrypt-discovery-challenger
 var EmbeddedKcryptChallenger []byte
 
