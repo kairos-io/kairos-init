@@ -313,6 +313,13 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 				"truncate -s 0 /etc/hostname",
 			},
 		},
+		{
+			Name: "Remove host ssh keys",
+			If:   "test -d /etc/ssh",
+			Commands: []string{
+				"rm -f /etc/ssh/ssh_host_*_key*",
+			},
+		},
 	}
 
 	var pkgs []values.VersionMap
