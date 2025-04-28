@@ -10,6 +10,7 @@ import (
 	"github.com/kairos-io/kairos-sdk/types"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -187,6 +188,18 @@ func (v *Validator) Validate() error {
 				}
 			}
 		}
+	}
+
+	// Check if there are any ssh host keys in /etc/ssh
+	matches, err := filepath.Glob("/etc/ssh/ssh_host_*_key")
+	if err != nil {
+		multi = multierror.Append(multi, fmt.Errorf("error checking for SSH host keys: %s", err))
+	}
+	if len(matches) > 0 {
+		v.Log.Logger.Warn().Strs("ssh_host_keys", matches).Msg("Found SSH host keys in the system")
+		multi = multierror.Append(multi, fmt.Errorf("found SSH host keys in the system: %v", matches))
+	} else {
+		v.Log.Logger.Info().Msg("No SSH host keys found bundled in the system")
 	}
 
 	return multi.ErrorOrNil()
