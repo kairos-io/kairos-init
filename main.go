@@ -24,6 +24,31 @@ var (
 	version    string
 )
 
+// runValidation performs system validation and returns an error if validation fails
+func runValidation(logger types.KairosLogger) error {
+	logger.Infof("Starting kairos-init version %s", values.GetVersion())
+	logger.Debug(litter.Sdump(values.GetFullVersion()))
+
+	validator := validation.NewValidator(logger)
+	err := validator.Validate()
+	if err != nil {
+		logger.Error(err)
+		return err
+	}
+	logger.Info("System is valid")
+	return nil
+}
+
+var validateCmd = &cobra.Command{
+	Use:   "validate",
+	Short: "Validate the system",
+	Long:  `Validate the system to ensure all required components are in place`,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		logger := types.NewKairosLogger("kairos-init", config.DefaultConfig.Level, false)
+		return runValidation(logger)
+	},
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "kairos-init",
 	Short: "Kairos init tool",
@@ -68,14 +93,7 @@ var rootCmd = &cobra.Command{
 		var runStages schema.YipConfig
 
 		if validate {
-			validator := validation.NewValidator(logger)
-			err = validator.Validate()
-			if err != nil {
-				logger.Error(err)
-				return err
-			}
-			logger.Info("System is valid")
-			return nil
+			return runValidation(logger)
 		}
 
 		if config.DefaultConfig.Stage != "" {
@@ -128,6 +146,8 @@ func init() {
 
 	// Mark required flags
 	rootCmd.MarkFlagRequired("version")
+
+	rootCmd.AddCommand(validateCmd)
 }
 
 func main() {
