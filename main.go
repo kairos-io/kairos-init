@@ -34,30 +34,19 @@ var rootCmd = &cobra.Command{
 			config.DefaultConfig.TrustedBoot = true
 		}
 
-		if variant == "" {
-			// Set default variant
-			config.DefaultConfig.Variant = config.CoreVariant
-		} else {
-			// Try to load the variant
-			err := config.DefaultConfig.Variant.FromString(variant)
-			if err != nil {
-				return fmt.Errorf("error loading variant: %w", err)
-			}
+		// Try to load the variant
+		err := config.DefaultConfig.Variant.FromString(variant)
+		if err != nil {
+			return fmt.Errorf("error loading variant: %w", err)
 		}
 
-		if ksProvider == "" {
-			// Set default variant
-			config.DefaultConfig.KubernetesProvider = config.K3sProvider
-		} else {
-			// Try to load the variant
-			err := config.DefaultConfig.KubernetesProvider.FromString(ksProvider)
-			if err != nil {
-				return fmt.Errorf("error loading kubernetes provider: %w", err)
-			}
+		// Try to load the kubernetes provider
+		err = config.DefaultConfig.KubernetesProvider.FromString(ksProvider)
+		if err != nil {
+			return fmt.Errorf("error loading kubernetes provider: %w", err)
 		}
 
 		if config.DefaultConfig.KubernetesVersion == "latest" {
-			// Set default variant
 			config.DefaultConfig.KubernetesVersion = ""
 		}
 
@@ -126,8 +115,8 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Level, "level", "l", "info", "set the log level")
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Stage, "stage", "s", "all", "set the stage to run")
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Model, "model", "m", "generic", "model to build for, like generic or rpi4")
-	rootCmd.Flags().StringVarP(&variant, "variant", "v", "core", "variant to build (core or standard for k3s flavor)")
-	rootCmd.Flags().StringVarP(&ksProvider, "kubernetes-provider", "k", "k3s", "Kubernetes provider")
+	rootCmd.Flags().StringVarP(&variant, "variant", "v", config.CoreVariant.String(), "variant to build (core or standard for k3s flavor)")
+	rootCmd.Flags().StringVarP(&ksProvider, "kubernetes-provider", "k", string(config.K3sProvider), "Kubernetes provider")
 	rootCmd.Flags().StringVar(&config.DefaultConfig.KubernetesVersion, "k8sversion", "latest", "Kubernetes version for provider")
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Registry, "registry", "r", "quay.io/kairos", "registry and org where the image is gonna be pushed. This is mainly used on upgrades to search for available images to upgrade to")
 	rootCmd.Flags().StringVarP(&trusted, "trusted", "t", "false", "init the system for Trusted Boot, changes bootloader to systemd")
