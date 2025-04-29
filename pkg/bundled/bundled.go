@@ -13,6 +13,9 @@ var EmbeddedImmucore []byte
 //go:embed binaries/kcrypt-discovery-challenger
 var EmbeddedKcryptChallenger []byte
 
+//go:embed binaries/kairos-cli
+var EmbeddedKairosProvider []byte
+
 // EmbeddedConfigs contains the cloudconfigs that go into /system/oem
 //
 //go:embed cloudconfigs/*

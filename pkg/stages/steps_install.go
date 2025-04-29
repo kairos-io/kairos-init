@@ -85,11 +85,22 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 }
 
 // GetInstallProviderAndKubernetes will install the provider and kubernetes packages
-func GetInstallProviderAndKubernetes(sis values.System, _ types.KairosLogger) []schema.Stage {
+func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []schema.Stage {
 	var data []schema.Stage
 
 	// If its core we dont do anything here
 	if config.DefaultConfig.Variant.String() == "core" {
+		return data
+	}
+	err := os.MkdirAll("/system/providers", os.ModeDir|os.ModePerm)
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to create directory")
+		return data
+	}
+	// write the embedded binaries to the system
+	err = os.WriteFile("/system/providers/agent-provider-kairos", bundled.EmbeddedKairosProvider, 0755)
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write agent-provider-kairos")
 		return data
 	}
 
@@ -180,15 +191,6 @@ func GetInstallProviderAndKubernetes(sis values.System, _ types.KairosLogger) []
 	}
 	// Install provider + k8s utils
 	data = append(data, []schema.Stage{
-		{
-			Name: "Install Provider packages",
-			UnpackImages: []schema.UnpackImageConf{
-				{
-					Source: values.GetProviderPackage(sis.Arch.String()),
-					Target: "/",
-				},
-			},
-		},
 		{
 			Name: "Install Edgevpn packages",
 			UnpackImages: []schema.UnpackImageConf{

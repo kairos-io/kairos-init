@@ -2,14 +2,16 @@
 AGENT_VERSION := v2.20.3
 IMMUCORE_VERSION := v0.9.4
 KCRYPT_CHALLENGER_VERSION := v0.11.1
+AGENT_PROVIDER_VERSION := v2.11.0
 ARCH := $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
-BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger
+BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger agent-provider-kairos
 OUTPUT_DIR := pkg/bundled/binaries
 
 # URLs for binaries
 kairos-agent_URL := https://github.com/kairos-io/kairos-agent/releases/download/$(AGENT_VERSION)/kairos-agent-$(AGENT_VERSION)-Linux-$(ARCH).tar.gz
 immucore_URL := https://github.com/kairos-io/immucore/releases/download/$(IMMUCORE_VERSION)/immucore-$(IMMUCORE_VERSION)-Linux-$(ARCH).tar.gz
 kcrypt-discovery-challenger_URL := https://github.com/kairos-io/kcrypt-challenger/releases/download/$(KCRYPT_CHALLENGER_VERSION)/kcrypt-discovery-challenger-$(KCRYPT_CHALLENGER_VERSION)-Linux-$(ARCH).tar.gz
+agent-provider-kairos_URL := https://github.com/kairos-io/provider-kairos/releases/download/$(AGENT_PROVIDER_VERSION)/kairos-cli-$(AGENT_PROVIDER_VERSION)-Linux-$(ARCH).tar.gz
 
 .PHONY: all prepare download compress cleanup
 
@@ -19,7 +21,7 @@ all: prepare download compress cleanup
 prepare:
 	@echo "Cleaning up the output directory..."
 	@rm -rf $(OUTPUT_DIR)
-	@if ! command -v upx >/dev/null 2>&1; then \
+	@if [ -z "$(SKIP_UPX)" ] && ! command -v upx >/dev/null 2>&1; then \
 	  echo "Error: upx binary is not available. Please install upx."; \
 	  exit 1; \
 	fi
