@@ -136,7 +136,7 @@ func init() {
 	rootCmd.Flags().StringVarP(&variant, "variant", "v", config.CoreVariant.String(), "variant to build (core or standard for k3s flavor)")
 	rootCmd.Flags().StringVarP(&ksProvider, "kubernetes-provider", "k", string(config.K3sProvider), "Kubernetes provider")
 	rootCmd.Flags().StringVar(&config.DefaultConfig.KubernetesVersion, "k8sversion", "latest", "Kubernetes version for provider")
-	rootCmd.Flags().StringVarP(&config.DefaultConfig.Registry, "registry", "r", "quay.io/kairos", "registry and org where the image is gonna be pushed. This is mainly used on upgrades to search for available images to upgrade to")
+	rootCmd.Flags().StringVarP(&config.DefaultConfig.Registry, "registry", "r", "", "registry and org where the image is gonna be pushed (e.g. quay.io/kairos). This is mainly used on upgrades to search for available images to upgrade to")
 	rootCmd.Flags().StringVarP(&trusted, "trusted", "t", "false", "init the system for Trusted Boot, changes bootloader to systemd")
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.FrameworkVersion, "framework", "f", values.GetFrameworkVersion(), "set the framework version to use")
 	rootCmd.Flags().BoolVar(&validate, "validate", false, "validate the running os to see if it all the pieces are in place")
@@ -146,6 +146,7 @@ func init() {
 
 	// Mark required flags
 	rootCmd.MarkFlagRequired("version")
+	rootCmd.MarkFlagRequired("registry")
 
 	rootCmd.AddCommand(validateCmd)
 }
