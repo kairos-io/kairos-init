@@ -127,12 +127,6 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.DefaultConfig.Extensions, "stage-extensions", false, "enable stage extensions mode")
 
 	// Mark required flags
-	rootCmd.MarkFlagRequired("level")
-	rootCmd.MarkFlagRequired("stage")
-	rootCmd.MarkFlagRequired("model")
-	rootCmd.MarkFlagRequired("registry")
-	rootCmd.MarkFlagRequired("trusted")
-	rootCmd.MarkFlagRequired("framework")
 	rootCmd.MarkFlagRequired("version")
 }
 
