@@ -9,6 +9,7 @@ require (
 	github.com/kairos-io/kairos-sdk v0.8.1
 	github.com/mudler/yip v1.16.0
 	github.com/sanity-io/litter v1.5.8
+	github.com/spf13/cobra v1.9.1
 	github.com/twpayne/go-vfs/v5 v5.0.4
 )
 
@@ -58,6 +59,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/huandu/xstrings v1.5.0 // indirect
+	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/itchyny/gojq v0.12.17 // indirect
 	github.com/itchyny/timefmt-go v0.1.6 // indirect
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
@@ -93,6 +95,7 @@ require (
 	github.com/skeema/knownhosts v1.3.1 // indirect
 	github.com/spectrocloud-labs/herd v0.4.2 // indirect
 	github.com/spf13/cast v1.7.1 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/tredoe/osutil v1.5.0 // indirect
 	github.com/twpayne/go-vfs/v4 v4.3.0 // indirect
 	github.com/ulikunitz/xz v0.5.12 // indirect
