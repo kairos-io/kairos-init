@@ -366,20 +366,12 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 func GetServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 	return []schema.Stage{
 		{
-			Name:     "Enable services for Modern systems",
-			OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*",
-			Systemctl: schema.Systemctl{
-				Enable: []string{
-					"systemd-networkd", // Separate this and use ifOS to trigger it only on systemd systems? i.e. do a reverse regex match somehow
-				},
-			},
-		},
-		{
 			Name:     "Enable services for Debian family",
 			OnlyIfOs: "Ubuntu.*|Debian.*",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"ssh",
+					"systemd-networkd",
 				},
 			},
 		},
@@ -390,11 +382,15 @@ func GetServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 				Enable: []string{
 					"sshd",
 					"systemd-resolved",
+					"systemd-networkd",
 				},
 				Disable: []string{
 					"dnf-makecache",
 					"dnf-makecache.timer",
 				},
+			},
+			Commands: []string{
+				"systemctl unmask getty.target", // Unmask getty.target to allow login on ttys as it comes masked by default
 			},
 		},
 		{
