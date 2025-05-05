@@ -23,7 +23,7 @@ var (
 	// renovate: datasource=docker
 	nerdctlPackage = "quay.io/kairos/packages:nerdctl-utils-2.0.4"
 	// renovate: datasource=docker
-	kubeVipPackage = "quay.io/kairos/packages:kube-vip-utils-0.9.0"
+	kubeVipPackage = "quay.io/kairos/packages:kube-vip-utils-0.9.1"
 )
 
 func GetFrameworkVersion() string {
