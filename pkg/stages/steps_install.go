@@ -217,37 +217,6 @@ func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []
 			}...)
 		}
 	}
-	// Install provider + k8s utils
-	data = append(data, []schema.Stage{
-		{
-			Name: "Install K9s packages",
-			UnpackImages: []schema.UnpackImageConf{
-				{
-					Source: values.GetK9sPackage(sis.Arch.String()),
-					Target: "/",
-				},
-			},
-		},
-		{
-			Name: "Install Nerdctl packages",
-			UnpackImages: []schema.UnpackImageConf{
-				{
-					Source: values.GetNerdctlPackage(sis.Arch.String()),
-					Target: "/",
-				},
-			},
-		},
-		{
-			Name: "Install Kube-vip packages",
-			UnpackImages: []schema.UnpackImageConf{
-				{
-					Source: values.GetKubeVipPackage(sis.Arch.String()),
-					Target: "/",
-				},
-			},
-		},
-	}...)
-
 	return data
 }
 
