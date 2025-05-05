@@ -114,6 +114,13 @@ func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []
 		return data
 	}
 
+	// Link /system/providers/agent-provider-kairos to /usr/bin/kairos
+	err = os.Symlink("/system/providers/agent-provider-kairos", "/usr/bin/kairos")
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to create symlink")
+		return data
+	}
+
 	switch config.DefaultConfig.KubernetesProvider {
 	case config.K3sProvider:
 		cmd := "INSTALL_K3S_BIN_DIR=/usr/bin INSTALL_K3S_SKIP_ENABLE=true INSTALL_K3S_SKIP_SELINUX_RPM=true"

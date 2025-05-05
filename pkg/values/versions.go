@@ -15,8 +15,6 @@ var (
 	// renovate: datasource=docker depName=quay.io/kairos/framework
 	frameWorkVersion = "v2.21.0"
 	// renovate: datasource=docker
-	providerPackage = "quay.io/kairos/packages:provider-kairos-system-2.10.4"
-	// renovate: datasource=docker
 	edgeVpnPackage = "quay.io/kairos/packages:edgevpn-utils-0.30.2"
 	// renovate: datasource=docker
 	k9sPackage = "quay.io/kairos/packages:k9s-utils-0.50.4"
@@ -43,10 +41,6 @@ func setProperRepo(arch string, url string) string {
 		}
 	}
 	return data
-}
-
-func GetProviderPackage(arch string) string {
-	return setProperRepo(arch, providerPackage)
 }
 
 func GetEdgeVPNPackage(arch string) string {

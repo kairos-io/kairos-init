@@ -43,6 +43,7 @@ func (v *Validator) Validate() error {
 		if config.DefaultConfig.KubernetesProvider == config.K0sProvider {
 			binaries = append(binaries, "k0s")
 		}
+		binaries = append(binaries, "kairos") // This is the agent provider binary
 	}
 
 	// Alter path to include our providers path
@@ -94,7 +95,6 @@ func (v *Validator) Validate() error {
 			"kairos-recovery",
 			"kairos-reset",
 			"kairos-webui",
-			"kairos",
 		}
 
 		if config.DefaultConfig.Variant == "standard" {
@@ -112,7 +112,6 @@ func (v *Validator) Validate() error {
 			} else {
 				v.Log.Logger.Info().Str("service", service).Msg("Found service")
 			}
-
 		}
 	}
 
