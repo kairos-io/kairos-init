@@ -7,14 +7,26 @@ import (
 //go:embed binaries/kairos-agent
 var EmbeddedAgent []byte
 
+//go:embed binaries/fips/kairos-agent
+var EmbeddedAgentFips []byte
+
 //go:embed binaries/immucore
 var EmbeddedImmucore []byte
+
+//go:embed binaries/fips/immucore
+var EmbeddedImmucoreFips []byte
 
 //go:embed binaries/kcrypt-discovery-challenger
 var EmbeddedKcryptChallenger []byte
 
+//go:embed binaries/fips/kcrypt-discovery-challenger
+var EmbeddedKcryptChallengerFips []byte
+
 //go:embed binaries/kairos-cli
 var EmbeddedKairosProvider []byte
+
+//go:embed binaries/fips/kairos-cli
+var EmbeddedKairosProviderFips []byte
 
 // EmbeddedConfigs contains the cloudconfigs that go into /system/oem
 //
@@ -442,8 +454,8 @@ ExecStartPost=-/usr/bin/kill -SIGRTMIN+20 1
 WantedBy=multi-user.target
 `
 
-// KairosResetservice contains the service that is used to run the kairos agent in reset mode
-const KairosResetservice = `[Unit]
+// KairosResetService contains the service that is used to run the kairos agent in reset mode
+const KairosResetService = `[Unit]
 Description=kairos reset
 After=sysinit.target
 [Service]
@@ -465,7 +477,7 @@ WantedBy=multi-user.target
 
 // KairosWebUIService contains the service that is used to run the kairos agent webui for web installs
 const KairosWebUIService = `[Unit]
-Description=kairos installer
+Description=kairos webui installer
 After=sysinit.target
 [Service]
 ExecStart=/usr/bin/kairos-agent webui

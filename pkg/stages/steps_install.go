@@ -108,13 +108,18 @@ func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []
 		return data
 	}
 	// write the embedded binaries to the system
-	err = os.WriteFile("/system/providers/agent-provider-kairos", bundled.EmbeddedKairosProvider, 0755)
+	agentProvider := bundled.EmbeddedKairosProvider
+	if config.DefaultConfig.Fips {
+		agentProvider = bundled.EmbeddedKairosProviderFips
+	}
+	err = os.WriteFile("/system/providers/agent-provider-kairos", agentProvider, 0755)
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to write agent-provider-kairos")
 		return data
 	}
 
-	// Link /system/providers/agent-provider-kairos to /usr/bin/kairos
+	// Link /system/providers/agent-provider-kairos to /usr/bin/kairos, not sure what uses it?
+	// TODO: Check if this is needed, maybe we can remove it?
 	err = os.Symlink("/system/providers/agent-provider-kairos", "/usr/bin/kairos")
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to create symlink")
@@ -404,7 +409,7 @@ func GetInstallServicesStage(_ values.System, _ types.KairosLogger) []schema.Sta
 					Permissions: 0755,
 					Owner:       0,
 					Group:       0,
-					Content:     bundled.KairosResetservice,
+					Content:     bundled.KairosResetService,
 				},
 				{
 					Path:        "/etc/systemd/system/kairos-webui.service",
@@ -445,23 +450,28 @@ func GetInstallServicesStage(_ values.System, _ types.KairosLogger) []schema.Sta
 	return data
 }
 
-// GetInstallKairosBinaries directly installs the kairos binaries from the remote location
-// TODO: Ideally this should be able to be done with a yip plugin so it respects the rest of the process
-// Something like InstallFromGithubRelease
-// In some distros, this needs to run after the packages are installed due to the ca-certificates package
-// being installed later, as we are using https
+// GetInstallKairosBinaries directly installs the kairos binaries from bundled binaries
 func GetInstallKairosBinaries(_ values.System, l types.KairosLogger) error {
-	// TODO: If versions are provided, download and install those instead
-	// TODO: Fips?
+	// TODO: If versions are provided, download and install those instead? i.e. Allow online install versions?
 
 	// write the embedded binaries to the system
-	err := os.WriteFile("/usr/bin/kairos-agent", bundled.EmbeddedAgent, 0755)
+	agentBinary := bundled.EmbeddedAgent
+	immucoreBinary := bundled.EmbeddedImmucore
+	kcryptChallengerBinary := bundled.EmbeddedKcryptChallenger
+
+	if config.DefaultConfig.Fips {
+		agentBinary = bundled.EmbeddedAgentFips
+		immucoreBinary = bundled.EmbeddedImmucoreFips
+		kcryptChallengerBinary = bundled.EmbeddedKcryptChallengerFips
+	}
+
+	err := os.WriteFile("/usr/bin/kairos-agent", agentBinary, 0755)
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to write kairos-agent")
 		return err
 	}
 
-	err = os.WriteFile("/usr/bin/immucore", bundled.EmbeddedImmucore, 0755)
+	err = os.WriteFile("/usr/bin/immucore", immucoreBinary, 0755)
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to write immucore")
 		return err
@@ -476,7 +486,7 @@ func GetInstallKairosBinaries(_ values.System, l types.KairosLogger) error {
 		}
 	}
 
-	err = os.WriteFile("/system/discovery/kcrypt-discovery-challenger", bundled.EmbeddedKcryptChallenger, 0755)
+	err = os.WriteFile("/system/discovery/kcrypt-discovery-challenger", kcryptChallengerBinary, 0755)
 
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to write kcrypt-discovery-challenger")
