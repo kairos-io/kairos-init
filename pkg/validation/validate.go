@@ -32,12 +32,11 @@ func (v *Validator) Validate() error {
 		"kairos-agent",
 		"sudo",
 		"less",
-		"kcrypt",
 		"kcrypt-discovery-challenger",
 	}
 
 	if config.DefaultConfig.Variant == "standard" {
-		binaries = append(binaries, "agent-provider-kairos", "kairos")
+		binaries = append(binaries, "agent-provider-kairos", "kairos", "edgevpn")
 		if config.DefaultConfig.KubernetesProvider == config.K3sProvider {
 			binaries = append(binaries, "k3s")
 		}
@@ -95,7 +94,6 @@ func (v *Validator) Validate() error {
 			"kairos-recovery",
 			"kairos-reset",
 			"kairos-webui",
-			"kairos",
 		}
 
 		if config.DefaultConfig.Variant == "standard" {
@@ -113,7 +111,6 @@ func (v *Validator) Validate() error {
 			} else {
 				v.Log.Logger.Info().Str("service", service).Msg("Found service")
 			}
-
 		}
 	}
 

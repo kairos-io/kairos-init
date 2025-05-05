@@ -1,0 +1,65 @@
+# Rootfs Kairos OEM configuration file
+#
+# This file is part of Kairos and will get reset during upgrades.
+#
+# Before you change this file manually,
+# consider copying this file to /usr/local/cloud-config or
+# copy the file with a prefix starting by 90, e.g. /oem/91_custom.yaml
+name: "Rootfs Layout Settings for UKI"
+stages:
+  rootfs:
+    - if: '[ -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
+      name: "Layout configuration for UKI boot"
+      environment_file: /run/cos/cos-layout.env
+      environment:
+        VOLUMES: "LABEL=COS_PERSISTENT:/usr/local"
+        RW_PATHS: "/var /etc /srv"
+        OVERLAY: "tmpfs:25%"
+        PERSISTENT_STATE_PATHS: >-
+          /etc/cni
+          /etc/iscsi
+          /etc/k0s
+          /etc/kubernetes
+          /etc/modprobe.d
+          /etc/rancher
+          /etc/runlevels
+          /etc/ssh
+          /etc/ssl/certs
+          /etc/sysconfig
+          /etc/systemd
+          /etc/zfs
+          /home
+          /opt
+          /root
+          /snap
+          /usr/libexec
+          /usr/share/pki/trust
+          /usr/share/pki/trust/anchors
+          /var/lib/ca-certificates
+          /var/lib/cni
+          /var/lib/containerd
+          /var/lib/dbus
+          /var/lib/etcd
+          /var/lib/extensions
+          /var/lib/k0s
+          /var/lib/kubelet
+          /var/lib/longhorn
+          /var/lib/rancher
+          /var/lib/snapd
+          /var/lib/wicked
+          /var/lib/kairos
+          /var/log
+          /var/snap
+    - if: '[ -e "/run/cos/uki_boot_mode" ] && ([ -e "/run/cos/recovery_mode" ] || [ -e "/run/cos/autoreset_mode" ])'
+      # omit the persistent partition on recovery mode/autoreset
+      name: "Layout configuration for recovery/autoreset mode on UKI"
+      environment_file: /run/cos/cos-layout.env
+      environment:
+        OVERLAY: "tmpfs:25%"
+    - if: '[ -e "/run/cos/uki_install_mode" ]'
+      # omit everything on installer, just set the ephemeral paths
+      name: "Layout configuration for UKI installer"
+      environment_file: /run/cos/cos-layout.env
+      environment:
+        RW_PATHS: "/var /etc /srv /home"
+        OVERLAY: "tmpfs:25%"

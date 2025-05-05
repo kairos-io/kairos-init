@@ -1,0 +1,74 @@
+name: "sysext"
+stages:
+  fs.after:
+    - name: "Default sysext extensions dirs"
+      if: '[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+      directories:
+        - path: /etc/extensions
+        - path: /run/extensions
+        - path: /var/lib/extensions
+        - path: /usr/lib/extensions
+        - path: /usr/local/lib/extensions
+  initramfs:
+    - name: "systemd-sysext uki config"
+      if: '[ -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
+      files:
+        - path: /etc/systemd/system/systemd-sysext.service.d/kairos-uki.conf
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            [Service]
+            # Make it timeout early to avoid blocking boot if keys are not in there to unlock sysext
+            TimeoutStartSec=10
+            # override exec and reload to set the image policy
+            ExecStart=
+            ExecStart=systemd-sysext refresh --image-policy="root=verity+signed+absent:usr=verity+signed+absent"
+            ExecReload=
+            ExecReload=systemd-sysext refresh --image-policy="root=verity+signed+absent:usr=verity+signed+absent"
+            # set the sysext hierarchies so we dont overwrite our mount at /usr/local
+            # set them very specifically instead of a generic /usr/local as systemd <= 255 mounts the overlay as RO
+            # and we dont want the full /usr/local to be RO as we store state in there
+            # on systemd 256 we can control if they are mutable or not
+            Environment="SYSTEMD_SYSEXT_HIERARCHIES=/usr/local/bin:/usr/local/sbin:/usr/local/include:/usr/local/lib:/usr/local/share:/usr/local/src:/usr/bin:/usr/share:/usr/lib:/usr/include:/usr/src:/usr/sbin"
+            [Unit]
+            # Make it timeout early to avoid blocking boot if keys are not in there to unlock sysext
+            JobRunningTimeoutSec=5
+    - name: "systemd-sysext config"
+      if: '[ ! -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
+      files:
+        - path: /etc/systemd/system/systemd-sysext.service.d/kairos.conf
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            [Service]
+            # Make it timeout early to avoid blocking boot if keys are not in there to unlock sysext
+            TimeoutStartSec=10
+            # override exec and reload to set the image policy
+            ExecStart=
+            ExecStart=systemd-sysext refresh --image-policy="root=verity+absent:usr=verity+absent"
+            ExecReload=
+            ExecReload=systemd-sysext refresh --image-policy="root=verity+absent:usr=verity+absent"
+            # set the sysext hierarchies so we dont overwrite our mount at /usr/local
+            # set them very specifically instead of a generic /usr/local as systemd <= 255 mounts the overlay as RO
+            # and we dont want the full /usr/local to be RO as we store state in there
+            # on systemd 256 we can control if they are mutable or not
+            Environment="SYSTEMD_SYSEXT_HIERARCHIES=/usr/local/bin:/usr/local/sbin:/usr/local/include:/usr/local/lib:/usr/local/share:/usr/local/src:/usr/bin:/usr/share:/usr/lib:/usr/include:/usr/src:/usr/sbin"
+            [Unit]
+            # Make it timeout early to avoid blocking boot if keys are not in there to unlock sysext
+            JobRunningTimeoutSec=5
+    - name: "systemd-sysext set hierarchy system-wide"
+      if: '[ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
+      files:
+        - path: /etc/profile.d/systemd-sysext.sh
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            export SYSTEMD_SYSEXT_HIERARCHIES="/usr/local/bin:/usr/local/sbin:/usr/local/include:/usr/local/lib:/usr/local/share:/usr/local/src:/usr/bin:/usr/share:/usr/lib:/usr/include:/usr/src:/usr/sbin"
+    - name: "systemd-sysext initramfs settings"
+      if: '[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+      systemctl:
+        enable:
+          - systemd-sysext

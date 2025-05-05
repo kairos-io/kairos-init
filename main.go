@@ -138,7 +138,6 @@ func init() {
 	rootCmd.Flags().StringVar(&config.DefaultConfig.KubernetesVersion, "k8sversion", "latest", "Kubernetes version for provider")
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Registry, "registry", "r", "", "registry and org where the image is gonna be pushed (e.g. quay.io/kairos). This is mainly used on upgrades to search for available images to upgrade to")
 	rootCmd.Flags().StringVarP(&trusted, "trusted", "t", "false", "init the system for Trusted Boot, changes bootloader to systemd")
-	rootCmd.Flags().StringVarP(&config.DefaultConfig.FrameworkVersion, "framework", "f", values.GetFrameworkVersion(), "set the framework version to use")
 	rootCmd.Flags().BoolVar(&validate, "validate", false, "validate the running os to see if it all the pieces are in place")
 	rootCmd.Flags().BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips framework. For FIPS 140-2 compliance images")
 	rootCmd.Flags().StringVar(&version, "version", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")

@@ -2,9 +2,12 @@ package stages
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 
+	"github.com/kairos-io/kairos-init/pkg/bundled"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types"
@@ -91,43 +94,47 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 	return stage, nil
 }
 
-// GetInstallFrameworkStage This returns the Stage to install the framework image
-// It uses the framework version from the config, defaulting to the latest found in the versions.go file
-// If we enable fips, we append -fips to the framework version
-func GetInstallFrameworkStage(_ values.System, _ types.KairosLogger) []schema.Stage {
-	framework := config.DefaultConfig.FrameworkVersion
-	if config.DefaultConfig.Fips {
-		framework = fmt.Sprintf("%s-fips", framework)
-	}
-	return []schema.Stage{
-		{
-			Name: "Create kairos directory",
-			If:   "test -d /etc/kairos",
-			Directories: []schema.Directory{
-				{
-					Path:        "/etc/kairos",
-					Permissions: 0755,
-				},
-			},
-		},
-		{
-			Name: "Install framework",
-			UnpackImages: []schema.UnpackImageConf{
-				{
-					Source: fmt.Sprintf("quay.io/kairos/framework:%s", framework),
-					Target: "/",
-				},
-			},
-		},
-	}
-}
-
 // GetInstallProviderAndKubernetes will install the provider and kubernetes packages
-func GetInstallProviderAndKubernetes(sis values.System, _ types.KairosLogger) []schema.Stage {
+func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []schema.Stage {
 	var data []schema.Stage
 
 	// If its core we dont do anything here
 	if config.DefaultConfig.Variant.String() == "core" {
+		return data
+	}
+	err := os.MkdirAll("/system/providers", os.ModeDir|os.ModePerm)
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to create directory")
+		return data
+	}
+	// write the embedded binaries to the system
+	agentProvider := bundled.EmbeddedKairosProvider
+	if config.DefaultConfig.Fips {
+		agentProvider = bundled.EmbeddedKairosProviderFips
+	}
+	err = os.WriteFile("/system/providers/agent-provider-kairos", agentProvider, 0755)
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write agent-provider-kairos")
+		return data
+	}
+
+	// Link /system/providers/agent-provider-kairos to /usr/bin/kairos, not sure what uses it?
+	// TODO: Check if this is needed, maybe we can remove it?
+	err = os.Symlink("/system/providers/agent-provider-kairos", "/usr/bin/kairos")
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to create symlink")
+		return data
+	}
+
+	err = os.WriteFile("/usr/bin/edgevpn", bundled.EmbeddedEdgeVPN, 0755)
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write edgevpn")
+		return data
+	}
+
+	err = os.WriteFile("/usr/bin/kube-vip", bundled.EmbeddedKubeVIP, 0755)
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write edgevpn")
 		return data
 	}
 
@@ -166,171 +173,422 @@ func GetInstallProviderAndKubernetes(sis values.System, _ types.KairosLogger) []
 					"mv /usr/local/bin/k0s /usr/bin/k0s",
 				},
 			},
-			{
-				Name: "Create k0s services for systemd",
-				If:   `[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]`,
-				Files: []schema.File{
-					{
-						Path:        "/etc/systemd/system/k0scontroller.service",
-						Permissions: 0644,
-						Owner:       0,
-						Group:       0,
-						Content: `[Unit]
-Description=k0s - Zero Friction Kubernetes
-Documentation=https://docs.k0sproject.io
-ConditionFileIsExecutable=/usr/bin/k0s
-
-After=network-online.target 
-Wants=network-online.target 
-
-[Service]
-StartLimitInterval=5
-StartLimitBurst=10
-ExecStart=/usr/bin/k0s controller
-
-RestartSec=10
-Delegate=yes
-KillMode=process
-LimitCORE=infinity
-TasksMax=infinity
-TimeoutStartSec=0
-LimitNOFILE=999999
-Restart=always
-
-[Install]
-WantedBy=multi-user.target`,
-					},
-					{
-						Path:        "/etc/systemd/system/k0sworker.service",
-						Permissions: 0644,
-						Owner:       0,
-						Group:       0,
-						Content: `[Unit]
-Description=k0s - Zero Friction Kubernetes
-Documentation=https://docs.k0sproject.io
-ConditionFileIsExecutable=/usr/bin/k0s
-
-After=network-online.target 
-Wants=network-online.target 
-
-[Service]
-StartLimitInterval=5
-StartLimitBurst=10
-ExecStart=/usr/bin/k0s worker
-
-RestartSec=10
-Delegate=yes
-KillMode=process
-LimitCORE=infinity
-TasksMax=infinity
-TimeoutStartSec=0
-LimitNOFILE=999999
-Restart=always
-
-[Install]
-WantedBy=multi-user.target`,
-					},
-				},
-			},
-			{
-				Name: "Create k0s services for openrc",
-				If:   `[ -f "/sbin/openrc" ]`,
-				Files: []schema.File{
-					{
-						Path:        "/etc/init.d/k0scontroller",
-						Permissions: 0755,
-						Owner:       0,
-						Group:       0,
-						Content: `#!/sbin/openrc-run
-supervisor=supervise-daemon
-description="k0s - Zero Friction Kubernetes"
-command=/usr/bin/k0s
-command_args="'controller' "
-name=$(basename $(readlink -f $command))
-supervise_daemon_args="--stdout /var/log/${name}.log --stderr /var/log/${name}.err"
-
-: "${rc_ulimit=-n 1048576 -u unlimited}"
-depend() { 
-	need cgroups 
-	need net 
-	use dns 
-	after firewall
-}`,
-					},
-					{
-						Path:        "/etc/init.d/k0sworker",
-						Permissions: 0755,
-						Owner:       0,
-						Group:       0,
-						Content: `#!/sbin/openrc-run
-supervisor=supervise-daemon
-description="k0s - Zero Friction Kubernetes"
-command=/usr/bin/k0s
-command_args="'worker' "
-name=$(basename $(readlink -f $command))
-supervise_daemon_args="--stdout /var/log/${name}.log --stderr /var/log/${name}.err"
-
-: "${rc_ulimit=-n 1048576 -u unlimited}"
-depend() { 
-	need cgroups 
-	need net 
-	use dns 
-	after firewall
-}`,
-					},
-				},
-			},
 		}...)
+
+		if sis.Family.String() == "alpine" {
+			// Add openrc services
+			data = append(data, []schema.Stage{
+				{
+					Name: "Create k0s services for openrc",
+					Files: []schema.File{
+						{
+							Path:        "/etc/init.d/k0scontroller",
+							Permissions: 0755,
+							Owner:       0,
+							Group:       0,
+							Content:     bundled.K0sControllerOpenrc,
+						},
+						{
+							Path:        "/etc/init.d/k0sworker",
+							Permissions: 0755,
+							Owner:       0,
+							Group:       0,
+							Content:     bundled.K0sWorkerOpenrc,
+						},
+					},
+				},
+			}...)
+		} else {
+			// Add systemd services
+			data = append(data, []schema.Stage{
+				{
+					Name: "Create k0s services for systemd",
+					Files: []schema.File{
+						{
+							Path:        "/etc/systemd/system/k0scontroller.service",
+							Permissions: 0644,
+							Owner:       0,
+							Group:       0,
+							Content:     bundled.K0sControllerSystemd,
+						},
+						{
+							Path:        "/etc/systemd/system/k0sworker.service",
+							Permissions: 0644,
+							Owner:       0,
+							Group:       0,
+							Content:     bundled.K0sWorkerSystemd,
+						},
+					},
+				},
+			}...)
+		}
+	}
+	return data
+}
+
+// GetInstallOemCloudConfigs dumps the OEM files to the system from the embedded oem files
+// TODO: Make them first class yip files in code and just dump them into the system?
+// That way they can be set as a normal yip stage maybe? a yip stage that dumps the yip stage lol
+func GetInstallOemCloudConfigs(l types.KairosLogger) error {
+	files, err := bundled.EmbeddedConfigs.ReadDir("cloudconfigs")
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to read embedded files")
+		return err
 	}
 
-	// Install provider + k8s utils
+	// Extract each file
+	for _, file := range files {
+		if !file.IsDir() {
+			data, err := bundled.EmbeddedConfigs.ReadFile(filepath.Join("cloudconfigs", file.Name()))
+			if err != nil {
+				l.Logger.Error().Err(err).Str("file", file.Name()).Msg("Failed to read embedded file")
+				continue
+			}
+
+			// check if /system/oem exists and create it if not
+			if _, err = os.Stat("/system/oem"); os.IsNotExist(err) {
+				err = os.MkdirAll("/system/oem", 0755)
+				if err != nil {
+					l.Logger.Error().Err(err).Str("dir", "/system/oem").Msg("Failed to create directory")
+					continue
+				}
+			}
+			outputPath := filepath.Join("/system/oem/", file.Name())
+			err = os.WriteFile(outputPath, data, 0644)
+			if err != nil {
+				fmt.Printf("Failed to write file %s: %v\n", outputPath, err)
+				continue
+			}
+
+			l.Logger.Debug().Str("file", outputPath).Msg("Wrote cloud config")
+		}
+	}
+	return nil
+}
+
+// GetInstallBrandingStage returns the branding stage
+// This stage takes care of creating the default branding files that are used by the system
+// Thinks like interactive install or recoivery welcome text or grubmenu configs
+func GetInstallBrandingStage(_ values.System, _ types.KairosLogger) []schema.Stage {
+	var data []schema.Stage
+
 	data = append(data, []schema.Stage{
 		{
-			Name: "Install Provider packages",
-			UnpackImages: []schema.UnpackImageConf{
+			Name: "Create branding files",
+			Files: []schema.File{
 				{
-					Source: values.GetProviderPackage(sis.Arch.String()),
-					Target: "/",
+					Path:        "/etc/kairos/branding/grubmenu.cfg",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.ExtraGrubCfg,
+				},
+				{
+					Path:        "/etc/kairos/branding/interactive_install_text",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.InteractiveText,
+				},
+				{
+					Path:        "/etc/kairos/branding/recovery_text",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.RecoveryText,
+				},
+				{
+					Path:        "/etc/kairos/branding/reset_text",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.ResetText,
+				},
+				{
+					Path:        "/etc/kairos/branding/install_text",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.InstallText,
 				},
 			},
 		},
+	}...)
+	return data
+}
+
+// GetInstallGrubBootArgsStage returns the stage to write the grub configs
+// This stage takes create of creating the /etc/cos/bootargs.cfg and /etc/cos/grub.cfg
+func GetInstallGrubBootArgsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
+	var data []schema.Stage
+	// On trusted boot this is useless
+	if config.DefaultConfig.TrustedBoot {
+		return data
+	}
+
+	data = append(data, []schema.Stage{
 		{
-			Name: "Install Edgevpn packages",
-			UnpackImages: []schema.UnpackImageConf{
+			Name: "Install grub configs",
+			Files: []schema.File{
 				{
-					Source: values.GetEdgeVPNPackage(sis.Arch.String()),
-					Target: "/",
+					Path:        "/etc/cos/grub.cfg",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.GrubCfg,
 				},
-			},
-		},
-		{
-			Name: "Install K9s packages",
-			UnpackImages: []schema.UnpackImageConf{
 				{
-					Source: values.GetK9sPackage(sis.Arch.String()),
-					Target: "/",
-				},
-			},
-		},
-		{
-			Name: "Install Nerdctl packages",
-			UnpackImages: []schema.UnpackImageConf{
-				{
-					Source: values.GetNerdctlPackage(sis.Arch.String()),
-					Target: "/",
-				},
-			},
-		},
-		{
-			Name: "Install Kube-vip packages",
-			UnpackImages: []schema.UnpackImageConf{
-				{
-					Source: values.GetKubeVipPackage(sis.Arch.String()),
-					Target: "/",
+					Path:        "/etc/cos/bootargs.cfg",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.BootArgsCfg,
 				},
 			},
 		},
 	}...)
 
 	return data
+}
+
+// GetInstallServicesStage returns the stage to create the services
+// This installs some services that for some reason are not created by the configs
+// TODO: Ideally this should be moved to be created on boot with cc instead of install
+func GetInstallServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
+	var data []schema.Stage
+
+	data = append(data, []schema.Stage{
+		{
+			Name: "Create kairos services",
+			If:   "[ ! -f \"/sbin/openrc\" ]",
+			Files: []schema.File{
+				{
+					Path:        "/etc/systemd/system/kairos-agent.service",
+					Permissions: 0755,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.KairosAgentService,
+				},
+				{
+					Path:        "/etc/systemd/system/kairos-recovery.service",
+					Permissions: 0755,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.KairosRecoveryService,
+				},
+				{
+					Path:        "/etc/systemd/system/kairos-reset.service",
+					Permissions: 0755,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.KairosResetService,
+				},
+				{
+					Path:        "/etc/systemd/system/kairos-webui.service",
+					Permissions: 0755,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.KairosWebUIService,
+				},
+				{
+					Path:        "/etc/systemd/system/kairos.service",
+					Permissions: 0755,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.KairosInstallerService,
+				},
+				{
+					Path:        "/etc/systemd/system/kairos-interactive.service",
+					Permissions: 0755,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.KairosInteractiveService,
+				},
+			},
+			Systemctl: schema.Systemctl{
+				Mask: []string{
+					"systemd-firstboot.service",
+				},
+				Overrides: []schema.SystemctlOverride{
+					{
+						Service: "systemd-networkd-wait-online",
+						Content: bundled.SystemdNetworkOnlineWaitOverride,
+					},
+				},
+			},
+		},
+	}...)
+
+	return data
+}
+
+// GetInstallKairosBinaries directly installs the kairos binaries from bundled binaries
+func GetInstallKairosBinaries(_ values.System, l types.KairosLogger) error {
+	// TODO: If versions are provided, download and install those instead? i.e. Allow online install versions?
+
+	// write the embedded binaries to the system
+	agentBinary := bundled.EmbeddedAgent
+	immucoreBinary := bundled.EmbeddedImmucore
+	kcryptChallengerBinary := bundled.EmbeddedKcryptChallenger
+
+	if config.DefaultConfig.Fips {
+		agentBinary = bundled.EmbeddedAgentFips
+		immucoreBinary = bundled.EmbeddedImmucoreFips
+		kcryptChallengerBinary = bundled.EmbeddedKcryptChallengerFips
+	}
+
+	err := os.WriteFile("/usr/bin/kairos-agent", agentBinary, 0755)
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write kairos-agent")
+		return err
+	}
+
+	err = os.WriteFile("/usr/bin/immucore", immucoreBinary, 0755)
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write immucore")
+		return err
+	}
+
+	// Check if dir exists and create it if not
+	if _, err = os.Stat("/system/discovery/"); os.IsNotExist(err) {
+		err = os.MkdirAll("/system/discovery/", 0755)
+		if err != nil {
+			l.Logger.Error().Err(err).Msg("Failed to create directory")
+			return err
+		}
+	}
+
+	err = os.WriteFile("/system/discovery/kcrypt-discovery-challenger", kcryptChallengerBinary, 0755)
+
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write kcrypt-discovery-challenger")
+		return err
+	}
+
+	return nil
+}
+
+// InstallKairosMiscellaneousFilesStage installs the kairos miscellaneous files
+// Like small scripts or other files that are not part of the main install process
+func InstallKairosMiscellaneousFilesStage(sis values.System, l types.KairosLogger) ([]schema.Stage, error) {
+	var data []schema.Stage
+
+	data = append(data, []schema.Stage{
+		{
+			Name: "Create kairos welcome message",
+			Files: []schema.File{
+				{
+					Path:        "/etc/issue.d/01-KAIROS",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.Issue,
+				},
+				{
+					Path:        "/etc/motd",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.MOTD,
+				},
+			},
+		},
+		{
+			Name: "Install suc-upgrade script",
+			Files: []schema.File{
+				{
+					Path:        "/usr/sbin/suc-upgrade",
+					Permissions: 0755,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.SucUpgrade,
+				},
+			},
+		},
+		{
+			Name: "Install logrotate config",
+			Files: []schema.File{
+				{
+					Path:        "/etc/logrotate.d/kairos",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.LogRotateConfig,
+				},
+			},
+		},
+	}...)
+
+	if sis.Family.String() == "alpine" {
+		immucoreFiles, err := bundled.EmbeddedAlpineInit.ReadFile("alpineInit/immucore.files")
+		if err != nil {
+			l.Logger.Error().Err(err).Str("file", "immucore.files").Msg("Failed to read embedded file")
+			return nil, err
+		}
+		initramfsInit, err := bundled.EmbeddedAlpineInit.ReadFile("alpineInit/initramfs-init")
+		if err != nil {
+			l.Logger.Error().Err(err).Str("file", "initramfs-init").Msg("Failed to read embedded file")
+			return nil, err
+		}
+		mkinitfsConf, err := bundled.EmbeddedAlpineInit.ReadFile("alpineInit/mkinitfs.conf")
+		if err != nil {
+			l.Logger.Error().Err(err).Str("file", "mkinitfs.conf").Msg("Failed to read embedded file")
+			return nil, err
+		}
+		tpmModules, err := bundled.EmbeddedAlpineInit.ReadFile("alpineInit/tpm.modules")
+		if err != nil {
+			l.Logger.Error().Err(err).Str("file", "tpm.modules").Msg("Failed to read embedded file")
+			return nil, err
+		}
+
+		data = append(data, []schema.Stage{
+			{
+				Name: "Install reconcile script",
+				Files: []schema.File{
+					{
+						Path:        "/usr/sbin/cos-setup-reconcile",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.ReconcileScript,
+					},
+				},
+			},
+			{
+				Name: "Install Alpine initrd scripts",
+				Files: []schema.File{
+					{
+						Path:        "/etc/mkinitfs/features.d/immucore.files",
+						Permissions: 0644,
+						Owner:       0,
+						Group:       0,
+						Content:     string(immucoreFiles),
+					},
+					{
+						Path:        "/etc/mkinitfs/features.d/tpm.modules",
+						Permissions: 0644,
+						Owner:       0,
+						Group:       0,
+						Content:     string(tpmModules),
+					},
+					{
+						Path:        "/etc/mkinitfs/mkinitfs.conf",
+						Permissions: 0644,
+						Owner:       0,
+						Group:       0,
+						Content:     string(mkinitfsConf),
+					},
+					{
+						Path:        "/usr/share/mkinitfs/initramfs-init",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     string(initramfsInit),
+					},
+				},
+			},
+		}...)
+	}
+
+	return data, nil
 }

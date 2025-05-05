@@ -11,7 +11,6 @@ type Config struct {
 	Level              string
 	Stage              string
 	Model              string
-	FrameworkVersion   string
 	Variant            Variant
 	Registry           string
 	TrustedBoot        bool
