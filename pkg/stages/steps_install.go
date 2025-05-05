@@ -72,7 +72,16 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 	}
 
 	// TODO(rhel): Add zfs packages? Currently we add the repos to alma+rocky but we don't install the packages so?
-	return []schema.Stage{
+	stage := []schema.Stage{
+		{
+			Name:     "Install epel-release",
+			OnlyIfOs: "CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*",
+			Packages: schema.Packages{
+				Install: []string{
+					"epel-release",
+				},
+			},
+		},
 		{
 			Name: "Install base packages",
 			Packages: schema.Packages{
@@ -81,7 +90,8 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 				Upgrade: true,
 			},
 		},
-	}, nil
+	}
+	return stage, nil
 }
 
 // GetInstallProviderAndKubernetes will install the provider and kubernetes packages
