@@ -13,7 +13,7 @@ var (
 	// The packages below get auto updated by renovate on github
 	// We built those under github.com/kairos/packages
 	// renovate: datasource=docker depName=quay.io/kairos/framework
-	frameWorkVersion = "v2.21.0"
+	frameWorkVersion = "v2.22.0"
 	// renovate: datasource=docker
 	edgeVpnPackage = "quay.io/kairos/packages:edgevpn-utils-0.30.2"
 	// renovate: datasource=docker
@@ -21,7 +21,7 @@ var (
 	// renovate: datasource=docker
 	nerdctlPackage = "quay.io/kairos/packages:nerdctl-utils-2.0.4"
 	// renovate: datasource=docker
-	kubeVipPackage = "quay.io/kairos/packages:kube-vip-utils-0.9.0"
+	kubeVipPackage = "quay.io/kairos/packages:kube-vip-utils-0.9.1"
 )
 
 func GetFrameworkVersion() string {
