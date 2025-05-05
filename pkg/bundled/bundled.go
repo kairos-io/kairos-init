@@ -31,25 +31,32 @@ var EmbeddedAlpineInit embed.FS
 const SucUpgrade = `#!/bin/bash
 set -x -e
 HOST_DIR="${HOST_DIR:-/host}"
-SUC_VERSION="1.0.0"
+SUC_VERSION="0.0.0"
 
 echo "SUC_VERSION: $SUC_VERSION"
 
+get_version() {
+    local file_path="$1"
+    # shellcheck disable=SC1090
+    source "$file_path"
+
+    echo "${KAIROS_VERSION}-${KAIROS_SOFTWARE_VERSION_PREFIX}${KAIROS_SOFTWARE_VERSION}"
+}
+
 if [ "$FORCE" != "true" ]; then
     if [ -f "/etc/kairos-release" ]; then
-      # shellcheck disable=SC1091
-      UPDATE_VERSION=$(source /etc/kairos-release && echo "${KAIROS_VERSION}")
+      UPDATE_VERSION=$(get_version "/etc/kairos-release")
     else
       # shellcheck disable=SC1091
-      UPDATE_VERSION=$(source /etc/os-release && echo "${KAIROS_VERSION}")
+      UPDATE_VERSION=$(get_version "/etc/os-release" )
     fi
 
     if [ -f "${HOST_DIR}/etc/kairos-release" ]; then
       # shellcheck disable=SC1091
-      CURRENT_VERSION=$(source "${HOST_DIR}"/etc/kairos-release && echo "${KAIROS_VERSION}")
+      CURRENT_VERSION=$(get_version "${HOST_DIR}/etc/kairos-release" )
     else
       # shellcheck disable=SC1091
-      CURRENT_VERSION=$(source "${HOST_DIR}"/etc/os-release && echo "${KAIROS_VERSION}")
+      CURRENT_VERSION=$(get_version "${HOST_DIR}/etc/os-release" )
     fi
 
     if [ "$CURRENT_VERSION" == "$UPDATE_VERSION" ]; then
