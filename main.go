@@ -137,9 +137,9 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Registry, "registry", "r", "", "registry and org where the image is gonna be pushed (e.g. quay.io/kairos). This is mainly used on upgrades to search for available images to upgrade to")
 	rootCmd.Flags().StringVarP(&trusted, "trusted", "t", "false", "init the system for Trusted Boot, changes bootloader to systemd")
 	rootCmd.Flags().BoolVar(&validate, "validate", false, "validate the running os to see if it all the pieces are in place")
-	rootCmd.Flags().BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips framework. For FIPS 140-2 compliance images")
+	rootCmd.Flags().BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips kairos binary versions. For FIPS 140-2 compliance images")
 	rootCmd.Flags().StringVarP(&version, "version", "v", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
-	rootCmd.Flags().BoolVar(&config.DefaultConfig.Extensions, "stage-extensions", false, "enable stage extensions mode")
+	rootCmd.Flags().BoolVarP(&config.DefaultConfig.Extensions, "stage-extensions", "x", false, "enable stage extensions mode")
 
 	// Mark required flags
 	rootCmd.MarkFlagRequired("version")
