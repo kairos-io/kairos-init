@@ -397,6 +397,7 @@ var BasePackages = PackageMap{
 				"qemu-guest-agent",
 				"systemd", // Basic tool.
 				"systemd-resolved",
+				"systemd-networkd",
 				"which",      // Basic tool. Basepackages?
 				"cryptsetup", // For encrypted partitions support, needed for trusted boot and dracut building
 			},
