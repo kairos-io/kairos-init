@@ -77,6 +77,18 @@
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
       "lookupNameTemplate": "mudler/edgevpn"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^Makefile$"
+      ],
+      "matchStrings": [
+        "KUBE_VIP_VERSION\\s*:=\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "lookupNameTemplate": "kube-vip/kube-vip"
     }
   ]
 }
