@@ -19,7 +19,6 @@ import (
 var (
 	trusted    string
 	validate   bool
-	variant    string
 	ksProvider string
 	version    string
 )
@@ -59,20 +58,20 @@ var rootCmd = &cobra.Command{
 			config.DefaultConfig.TrustedBoot = true
 		}
 
-		// Try to load the variant
-		err := config.DefaultConfig.Variant.FromString(variant)
-		if err != nil {
-			return fmt.Errorf("error loading variant: %w", err)
-		}
-
-		// Try to load the kubernetes provider
-		err = config.DefaultConfig.KubernetesProvider.FromString(ksProvider)
-		if err != nil {
-			return fmt.Errorf("error loading kubernetes provider: %w", err)
-		}
-
-		if config.DefaultConfig.KubernetesVersion == "latest" {
-			config.DefaultConfig.KubernetesVersion = ""
+		if ksProvider != "" {
+			// Try to load the kubernetes provider
+			err := config.DefaultConfig.KubernetesProvider.FromString(ksProvider)
+			if err != nil {
+				return fmt.Errorf("error loading kubernetes provider: %w", err)
+			}
+			if config.DefaultConfig.KubernetesVersion == "latest" {
+				// Set the kubernetes version to empty if latest is set so the latest is used
+				config.DefaultConfig.KubernetesVersion = ""
+			}
+			config.DefaultConfig.Variant = config.StandardVariant
+		} else {
+			// If no provider is set, set the variant to core
+			config.DefaultConfig.Variant = config.CoreVariant
 		}
 
 		logger := types.NewKairosLogger("kairos-init", config.DefaultConfig.Level, false)
@@ -133,14 +132,13 @@ func init() {
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Level, "level", "l", "info", "set the log level")
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Stage, "stage", "s", "all", "set the stage to run")
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Model, "model", "m", "generic", "model to build for, like generic or rpi4")
-	rootCmd.Flags().StringVarP(&variant, "variant", "v", config.CoreVariant.String(), "variant to build (core or standard for k3s flavor)")
-	rootCmd.Flags().StringVarP(&ksProvider, "kubernetes-provider", "k", string(config.K3sProvider), "Kubernetes provider")
+	rootCmd.Flags().StringVarP(&ksProvider, "kubernetes-provider", "k", "", "Kubernetes provider")
 	rootCmd.Flags().StringVar(&config.DefaultConfig.KubernetesVersion, "k8sversion", "latest", "Kubernetes version for provider")
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Registry, "registry", "r", "", "registry and org where the image is gonna be pushed (e.g. quay.io/kairos). This is mainly used on upgrades to search for available images to upgrade to")
 	rootCmd.Flags().StringVarP(&trusted, "trusted", "t", "false", "init the system for Trusted Boot, changes bootloader to systemd")
 	rootCmd.Flags().BoolVar(&validate, "validate", false, "validate the running os to see if it all the pieces are in place")
 	rootCmd.Flags().BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips framework. For FIPS 140-2 compliance images")
-	rootCmd.Flags().StringVar(&version, "version", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
+	rootCmd.Flags().StringVarP(&version, "version", "v", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
 	rootCmd.Flags().BoolVar(&config.DefaultConfig.Extensions, "stage-extensions", false, "enable stage extensions mode")
 
 	// Mark required flags
