@@ -28,7 +28,7 @@
       ],
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
-      "lookupNameTemplate": "kairos-io/kairos-agent"
+      "packageNameTemplate": "kairos-io/kairos-agent"
     },
     {
       "customType": "regex",
@@ -40,7 +40,7 @@
       ],
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
-      "lookupNameTemplate": "kairos-io/immucore"
+      "packageNameTemplate": "kairos-io/immucore"
     },
     {
       "customType": "regex",
@@ -52,7 +52,7 @@
       ],
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
-      "lookupNameTemplate": "kairos-io/kcrypt-challenger"
+      "packageNameTemplate": "kairos-io/kcrypt-challenger"
     },
     {
       "customType": "regex",
@@ -64,7 +64,7 @@
       ],
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
-      "lookupNameTemplate": "kairos-io/provider-kairos"
+      "packageNameTemplate": "kairos-io/provider-kairos"
     },
     {
       "customType": "regex",
@@ -76,7 +76,7 @@
       ],
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
-      "lookupNameTemplate": "mudler/edgevpn"
+      "packageNameTemplate": "mudler/edgevpn"
     },
     {
       "customType": "regex",
@@ -88,7 +88,7 @@
       ],
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
-      "lookupNameTemplate": "kube-vip/kube-vip"
+      "packageNameTemplate": "kube-vip/kube-vip"
     }
   ]
 }
