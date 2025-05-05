@@ -126,6 +126,12 @@ func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []
 		return data
 	}
 
+	err = os.WriteFile("/usr/bin/edgevpn", bundled.EmbeddedEdgeVPN, 0755)
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to write edgevpn")
+		return data
+	}
+
 	switch config.DefaultConfig.KubernetesProvider {
 	case config.K3sProvider:
 		cmd := "INSTALL_K3S_BIN_DIR=/usr/bin INSTALL_K3S_SKIP_ENABLE=true INSTALL_K3S_SKIP_SELINUX_RPM=true"
@@ -213,15 +219,6 @@ func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []
 	}
 	// Install provider + k8s utils
 	data = append(data, []schema.Stage{
-		{
-			Name: "Install Edgevpn packages",
-			UnpackImages: []schema.UnpackImageConf{
-				{
-					Source: values.GetEdgeVPNPackage(sis.Arch.String()),
-					Target: "/",
-				},
-			},
-		},
 		{
 			Name: "Install K9s packages",
 			UnpackImages: []schema.UnpackImageConf{

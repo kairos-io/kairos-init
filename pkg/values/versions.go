@@ -13,8 +13,6 @@ var (
 	// The packages below get auto updated by renovate on github
 	// We built those under github.com/kairos/packages
 	// renovate: datasource=docker
-	edgeVpnPackage = "quay.io/kairos/packages:edgevpn-utils-0.30.2"
-	// renovate: datasource=docker
 	k9sPackage = "quay.io/kairos/packages:k9s-utils-0.50.4"
 	// renovate: datasource=docker
 	nerdctlPackage = "quay.io/kairos/packages:nerdctl-utils-2.0.4"
@@ -35,10 +33,6 @@ func setProperRepo(arch string, url string) string {
 		}
 	}
 	return data
-}
-
-func GetEdgeVPNPackage(arch string) string {
-	return setProperRepo(arch, edgeVpnPackage)
 }
 
 func GetK9sPackage(arch string) string {

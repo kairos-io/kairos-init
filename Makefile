@@ -3,6 +3,7 @@ AGENT_VERSION := v2.20.3
 IMMUCORE_VERSION := v0.9.4
 KCRYPT_CHALLENGER_VERSION := v0.11.1
 AGENT_PROVIDER_VERSION := v2.11.0
+EDGEVPN_VERSION := v0.30.1
 ARCH := $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
 BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger kairos-cli
 OUTPUT_DIR := pkg/bundled/binaries
@@ -43,6 +44,11 @@ $(OUTPUT_DIR):
 
 # Download all binaries (standard and FIPS)
 download: $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES)) $(addprefix $(OUTPUT_DIR_FIPS)/, $(addsuffix -fips, $(BINARY_NAMES)))
+	@# Download edgevpn by itself
+	@echo "Downloading and extracting edgevpn for architecture $(ARCH)..."
+	@mkdir -p $(OUTPUT_DIR)
+	@# Unfortunately edgevpn uses x86_64 instead of amd64 so we need to do some string manipulation here
+	@curl -L -s https://github.com/mudler/edgevpn/releases/download/$(EDGEVPN_VERSION)/edgevpn-$(EDGEVPN_VERSION)-Linux-$(shell uname -m | sed -e 's/aarch64/arm64/').tar.gz | tar -xz -C $(OUTPUT_DIR)
 
 # Download each binary
 $(OUTPUT_DIR)/%:
@@ -60,7 +66,7 @@ $(OUTPUT_DIR_FIPS)/%-fips:
 compress:
 	@if [ -z "$(SKIP_UPX)" ]; then \
 		echo "Running upx compress..."; \
-		upx -q -5 $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES)); \
+		upx -q -5 $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn); \
 		upx -q -5 $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); \
 	else \
 		echo "Skipping upx compression as SKIP_UPX is set"; \
