@@ -121,13 +121,18 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 			}...)
 		}
 
+		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s", kernel)
+		if config.DefaultConfig.Level == "debug" {
+			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel)
+		}
+
 		stage = append(stage, []schema.Stage{
 			{
 				Name:     "Create new initrd",
 				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
 				Commands: []string{
 					fmt.Sprintf("depmod -a %s", kernel),
-					fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel),
+					dracutCmd,
 				},
 			},
 			{
