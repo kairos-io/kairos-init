@@ -4,7 +4,6 @@ IMMUCORE_VERSION := v0.10.0
 KCRYPT_CHALLENGER_VERSION := v0.11.2
 AGENT_PROVIDER_VERSION := v2.12.0
 EDGEVPN_VERSION := v0.30.2
-KUBE_VIP_VERSION := v0.9.1
 ARCH := $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
 BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger kairos-cli
 OUTPUT_DIR := pkg/bundled/binaries
@@ -27,7 +26,7 @@ kairos-cli-fips_URL := $(call URL_TEMPLATE,provider-kairos,$(AGENT_PROVIDER_VERS
 
 .PHONY: all prepare download compress cleanup
 
-all: prepare download kube-vip compress cleanup
+all: prepare download compress cleanup
 
 # Clean the output directory
 prepare:
@@ -64,25 +63,11 @@ $(OUTPUT_DIR_FIPS)/%-fips:
 	@curl -L -s $($*-fips_URL) | tar -xz -C $(OUTPUT_DIR_FIPS)
 
 
-# Target to build kube-vip from source
-kube-vip: $(OUTPUT_DIR)/kube-vip
-
-$(OUTPUT_DIR)/kube-vip:
-	@echo "Downloading kube-vip source for version $(KUBE_VIP_VERSION)..."
-	@mkdir -p /tmp/kube-vip-build
-	@curl -L -s https://github.com/kube-vip/kube-vip/archive/refs/tags/$(KUBE_VIP_VERSION).tar.gz | tar -xz -C /tmp/kube-vip-build --strip-components=1
-	@echo "Building kube-vip binary..."
-	@cd /tmp/kube-vip-build && CGO_ENABLED=0 GOOS=linux GOARCH=$(ARCH) go build -ldflags="-s -w" -o kube-vip .
-	@mv /tmp/kube-vip-build/kube-vip $(OUTPUT_DIR)/
-	@echo "Cleaning up temporary files..."
-	@rm -rf /tmp/kube-vip-build
-	@echo "kube-vip binary built and moved to $(OUTPUT_DIR)"
-
 # Run upx to compress binaries unless SKIP_UPX is set
 compress:
 	@if [ -z "$(SKIP_UPX)" ]; then \
 		echo "Running upx compress..."; \
-		upx -q -5 $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn kube-vip); \
+		upx -q -5 $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn ); \
 		upx -q -5 $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); \
 	else \
 		echo "Skipping upx compression as SKIP_UPX is set"; \
