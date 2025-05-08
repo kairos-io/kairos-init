@@ -139,10 +139,12 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips kairos binary versions. For FIPS 140-2 compliance images")
 	rootCmd.Flags().StringVarP(&version, "version", "v", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
 	rootCmd.Flags().BoolVarP(&config.DefaultConfig.Extensions, "stage-extensions", "x", false, "enable stage extensions mode")
+	rootCmd.Flags().BoolVar(&config.DefaultConfig.SkipInstallPackages, "skip-packages-install", false, "Skip the install of packages. This assumes that the needed packages are already installed in the base image.")
+	rootCmd.Flags().BoolVar(&config.DefaultConfig.SkipInstallK8s, "skip-k8s-install", false, "Skip the install of k8s packages. This assumes that the needed packages are already installed in the base image.")
 
 	// Mark required flags
-	rootCmd.MarkFlagRequired("version")
-	rootCmd.MarkFlagRequired("registry")
+	_ = rootCmd.MarkFlagRequired("version")
+	_ = rootCmd.MarkFlagRequired("registry")
 
 	rootCmd.AddCommand(validateCmd)
 }

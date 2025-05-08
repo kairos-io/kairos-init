@@ -22,6 +22,10 @@ import (
 // This file contains the stages for the install process
 
 func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Stage, error) {
+	if config.DefaultConfig.SkipInstallPackages {
+		logger.Logger.Warn().Msg("Skipping install packages stage")
+		return []schema.Stage{}, nil
+	}
 	// Fips + ubuntu fails early and redirect to our Example
 	if sis.Distro == values.Ubuntu && config.DefaultConfig.Fips {
 		return nil, fmt.Errorf("FIPS is not supported on Ubuntu without a PRO account and extra packages.\n" +
@@ -100,7 +104,11 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 }
 
 // GetInstallKubernetesStage returns the the kubernetes install stage
-func GetInstallKubernetesStage(sis values.System, l types.KairosLogger) []schema.Stage {
+func GetInstallKubernetesStage(sis values.System, logger types.KairosLogger) []schema.Stage {
+	if config.DefaultConfig.SkipInstallK8s {
+		logger.Logger.Warn().Msg("Skipping installing kubernetes stage")
+		return []schema.Stage{}
+	}
 	var stages []schema.Stage
 
 	// If its core we dont do anything here
