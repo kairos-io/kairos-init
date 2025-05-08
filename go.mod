@@ -6,11 +6,12 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.7.0
 	github.com/joho/godotenv v1.5.1
-	github.com/kairos-io/kairos-sdk v0.9.1
+	github.com/kairos-io/kairos-sdk v0.9.2
 	github.com/mudler/yip v1.16.0
 	github.com/sanity-io/litter v1.5.8
 	github.com/spf13/cobra v1.9.1
 	github.com/twpayne/go-vfs/v5 v5.0.4
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -121,7 +122,6 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 	pault.ag/go/modprobe v0.2.0 // indirect
 	pault.ag/go/topsort v0.1.1 // indirect
 )
