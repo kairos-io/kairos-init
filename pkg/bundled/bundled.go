@@ -22,10 +22,10 @@ var EmbeddedKcryptChallenger []byte
 //go:embed binaries/fips/kcrypt-discovery-challenger
 var EmbeddedKcryptChallengerFips []byte
 
-//go:embed binaries/kairos-cli
+//go:embed binaries/provider-kairos
 var EmbeddedKairosProvider []byte
 
-//go:embed binaries/fips/kairos-cli
+//go:embed binaries/fips/provider-kairos
 var EmbeddedKairosProviderFips []byte
 
 //go:embed binaries/edgevpn

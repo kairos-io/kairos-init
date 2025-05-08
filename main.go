@@ -85,7 +85,6 @@ var rootCmd = &cobra.Command{
 		}
 
 		config.DefaultConfig.KairosVersion = *sv
-		litter.Config.HideZeroValues = true
 		litter.Config.HidePrivateFields = false
 		logger.Debug(litter.Sdump(config.DefaultConfig))
 

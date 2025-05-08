@@ -48,11 +48,11 @@
         "/^Makefile$/"
       ],
       "matchStrings": [
-        "KCRYPT_CHALLENGER_VERSION\\s*:=\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+        "KCRYPT_DISCOVERY_CHALLENGER_VERSION\\s*:=\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
       ],
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
-      "packageNameTemplate": "kairos-io/kcrypt-challenger"
+      "packageNameTemplate": "kairos-io/kcrypt-discovery-challenger"
     },
     {
       "customType": "regex",
@@ -60,7 +60,7 @@
         "/^Makefile$/"
       ],
       "matchStrings": [
-        "AGENT_PROVIDER_VERSION\\s*:=\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+        "PROVIDER_KAIROS_VERSION\\s*:=\\s*(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
       ],
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
