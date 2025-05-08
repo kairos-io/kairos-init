@@ -83,7 +83,6 @@ var ValidProviders = []KubernetesProvider{K3sProvider, K0sProvider}
 func (c *Config) LoadVersionOverrides() {
 	file, err := os.Open("/etc/kairos/.init_versions.yaml")
 	if err != nil {
-		fmt.Println("error opening version overrides file:", err)
 		return
 	}
 	defer file.Close()
@@ -91,7 +90,6 @@ func (c *Config) LoadVersionOverrides() {
 	decoder := yaml.NewDecoder(file)
 	err = decoder.Decode(&c.VersionOverrides)
 	if err != nil {
-		fmt.Println("error decoding version overrides file:", err)
 		return
 	}
 }
