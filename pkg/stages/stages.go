@@ -80,8 +80,8 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data.Stages["install"] = append(data.Stages["install"], GetInstallGrubBootArgsStage(sis, logger)...)
 	// Add the services
 	data.Stages["install"] = append(data.Stages["install"], GetInstallServicesStage(sis, logger)...)
-	// Add the provider and kubernetes
-	data.Stages["install"] = append(data.Stages["install"], GetInstallProviderAndKubernetes(sis, logger)...)
+	// Add kubernetes
+	data.Stages["install"] = append(data.Stages["install"], GetInstallKubernetesStage(sis, logger)...)
 	// Add the miscellaneous files
 	miscellaneous, err := InstallKairosMiscellaneousFilesStage(sis, logger)
 	if err != nil {
@@ -115,6 +115,12 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 
 	// Bring kairos binaries
 	err = GetInstallKairosBinaries(sis, logger)
+	if err != nil {
+		return schema.YipConfig{}, err
+	}
+
+	// Bring provider binaries
+	err = GetInstallProviderBinaries(sis, logger)
 	if err != nil {
 		return schema.YipConfig{}, err
 	}

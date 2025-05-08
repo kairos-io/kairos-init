@@ -1,11 +1,16 @@
 package stages
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strings"
 
 	"github.com/kairos-io/kairos-init/pkg/bundled"
 	"github.com/kairos-io/kairos-init/pkg/config"
@@ -94,42 +99,13 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 	return stage, nil
 }
 
-// GetInstallProviderAndKubernetes will install the provider and kubernetes packages
-func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []schema.Stage {
-	var data []schema.Stage
+// GetInstallKubernetesStage returns the the kubernetes install stage
+func GetInstallKubernetesStage(sis values.System, l types.KairosLogger) []schema.Stage {
+	var stages []schema.Stage
 
 	// If its core we dont do anything here
 	if config.DefaultConfig.Variant.String() == "core" {
-		return data
-	}
-	err := os.MkdirAll("/system/providers", os.ModeDir|os.ModePerm)
-	if err != nil {
-		l.Logger.Error().Err(err).Msg("Failed to create directory")
-		return data
-	}
-	// write the embedded binaries to the system
-	agentProvider := bundled.EmbeddedKairosProvider
-	if config.DefaultConfig.Fips {
-		agentProvider = bundled.EmbeddedKairosProviderFips
-	}
-	err = os.WriteFile("/system/providers/agent-provider-kairos", agentProvider, 0755)
-	if err != nil {
-		l.Logger.Error().Err(err).Msg("Failed to write agent-provider-kairos")
-		return data
-	}
-
-	// Link /system/providers/agent-provider-kairos to /usr/bin/kairos, not sure what uses it?
-	// TODO: Check if this is needed, maybe we can remove it?
-	err = os.Symlink("/system/providers/agent-provider-kairos", "/usr/bin/kairos")
-	if err != nil {
-		l.Logger.Error().Err(err).Msg("Failed to create symlink")
-		return data
-	}
-
-	err = os.WriteFile("/usr/bin/edgevpn", bundled.EmbeddedEdgeVPN, 0755)
-	if err != nil {
-		l.Logger.Error().Err(err).Msg("Failed to write edgevpn")
-		return data
+		return stages
 	}
 
 	switch config.DefaultConfig.KubernetesProvider {
@@ -139,7 +115,7 @@ func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []
 		if config.DefaultConfig.KubernetesVersion != "" {
 			cmd = fmt.Sprintf("INSTALL_K3S_VERSION=%s %s", config.DefaultConfig.KubernetesVersion, cmd)
 		}
-		data = append(data, []schema.Stage{
+		stages = append(stages, []schema.Stage{
 			{
 				Name: "Install Kubernetes packages",
 				Commands: []string{
@@ -156,7 +132,7 @@ func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []
 		if config.DefaultConfig.KubernetesVersion != "" {
 			cmd = fmt.Sprintf("K0S_VERSION=%s %s", config.DefaultConfig.KubernetesVersion, cmd)
 		}
-		data = append(data, []schema.Stage{
+		stages = append(stages, []schema.Stage{
 			{
 				Name: "Install Kubernetes packages",
 				Commands: []string{
@@ -171,7 +147,7 @@ func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []
 
 		if sis.Family.String() == "alpine" {
 			// Add openrc services
-			data = append(data, []schema.Stage{
+			stages = append(stages, []schema.Stage{
 				{
 					Name: "Create k0s services for openrc",
 					Files: []schema.File{
@@ -194,7 +170,7 @@ func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []
 			}...)
 		} else {
 			// Add systemd services
-			data = append(data, []schema.Stage{
+			stages = append(stages, []schema.Stage{
 				{
 					Name: "Create k0s services for systemd",
 					Files: []schema.File{
@@ -217,7 +193,7 @@ func GetInstallProviderAndKubernetes(sis values.System, l types.KairosLogger) []
 			}...)
 		}
 	}
-	return data
+	return stages
 }
 
 // GetInstallOemCloudConfigs dumps the OEM files to the system from the embedded oem files
@@ -417,48 +393,162 @@ func GetInstallServicesStage(_ values.System, _ types.KairosLogger) []schema.Sta
 }
 
 // GetInstallKairosBinaries directly installs the kairos binaries from bundled binaries
-func GetInstallKairosBinaries(_ values.System, l types.KairosLogger) error {
-	// TODO: If versions are provided, download and install those instead? i.e. Allow online install versions?
+func GetInstallKairosBinaries(sis values.System, l types.KairosLogger) error {
+	//  If versions are provided, download and install those instead? i.e. Allow online install versions?
 
-	// write the embedded binaries to the system
-	agentBinary := bundled.EmbeddedAgent
-	immucoreBinary := bundled.EmbeddedImmucore
-	kcryptChallengerBinary := bundled.EmbeddedKcryptChallenger
-
-	if config.DefaultConfig.Fips {
-		agentBinary = bundled.EmbeddedAgentFips
-		immucoreBinary = bundled.EmbeddedImmucoreFips
-		kcryptChallengerBinary = bundled.EmbeddedKcryptChallengerFips
+	binaries := map[string]string{
+		"/usr/bin/kairos-agent":                         config.DefaultConfig.VersionOverrides.Agent,
+		"/usr/bin/immucore":                             config.DefaultConfig.VersionOverrides.Immucore,
+		"/system/discovery/kcrypt-discovery-challenger": config.DefaultConfig.VersionOverrides.KcryptChallenger,
 	}
 
-	err := os.WriteFile("/usr/bin/kairos-agent", agentBinary, 0755)
-	if err != nil {
-		l.Logger.Error().Err(err).Msg("Failed to write kairos-agent")
-		return err
-	}
+	for dest, version := range binaries {
+		if version != "" {
+			// Create the directory if it doesn't exist
+			if _, err := os.Stat(filepath.Dir(dest)); os.IsNotExist(err) {
+				err := os.MkdirAll(filepath.Dir(dest), 0755)
+				if err != nil {
+					l.Logger.Error().Err(err).Str("dir", filepath.Dir(dest)).Msg("Failed to create directory")
+				}
+			}
 
-	err = os.WriteFile("/usr/bin/immucore", immucoreBinary, 0755)
-	if err != nil {
-		l.Logger.Error().Err(err).Msg("Failed to write immucore")
-		return err
-	}
+			reponame := filepath.Base(dest)
+			url := fmt.Sprintf("https://github.com/kairos-io/%[1]s/releases/download/%[2]s/%[1]s-%[2]s-Linux-%[3]s", reponame, version, sis.Arch)
+			// Append -fips to the url if fips is enabled
+			if config.DefaultConfig.Fips {
+				url = fmt.Sprintf("%s-fips", url)
+			}
+			// Add the .tar.gz to the url
+			url = fmt.Sprintf("%s.tar.gz", url)
+			l.Logger.Info().Str("url", url).Msg("Downloading binary")
+			err := DownloadAndExtract(url, dest)
+			if err != nil {
+				l.Logger.Error().Err(err).Str("binary", dest).Msg("Failed to download and extract binary")
+				return err
+			}
+		} else {
+			// Use embedded binaries
+			var data []byte
+			switch dest {
+			case "/usr/bin/kairos-agent":
+				data = bundled.EmbeddedAgent
+			case "/usr/bin/immucore":
+				data = bundled.EmbeddedImmucore
+			case "/system/discovery/kcrypt-discovery-challenger":
+				data = bundled.EmbeddedKcryptChallenger
+			}
 
-	// Check if dir exists and create it if not
-	if _, err = os.Stat("/system/discovery/"); os.IsNotExist(err) {
-		err = os.MkdirAll("/system/discovery/", 0755)
-		if err != nil {
-			l.Logger.Error().Err(err).Msg("Failed to create directory")
-			return err
+			// Create the directory if it doesn't exist
+			if _, err := os.Stat(filepath.Dir(dest)); os.IsNotExist(err) {
+				err := os.MkdirAll(filepath.Dir(dest), 0755)
+				if err != nil {
+					l.Logger.Error().Err(err).Str("dir", filepath.Dir(dest)).Msg("Failed to create directory")
+				}
+			}
+
+			err := os.WriteFile(dest, data, 0755)
+			if err != nil {
+				l.Logger.Error().Err(err).Str("binary", dest).Msg("Failed to write embedded binary")
+				return err
+			}
 		}
 	}
 
-	err = os.WriteFile("/system/discovery/kcrypt-discovery-challenger", kcryptChallengerBinary, 0755)
+	return nil
+}
 
+// GetInstallProviderBinaries installs the provider and edgevpn binaries
+func GetInstallProviderBinaries(sis values.System, l types.KairosLogger) error {
+	// If its core we dont do anything here
+	if config.DefaultConfig.Variant.String() == "core" {
+		return nil
+	}
+
+	err := os.MkdirAll("/system/providers", os.ModeDir|os.ModePerm)
 	if err != nil {
-		l.Logger.Error().Err(err).Msg("Failed to write kcrypt-discovery-challenger")
+		l.Logger.Error().Err(err).Msg("Failed to create directory")
 		return err
 	}
 
+	binaries := map[string]string{
+		"/system/providers/agent-provider-kairos": config.DefaultConfig.VersionOverrides.Provider,
+		"/usr/bin/edgevpn":                        config.DefaultConfig.VersionOverrides.EdgeVpn,
+	}
+
+	for dest, version := range binaries {
+		if version != "" {
+			// Create the directory if it doesn't exist
+			if _, err := os.Stat(filepath.Dir(dest)); os.IsNotExist(err) {
+				err := os.MkdirAll(filepath.Dir(dest), 0755)
+				if err != nil {
+					l.Logger.Error().Err(err).Str("dir", filepath.Dir(dest)).Msg("Failed to create directory")
+					return err
+				}
+			}
+
+			org := "kairos-io"
+			arch := sis.Arch
+			// Check if the destination is edgevpn, if so we need to use mudler as the org
+			// And change the arch to x86_64 if its amd64
+			if dest == "/usr/bin/edgevpn" {
+				org = "mudler"
+				if arch == "amd64" {
+					arch = "x86_64"
+				}
+			}
+			// Binary destination has the prefix agent- so we need to remove it as the repo does not have it, nor the file
+			binaryName := strings.Replace(filepath.Base(dest), "agent-", "", 1)
+			url := fmt.Sprintf("https://github.com/%[4]s/%[1]s/releases/download/%[2]s/%[1]s-%[2]s-Linux-%[3]s", binaryName, version, arch, org)
+
+			// Append -fips to the url if fips is enabled for provider only
+			if config.DefaultConfig.Fips && dest != "/usr/bin/edgevpn" {
+				url = fmt.Sprintf("%s-fips", url)
+			}
+			// Add the .tar.gz to the url
+			url = fmt.Sprintf("%s.tar.gz", url)
+			l.Logger.Info().Str("url", url).Msg("Downloading binary")
+			err := DownloadAndExtract(url, dest, binaryName)
+			if err != nil {
+				l.Logger.Error().Err(err).Str("binary", dest).Msg("Failed to download and extract binary")
+				return err
+			}
+		} else {
+			// Use embedded binaries
+			var data []byte
+			switch dest {
+			case "/system/providers/agent-provider-kairos":
+				if config.DefaultConfig.Fips {
+					data = bundled.EmbeddedKairosProviderFips
+				} else {
+					data = bundled.EmbeddedKairosProvider
+				}
+			case "/usr/bin/edgevpn":
+				data = bundled.EmbeddedEdgeVPN
+			}
+
+			// Create the directory if it doesn't exist
+			if _, err := os.Stat(filepath.Dir(dest)); os.IsNotExist(err) {
+				err := os.MkdirAll(filepath.Dir(dest), 0755)
+				if err != nil {
+					l.Logger.Error().Err(err).Str("dir", filepath.Dir(dest)).Msg("Failed to create directory")
+				}
+			}
+
+			err := os.WriteFile(dest, data, 0755)
+			if err != nil {
+				l.Logger.Error().Err(err).Str("binary", dest).Msg("Failed to write embedded binary")
+				return err
+			}
+		}
+	}
+
+	// Link /system/providers/agent-provider-kairos to /usr/bin/kairos, not sure what uses it?
+	// TODO: Check if this is needed, maybe we can remove it?
+	err = os.Symlink("/system/providers/agent-provider-kairos", "/usr/bin/kairos")
+	if err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to create symlink")
+		return err
+	}
 	return nil
 }
 
@@ -585,4 +675,61 @@ func InstallKairosMiscellaneousFilesStage(sis values.System, l types.KairosLogge
 	}
 
 	return data, nil
+}
+
+// DownloadAndExtract downloads a tar.gz file from the specified URL, extracts its contents,
+// and searches for a binary file to move to the destination path. If a binary name is provided
+// as an optional parameter, it uses that name to locate the binary in the archive; otherwise,
+// it defaults to using the base name of the destination path. The function returns an error
+// if the download, extraction, or file operations fail, or if the binary is not found in the archive.
+func DownloadAndExtract(url, dest string, binaryName ...string) error {
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("failed to download file: %w", err)
+	}
+	defer resp.Body.Close()
+
+	gzr, err := gzip.NewReader(resp.Body)
+	if err != nil {
+		return fmt.Errorf("failed to create gzip reader: %w", err)
+	}
+	defer gzr.Close()
+
+	tarReader := tar.NewReader(gzr)
+	targetBinary := filepath.Base(dest)
+	if len(binaryName) > 0 {
+		targetBinary = binaryName[0]
+	}
+
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("failed to read tar file: %w", err)
+		}
+
+		if header.Typeflag == tar.TypeReg && strings.HasSuffix(header.Name, targetBinary) {
+			outFile, err := os.Create(dest)
+			if err != nil {
+				return fmt.Errorf("failed to create file: %w", err)
+			}
+			defer outFile.Close()
+
+			_, err = io.Copy(outFile, tarReader)
+			if err != nil {
+				return fmt.Errorf("failed to copy file content: %w", err)
+			}
+			// Set the file permissions
+
+			err = outFile.Chmod(0755)
+			if err != nil {
+				return fmt.Errorf("failed to set file permissions: %w", err)
+			}
+
+			return nil
+		}
+	}
+	return fmt.Errorf("binary not found in archive")
 }

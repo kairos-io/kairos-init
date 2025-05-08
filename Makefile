@@ -1,28 +1,28 @@
 # Variables
 AGENT_VERSION := v2.20.4
 IMMUCORE_VERSION := v0.10.0
-KCRYPT_CHALLENGER_VERSION := v0.11.2
-AGENT_PROVIDER_VERSION := v2.12.0
+KCRYPT_DISCOVERY_CHALLENGER_VERSION := v0.11.2
+PROVIDER_KAIROS_VERSION := v2.13.1
 EDGEVPN_VERSION := v0.30.2
 ARCH := $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
-BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger kairos-cli
+BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger provider-kairos
 OUTPUT_DIR := pkg/bundled/binaries
 OUTPUT_DIR_FIPS := pkg/bundled/binaries/fips
 
 # URLs for binaries
 define URL_TEMPLATE
-https://github.com/kairos-io/$1/releases/download/$2/$3-$2-Linux-$(ARCH)$4.tar.gz
+https://github.com/kairos-io/$1/releases/download/$2/$1-$2-Linux-$(ARCH)$3.tar.gz
 endef
 
-kairos-agent_URL := $(call URL_TEMPLATE,kairos-agent,$(AGENT_VERSION),kairos-agent)
-immucore_URL := $(call URL_TEMPLATE,immucore,$(IMMUCORE_VERSION),immucore)
-kcrypt-discovery-challenger_URL := $(call URL_TEMPLATE,kcrypt-challenger,$(KCRYPT_CHALLENGER_VERSION),kcrypt-discovery-challenger)
-kairos-cli_URL := $(call URL_TEMPLATE,provider-kairos,$(AGENT_PROVIDER_VERSION),kairos-cli)
+kairos-agent_URL := $(call URL_TEMPLATE,kairos-agent,$(AGENT_VERSION))
+immucore_URL := $(call URL_TEMPLATE,immucore,$(IMMUCORE_VERSION))
+kcrypt-discovery-challenger_URL := $(call URL_TEMPLATE,kcrypt-discovery-challenger,$(KCRYPT_DISCOVERY_CHALLENGER_VERSION))
+provider-kairos_URL := $(call URL_TEMPLATE,provider-kairos,$(PROVIDER_KAIROS_VERSION))
 
-kairos-agent-fips_URL := $(call URL_TEMPLATE,kairos-agent,$(AGENT_VERSION),kairos-agent,-fips)
-immucore-fips_URL := $(call URL_TEMPLATE,immucore,$(IMMUCORE_VERSION),immucore,-fips)
-kcrypt-discovery-challenger-fips_URL := $(call URL_TEMPLATE,kcrypt-challenger,$(KCRYPT_CHALLENGER_VERSION),kcrypt-discovery-challenger,-fips)
-kairos-cli-fips_URL := $(call URL_TEMPLATE,provider-kairos,$(AGENT_PROVIDER_VERSION),kairos-cli,-fips)
+kairos-agent-fips_URL := $(call URL_TEMPLATE,kairos-agent,$(AGENT_VERSION),-fips)
+immucore-fips_URL := $(call URL_TEMPLATE,immucore,$(IMMUCORE_VERSION),-fips)
+kcrypt-discovery-challenger-fips_URL := $(call URL_TEMPLATE,kcrypt-discovery-challenger,$(KCRYPT_DISCOVERY_CHALLENGER_VERSION),-fips)
+provider-kairos-fips_URL := $(call URL_TEMPLATE,provider-kairos,$(PROVIDER_KAIROS_VERSION),-fips)
 
 .PHONY: all prepare download compress cleanup
 

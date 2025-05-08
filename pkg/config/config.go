@@ -3,6 +3,8 @@ package config
 import (
 	"fmt"
 	semver "github.com/hashicorp/go-version"
+	"gopkg.in/yaml.v3"
+	"os"
 )
 
 // Config is the struct to track the config of the init image
@@ -19,6 +21,16 @@ type Config struct {
 	KubernetesVersion  string
 	KairosVersion      semver.Version
 	Extensions         bool
+	VersionOverrides   VersionOverrides
+}
+
+// VersionOverrides holds version overrides for binaries
+type VersionOverrides struct {
+	Agent            string `yaml:"agent,omitempty"`
+	Immucore         string `yaml:"immucore,omitempty"`
+	KcryptChallenger string `yaml:"kcrypt_challenger,omitempty"`
+	Provider         string `yaml:"provider,omitempty"`
+	EdgeVpn          string `yaml:"edgevpn,omitempty"`
 }
 
 var DefaultConfig = Config{}
@@ -64,3 +76,25 @@ const K3sProvider KubernetesProvider = "k3s"
 const K0sProvider KubernetesProvider = "k0s"
 
 var ValidProviders = []KubernetesProvider{K3sProvider, K0sProvider}
+
+// LoadVersionOverrides initializes the VersionOverrides from a file
+func (c *Config) LoadVersionOverrides() {
+	file, err := os.Open("/etc/kairos/.init_versions.yaml")
+	if err != nil {
+		fmt.Println("error opening version overrides file:", err)
+		return
+	}
+	defer file.Close()
+
+	decoder := yaml.NewDecoder(file)
+	err = decoder.Decode(&c.VersionOverrides)
+	if err != nil {
+		fmt.Println("error decoding version overrides file:", err)
+		return
+	}
+}
+
+func init() {
+	// Attempt to load version overrides during initialization
+	DefaultConfig.LoadVersionOverrides()
+}
