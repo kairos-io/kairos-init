@@ -112,12 +112,13 @@ var ImmucorePackages = PackageMap{
 var KernelPackages = PackageMap{
 	Ubuntu: {
 		ArchCommon: {
-			">=20.04, != 24.10": {
+			">=20.04, != 24.10, != 25.04, != 25.10": {
+				// Note: this logic only works for LTS release (x.04), any odd year or x.10 will not work
 				// This is a template, so we can replace the version with the actual version of the system
 				"linux-image-generic-hwe-{{.version}}",
 			},
-			// Somehow 24.10 uses the 22.04 hwe kernel
-			"24.10": {"linux-image-generic-hwe-24.04"},
+			// 24.10 uses the 24.04 hwe kernel as it is the same hwe track https://ubuntu.com/kernel/lifecycle
+			"24.10, 25.04, 25.10": {"linux-image-generic-hwe-24.04"},
 		},
 	},
 	Debian: {
@@ -160,10 +161,20 @@ var KernelPackages = PackageMap{
 }
 
 // KernelPackagesTrustedBoot Separated kernel package for trusted boot as we dont want to install the same packages on both variants
-// we need to keep teh trusted boot variant as small as possible so we want more control over it
+// we need to keep the trusted boot variant as small as possible so we want more control over it
 // In this case, only Ubuntu has an specific smallest kernel package as its the only distro that supports trusted boot
 // Fedora also works but we havent make it slim yet
 var KernelPackagesTrustedBoot = PackageMap{
+	Ubuntu: {
+		ArchCommon: {
+			Common: {
+				// All the Ubuntu releases supporting UFI use the hwe kernel from the 24.04 track until 26.04 release
+				// https://ubuntu.com/kernel/lifecycle for more details
+				"linux-image-generic-hwe-24.04",
+				"linux-firmware",
+			},
+		},
+	},
 	Debian: {
 		ArchAMD64: {
 			Common: {
