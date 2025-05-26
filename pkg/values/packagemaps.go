@@ -402,6 +402,7 @@ var BasePackages = PackageMap{
 				"cracklib-dicts",       // Password dictionary support
 				"cloud-utils-growpart", // grow partition use. Check if yip still needs it?
 				"device-mapper",        // Device mapper support, needed for lvm and cryptsetup
+				"iproute",              // Basic tool for networking
 				"openssh-server",
 				"openssh-clients",
 				"polkit",
