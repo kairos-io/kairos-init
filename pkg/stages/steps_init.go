@@ -286,7 +286,10 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 
 // GetWorkaroundsStage Returns the workarounds stage
 // It applies some workarounds to the system to fix up inconsistent things or issues on the system
-func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
+// For ubuntu + trusted boot we need to download the linux-modules-extra package, save the nvdimm modules
+// and then clean it up so http uki boot works out of the box. By default the nvdimm modules needed are in that package
+// We could just install the package but its a 100+MB  package and we need just 4 or 5 modules.
+func GetWorkaroundsStage(sis values.System, l types.KairosLogger) []schema.Stage {
 	stages := []schema.Stage{
 		{
 			Name: "Link grub-editenv to grub2-editenv",
@@ -306,6 +309,31 @@ func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 		},
 	}
 
+	if config.DefaultConfig.TrustedBoot {
+		if sis.Distro == values.Ubuntu {
+			kernel, err := getLatestKernel(l)
+			if err != nil {
+				l.Logger.Error().Msgf("Failed to get the latest kernel: %s", err)
+				return stages
+			}
+			stages = append(stages, []schema.Stage{
+				{
+					Name:     "Download linux-modules-extra for nvdimm modules",
+					OnlyIfOs: "Ubuntu.*",
+					Commands: []string{
+						fmt.Sprintf("apt-get download linux-modules-extra-%s", kernel),
+						fmt.Sprintf("dpkg-deb -x linux-modules-extra-%s_*.deb /tmp/modules", kernel),
+						fmt.Sprintf("mkdir -p /usr/lib/modules/%s/kernel/drivers/nvdimm", kernel),
+						fmt.Sprintf("mv /tmp/modules/lib/modules/%[1]s/kernel/drivers/nvdimm/* /usr/lib/modules/%[1]s/kernel/drivers/nvdimm/", kernel),
+						fmt.Sprintf("depmod -a %s", kernel),
+						"rm -rf /tmp/modules",
+						"rm /*.deb",
+					},
+				},
+			}...)
+		}
+	}
+
 	return stages
 }
 
@@ -314,6 +342,7 @@ func GetWorkaroundsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 // As some of the software installed can mess with he system and we dont want to have it in an inconsistent state
 // I also removes some packages that are no longer needed, like dracut and dependant packages as once
 // we have build the initramfs we dont need them anymore
+// TODO: Remove package cache for all distros
 func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 	stages := []schema.Stage{
 		{
