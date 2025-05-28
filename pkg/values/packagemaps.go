@@ -412,6 +412,7 @@ var BasePackages = PackageMap{
 				"systemd-networkd",
 				"which",      // Basic tool. Basepackages?
 				"cryptsetup", // For encrypted partitions support, needed for trusted boot and dracut building
+				"tpm2-tss",   // For TPM support, mainly trusted boot
 			},
 		},
 	},
