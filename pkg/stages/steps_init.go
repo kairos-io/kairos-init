@@ -253,7 +253,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 			// k3s version v1.21.4+k3s1 (3781f4b7)
 			// go version go1.16.5
 			// We need the first line
-			re := regexp.MustCompile(`k3s version v(\d+\.\d+\.\d+\+k3s\d+)`)
+			re := regexp.MustCompile(`k3s version (v\d+\.\d+\.\d+\+k3s\d+)`)
 			if re.MatchString(string(out)) {
 				match := re.FindStringSubmatch(string(out))
 				k8sVersion = match[1]
