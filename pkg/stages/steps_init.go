@@ -60,26 +60,6 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 			}...)
 		}
 
-		// Add support for pmem modules to support HTTP EFI boot automatically mounting the served ISO as a livecd
-		// This means the UEFI firmware will expose the loaded HTTP Iso memory as a block device for the kernel
-		// to find it and mount it as if it was a regular disk
-		// Then dracut will find the label and mount it in the proper places
-		stage = append(stage, []schema.Stage{
-			{
-				Name:     "Add pmem modules to initramfs",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
-				Files: []schema.File{
-					{
-						Path:        "/etc/dracut.conf.d/kairos-pmem.conf",
-						Owner:       0,
-						Group:       0,
-						Permissions: 0644,
-						Content:     "add_drivers+=\" nfit libnvdimm nd_pmem dax_pmem \"",
-					},
-				},
-			},
-		}...)
-
 		// Add proper network and systemd-sysext if needed
 		// We default to systemd-networkd and sysext enbled and if its ubuntu <= 22.04 we need to use the plain network module and
 		// disable sysext as they are not supported in those versions
