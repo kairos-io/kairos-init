@@ -46,7 +46,7 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 			stage = append(stage, []schema.Stage{
 				{
 					Name:     "Add fips support to initramfs",
-					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
 					Files: []schema.File{
 						{
 							Path:        "/etc/dracut.conf.d/kairos-fips.conf",
@@ -67,7 +67,7 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 		stage = append(stage, []schema.Stage{
 			{
 				Name:     "Add pmem modules to initramfs",
-				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
 				Files: []schema.File{
 					{
 						Path:        "/etc/dracut.conf.d/kairos-pmem.conf",
@@ -110,24 +110,41 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 		stage = append(stage, []schema.Stage{
 			{
 				Name:     "Add proper network module to initramfs",
-				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
 				Files: []schema.File{
 					{
 						Path:        "/etc/dracut.conf.d/kairos-network.conf",
 						Owner:       0,
 						Group:       0,
 						Permissions: 0644,
-						Content:     fmt.Sprintf("add_dracutmodules+=\" %s \"\n", networkModule),
+						Content:     fmt.Sprintf("add_dracutmodules+=\" dmsquash-live %s \"\n", networkModule),
 					},
 				},
 			},
 		}...)
+		if !config.DefaultConfig.TrustedBoot {
+			stage = append(stage, []schema.Stage{
+				{
+					Name:     "Add proper live module to initramfs",
+					OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+					Files: []schema.File{
+						{
+							Path:        "/etc/dracut.conf.d/kairos-live.conf",
+							Owner:       0,
+							Group:       0,
+							Permissions: 0644,
+							Content:     fmt.Sprintf("add_dracutmodules+=\" dmsquash-live \"\n"),
+						},
+					},
+				},
+			}...)
+		}
 
 		if sysextModule {
 			stage = append(stage, []schema.Stage{
 				{
 					Name:     "Add proper sysext module to initramfs",
-					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
 					Files: []schema.File{
 						{
 							Path:        "/etc/dracut.conf.d/kairos-sysext.conf",
@@ -149,7 +166,7 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 		stage = append(stage, []schema.Stage{
 			{
 				Name:     "Create new initrd",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
 				Commands: []string{
 					fmt.Sprintf("depmod -a %s", kernel),
 					dracutCmd,
@@ -316,6 +333,8 @@ func GetWorkaroundsStage(sis values.System, l types.KairosLogger) []schema.Stage
 				l.Logger.Error().Msgf("Failed to get the latest kernel: %s", err)
 				return stages
 			}
+			// This looks like its out of its place as we would expect this modules to be in the initrd but this is for Trusted Boot
+			// so the initrd is creating during artifact build and contains the rootfs, so this is ok to be in here
 			stages = append(stages, []schema.Stage{
 				{
 					Name:     "Download linux-modules-extra for nvdimm modules",
@@ -430,7 +449,7 @@ func GetServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:     "Enable services for RHEL family",
-			OnlyIfOs: "Fedora.*|CentOS.*|RedHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs: "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"sshd",
@@ -516,7 +535,7 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 			},
 		},
 		{ // On Fedora, if we don't have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
-			// TODO: Check if this is needed on AlmaLinux/RockyLinux/RedHatLinux
+			// TODO: Check if this is needed on AlmaLinux/RockyLinux/Red\sHatLinux
 			Name:     "Copy kernel for Fedora Trusted Boot",
 			OnlyIfOs: "Fedora.*",
 			If:       fmt.Sprintf("test ! -f /boot/vmlinuz-%s && test -f /usr/lib/modules/%s/vmlinuz", kernel, kernel),
