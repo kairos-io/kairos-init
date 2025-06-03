@@ -82,12 +82,14 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data.Stages["install"] = append(data.Stages["install"], GetInstallServicesStage(sis, logger)...)
 	// Add kubernetes
 	data.Stages["install"] = append(data.Stages["install"], GetInstallKubernetesStage(sis, logger)...)
-	// Add the miscellaneous files
-	miscellaneous, err := InstallKairosMiscellaneousFilesStage(sis, logger)
+	// Add initrd files
+	initrdStage, err := GetKairosInitramfsFilesStage(sis, logger)
 	if err != nil {
 		return data, err
 	}
-	data.Stages["install"] = append(data.Stages["install"], miscellaneous...)
+	data.Stages["install"] = append(data.Stages["install"], initrdStage...)
+	// Add the miscellaneous files
+	data.Stages["install"] = append(data.Stages["install"], GetKairosMiscellaneousFilesStage(sis, logger)...)
 
 	// Add extensions from disk
 	data.Stages["install"] = append(data.Stages["install"], GetStageExtensions("install", logger)...)

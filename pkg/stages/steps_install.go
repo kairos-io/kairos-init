@@ -4,12 +4,14 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"fmt"
+	semver "github.com/hashicorp/go-version"
 	"io"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/kairos-io/kairos-init/pkg/bundled"
@@ -560,56 +562,14 @@ func GetInstallProviderBinaries(sis values.System, l types.KairosLogger) error {
 	return nil
 }
 
-// InstallKairosMiscellaneousFilesStage installs the kairos miscellaneous files
-// Like small scripts or other files that are not part of the main install process
-func InstallKairosMiscellaneousFilesStage(sis values.System, l types.KairosLogger) ([]schema.Stage, error) {
+// GetKairosInitramfsFilesStage installs the kairos initramfs files
+// This stage is used to install the initramfs files that are needed for the system to boot
+func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]schema.Stage, error) {
 	var data []schema.Stage
-
-	data = append(data, []schema.Stage{
-		{
-			Name: "Create kairos welcome message",
-			Files: []schema.File{
-				{
-					Path:        "/etc/issue.d/01-KAIROS",
-					Permissions: 0644,
-					Owner:       0,
-					Group:       0,
-					Content:     bundled.Issue,
-				},
-				{
-					Path:        "/etc/motd",
-					Permissions: 0644,
-					Owner:       0,
-					Group:       0,
-					Content:     bundled.MOTD,
-				},
-			},
-		},
-		{
-			Name: "Install suc-upgrade script",
-			Files: []schema.File{
-				{
-					Path:        "/usr/sbin/suc-upgrade",
-					Permissions: 0755,
-					Owner:       0,
-					Group:       0,
-					Content:     bundled.SucUpgrade,
-				},
-			},
-		},
-		{
-			Name: "Install logrotate config",
-			Files: []schema.File{
-				{
-					Path:        "/etc/logrotate.d/kairos",
-					Permissions: 0644,
-					Owner:       0,
-					Group:       0,
-					Content:     bundled.LogRotateConfig,
-				},
-			},
-		},
-	}...)
+	if config.DefaultConfig.TrustedBoot {
+		l.Logger.Info().Msg("Skipping installing initramfs files stage for trusted boot")
+		return data, nil
+	}
 
 	if sis.Family.String() == "alpine" {
 		immucoreFiles, err := bundled.EmbeddedAlpineInit.ReadFile("alpineInit/immucore.files")
@@ -680,9 +640,194 @@ func InstallKairosMiscellaneousFilesStage(sis values.System, l types.KairosLogge
 				},
 			},
 		}...)
+	} else {
+		// Add proper network and systemd-sysext if needed
+		// We default to systemd-networkd and sysext enabled and if its ubuntu <= 22.04 we need to use the plain network module and
+		// disable sysext as they are not supported in those versions
+		networkModule := "systemd-networkd"
+		sysextModule := true
+
+		if sis.Distro == values.Ubuntu {
+			constraint, _ := semver.NewConstraint("<=22.04")
+			ver, err := semver.NewVersion(sis.Version)
+			if err != nil {
+				l.Logger.Error().Msgf("Failed to parse the version %s: %s", sis.Version, err)
+				return []schema.Stage{}, err
+			}
+			// If its <= 22.04 we need to use the plain network module and disable sysext
+			if constraint.Check(ver) {
+				l.Logger.Debug().Str("distro", string(sis.Distro)).Str("version", sis.Version).Msg("Using the plain network module and disabling sysext")
+				networkModule = "network"
+				sysextModule = false
+			}
+		}
+
+		if sis.Distro == values.RockyLinux || sis.Distro == values.AlmaLinux || sis.Distro == values.RedHat {
+			// On Rocky and AlmaLinux we need to use the plain network module
+			l.Logger.Debug().Str("distro", string(sis.Distro)).Str("version", sis.Version).Msg("Using the plain network module and disabling sysext")
+			networkModule = "network"
+		}
+
+		// Add support for pmem modules to support HTTP EFI boot automatically mounting the served ISO as a livecd
+		// This means the UEFI firmware will expose the loaded HTTP Iso memory as a block device for the kernel
+		// to find it and mount it as if it was a regular disk
+		// Then dracut will find the label and mount it in the proper places
+		// Add the dmsquash-live module to the initramfs so we can use it
+		// Add network module to the initramfs so we can use it
+		// Add immucore module to the initramfs so we can use it
+		data = append(data, []schema.Stage{
+			{
+				Name:     "Add pmem modules to initramfs",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutPmemPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.DracutPmemConfig,
+					},
+				},
+			},
+			{
+				Name:     "Add sysext module to initramfs",
+				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+				If:       strconv.FormatBool(sysextModule),
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutSysextPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.DracutSysextConfig,
+					},
+				},
+			},
+			{
+				Name:     "Add network module to initramfs",
+				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutNetworkPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     fmt.Sprintf(bundled.DracutNetworkConfig, networkModule),
+					},
+				},
+			},
+			{
+				Name:     "Add immucore module to initramfs",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutConfigPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.ImmucoreConfigDracut,
+					},
+					{
+						Path:        bundled.DracutImmucoreModuleSetupPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0755,
+						Content:     bundled.ImmucoreModuleSetupDracut,
+					},
+					{
+						Path:        bundled.DracutImmucoreGeneratorPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0755,
+						Content:     bundled.ImmucoreGeneratorDracut,
+					},
+					{
+						Path:        bundled.DracutImmucoreServicePath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.ImmucoreServiceDracut,
+					},
+				},
+			},
+		}...)
+
+		if config.DefaultConfig.Fips {
+			// Add dracut fips support
+			data = append(data, []schema.Stage{
+				{
+					Name:     "Add fips support to initramfs",
+					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+					Files: []schema.File{
+						{
+							Path:        bundled.DracutFipsPath,
+							Owner:       0,
+							Group:       0,
+							Permissions: 0644,
+							Content:     bundled.DracutFipsConfig,
+						},
+					},
+				},
+			}...)
+		}
+
 	}
 
 	return data, nil
+}
+
+// GetKairosMiscellaneousFilesStage installs the kairos miscellaneous files
+// Like small scripts or other files that are not part of the main install process
+func GetKairosMiscellaneousFilesStage(sis values.System, l types.KairosLogger) []schema.Stage {
+	var data []schema.Stage
+
+	data = append(data, []schema.Stage{
+		{
+			Name: "Create kairos welcome message",
+			Files: []schema.File{
+				{
+					Path:        "/etc/issue.d/01-KAIROS",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.Issue,
+				},
+				{
+					Path:        "/etc/motd",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.MOTD,
+				},
+			},
+		},
+		{
+			Name: "Install suc-upgrade script",
+			Files: []schema.File{
+				{
+					Path:        "/usr/sbin/suc-upgrade",
+					Permissions: 0755,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.SucUpgrade,
+				},
+			},
+		},
+		{
+			Name: "Install logrotate config",
+			Files: []schema.File{
+				{
+					Path:        "/etc/logrotate.d/kairos",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+					Content:     bundled.LogRotateConfig,
+				},
+			},
+		},
+	}...)
+
+	return data
 }
 
 // DownloadAndExtract downloads a tar.gz file from the specified URL, extracts its contents,

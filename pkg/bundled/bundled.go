@@ -125,6 +125,149 @@ const LogRotateConfig = `/var/log/kairos/*.log {
     rotate 3
 }`
 
+// DRACUT stuff starts here
+
+// Paths
+const (
+	DracutPmemPath                = "/etc/dracut.conf.d/kairos-pmem.conf"
+	DracutFipsPath                = "/etc/dracut.conf.d/kairos-fips.conf"
+	DracutSysextPath              = "/etc/dracut.conf.d/kairos-sysext.conf"
+	DracutNetworkPath             = "/etc/dracut.conf.d/kairos-network.conf"
+	DracutConfigPath              = "/etc/dracut.conf.d/10-immucore.conf"
+	DracutImmucoreModuleSetupPath = "/usr/lib/dracut/modules.d/28immucore/module-setup.sh"
+	DracutImmucoreGeneratorPath   = "/usr/lib/dracut/modules.d/28immucore/generator.sh"
+	DracutImmucoreServicePath     = "/usr/lib/dracut/modules.d/28immucore/immucore.service"
+)
+
+// ImmucoreConfigDracut /etc/dracut.conf.d/10-immucore.conf is the dracut config file that is used to build the initramfs
+const ImmucoreConfigDracut = `hostonly_cmdline="no"
+hostonly="no"
+compress="xz"
+i18n_install_all="yes"
+show_modules="yes"
+install_items+=" /etc/hosts "
+omit_dracutmodules+=" multipath "
+add_dracutmodules+=" livenet dmsquash-live immucore network "
+`
+
+// ImmucoreGeneratorDracut is the dracut generator script that is used to generate the sysroot.mount file
+// This is used to set a timeout for the sysroot mount and to ensure that the sysroot.mount is properly linked
+// Ideally at some point this could be dropped
+const ImmucoreGeneratorDracut = `#!/bin/bash
+
+set +x
+
+type getarg >/dev/null 2>&1 || . /lib/dracut-lib.sh
+
+GENERATOR_DIR="$2"
+[ -z "$GENERATOR_DIR" ] && exit 1
+[ -d "$GENERATOR_DIR" ] || mkdir "$GENERATOR_DIR"
+
+# Add a timeout to the sysroot so it waits a bit for immucore to mount it properly
+mkdir -p "$GENERATOR_DIR"/sysroot.mount.d
+{
+    echo "[Mount]"
+    echo "TimeoutSec=300"
+} > "$GENERATOR_DIR"/sysroot.mount.d/timeout.conf
+
+# Make sure initrd-root-fs.target depends on sysroot.mount
+# This seems to affect mainly ubuntu-22 where initrd-usr-fs depends on sysroot, but it has a broken link to it as sysroot.mount
+# is generated under the generator.early dir but the link points to the generator dir.
+# So it makes everything else a bit broken if you insert deps in the middle.
+# By default other distros seem to do this as it shows on the map page https://man7.org/linux/man-pages/man7/dracut.bootup.7.html
+if ! [ -L "$GENERATOR_DIR"/initrd-root-fs.target.wants/sysroot.mount ]; then
+  [ -d "$GENERATOR_DIR"/initrd-root-fs.target.wants ] || mkdir -p "$GENERATOR_DIR"/initrd-root-fs.target.wants
+  ln -s ../sysroot.mount "$GENERATOR_DIR"/initrd-root-fs.target.wants/sysroot.mount
+fi`
+
+// ImmucoreServiceDracut is the dracut service file that is used to run immucore in the initramfs
+const ImmucoreServiceDracut = `[Unit]
+Description=immucore
+DefaultDependencies=no
+After=systemd-udev-settle.service
+Requires=systemd-udev-settle.service
+Before=initrd-fs.target
+Conflicts=initrd-switch-root.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+StandardOutput=journal+console
+ExecStart=/usr/bin/immucore`
+
+// ImmucoreModuleSetupDracut is the dracut module setup script that is used to install the immucore module and deps
+const ImmucoreModuleSetupDracut = `#!/bin/bash
+
+# check() is called by dracut to evaluate the inclusion of a dracut module in the initramfs.
+# we always want to have this module so we return 0
+check() {
+    return 0
+}
+
+# The function depends() should echo all other dracut module names the module depends on
+depends() {
+    echo rootfs-block dm fs-lib lvm
+    return 0
+}
+
+# In installkernel() all kernel related files should be installed
+installkernel() {
+    instmods overlay
+}
+
+# custom function to check if binaries exist before calling inst_multiple
+inst_check_multiple() {
+    for bin in "$@"; do
+        if ! command -v "$bin" >/dev/null 2>&1; then
+            derror "Required binary $bin not found!"
+            exit 1
+        fi
+    done
+    inst_multiple "$@"
+}
+
+
+# The install() function is called to install everything non-kernel related.
+install() {
+    declare moddir=${moddir}
+    declare systemdutildir=${systemdutildir}
+    declare systemdsystemunitdir=${systemdsystemunitdir}
+
+    inst_check_multiple immucore kairos-agent
+    # add utils used by yip stages
+    inst_check_multiple partprobe sync udevadm parted mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat mkfs.fat blkid lsblk e2fsck resize2fs mount umount sgdisk rsync cryptsetup growpart sfdisk gawk awk
+
+    # Install libraries needed by gawk
+    inst_libdir_file "libsigsegv.so*"
+    inst_libdir_file "libmpfr.so*"
+
+    # missing mkfs.xfs xfs_growfs in image?
+    inst_script "${moddir}/generator.sh" "${systemdutildir}/system-generators/immucore-generator"
+    # SERVICES FOR SYSTEMD-BASED SYSTEMS
+    inst_simple "${moddir}/immucore.service" "${systemdsystemunitdir}/immucore.service"
+    mkdir -p "${initdir}/${systemdsystemunitdir}/initrd.target.requires"
+    ln_r "../immucore.service" "${systemdsystemunitdir}/initrd.target.requires/immucore.service"
+    # END SYSTEMD SERVICES
+
+    dracut_need_initqueue
+}
+`
+
+// DracutFipsConfig is the dracut config file that is used to enable FIPS mode in the initramfs
+const DracutFipsConfig = `omit_dracutmodules+=" iscsi iscsiroot "
+add_dracutmodules+=" fips "`
+
+// DracutPmemConfig is the dracut config file that is used to enable pmem support in the initramfs
+const DracutPmemConfig = `add_drivers+=" nfit libnvdimm nd_pmem dax_pmem "`
+
+// DracutSysextConfig is the dracut config file that is used to enable systemd-sysext in the initramfs
+const DracutSysextConfig = `add_dracutmodules+=" systemd-sysext "`
+
+// DracutNetworkConfig is the dracut config file that is used to enable network support in the initramfs
+const DracutNetworkConfig = `add_dracutmodules+=" %s "`
+
+// DRACUT stuff ends here
+
 // GrubCfg /etc/cos/grub.cfg is the default grub config that is used for the system boot
 const GrubCfg = `set timeout=10
 
