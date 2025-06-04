@@ -500,7 +500,7 @@ _/    _/    _/_/_/  _/  _/          _/_/    _/_/_/
 // ExtraGrubCfg /etc/kairos/branding/grubmenu.cfg is the extra grub config that is used for the system that can be
 // overridden by the user to provide its own entries in grub
 const ExtraGrubCfg = `
-menuentry "Kairos remote recovery" --id remoterecovery {
+menuentry "${display_name} remote recovery" --id remoterecovery {
     search --no-floppy --label --set=root COS_RECOVERY
     if [ test -s /cOS/recovery.squashfs ]; then
         set img=/cOS/recovery.squashfs
