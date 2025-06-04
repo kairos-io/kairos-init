@@ -1,5 +1,5 @@
 # Variables
-AGENT_VERSION := v2.21.1
+AGENT_VERSION := v2.21.2
 IMMUCORE_VERSION := v0.11.0
 KCRYPT_DISCOVERY_CHALLENGER_VERSION := v0.11.2
 PROVIDER_KAIROS_VERSION := v2.13.1
@@ -36,6 +36,12 @@ prepare:
 		echo "Error: upx binary is not available. Please install upx."; \
 		exit 1; \
 	fi
+	@echo "Binary versions:"
+	@echo "  kairos-agent: $(AGENT_VERSION)"
+	@echo "  immucore: $(IMMUCORE_VERSION)"
+	@echo "  kcrypt-discovery-challenger: $(KCRYPT_DISCOVERY_CHALLENGER_VERSION)"
+	@echo "  provider-kairos: $(PROVIDER_KAIROS_VERSION)"
+	@echo "  edgevpn: $(EDGEVPN_VERSION)"
 
 # Ensure the bundled directory exists
 $(OUTPUT_DIR):
