@@ -642,30 +642,38 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 		}...)
 	} else {
 		// Add proper network and systemd-sysext if needed
-		// We default to systemd-networkd and sysext enabled and if its ubuntu <= 22.04 we need to use the plain network module and
-		// disable sysext as they are not supported in those versions
-		networkModule := "systemd-networkd"
+		// We default to systemd-networkd+network-legacy and sysext enabled
+		// If its ubuntu <= 22.04 we need to disable sysext
+		// If its ubuntu <= 20.04 we need to use the plain network module
+		// network-legacy is needed for ipxe as it comes up very fast which makes the livenet stuff work properly
+		// otherwise systemd-networkd doest not trigger the dracut hooks to let it know that its up and running
+		// https://github.com/dracutdevs/dracut/issues/1822
+		networkModule := "systemd-networkd network-legacy"
 		sysextModule := true
 
 		if sis.Distro == values.Ubuntu {
-			constraint, _ := semver.NewConstraint("<=22.04")
 			ver, err := semver.NewVersion(sis.Version)
 			if err != nil {
 				l.Logger.Error().Msgf("Failed to parse the version %s: %s", sis.Version, err)
 				return []schema.Stage{}, err
 			}
+			constraint, _ := semver.NewConstraint("<=22.04")
 			// If its <= 22.04 we need to use the plain network module and disable sysext
 			if constraint.Check(ver) {
-				l.Logger.Debug().Str("distro", string(sis.Distro)).Str("version", sis.Version).Msg("Using the plain network module and disabling sysext")
-				networkModule = "network"
+				l.Logger.Debug().Str("distro", string(sis.Distro)).Str("version", sis.Version).Msg("Disabling sysext")
 				sysextModule = false
+				constraint, _ = semver.NewConstraint("<=20.04")
+				// If its <= 20.04 we need to use the plain network module
+				if constraint.Check(ver) {
+					l.Logger.Debug().Str("distro", string(sis.Distro)).Str("version", sis.Version).Msg("Using the plain network module")
+					networkModule = "network"
+				}
 			}
 		}
 
-		if sis.Distro == values.RockyLinux || sis.Distro == values.AlmaLinux || sis.Distro == values.RedHat {
-			// On Rocky and AlmaLinux we need to use the plain network module
-			l.Logger.Debug().Str("distro", string(sis.Distro)).Str("version", sis.Version).Msg("Using the plain network module and disabling sysext")
-			networkModule = "network"
+		if sis.Distro == values.Fedora {
+			// On Fedora we drop the network-legacy module
+			networkModule = "systemd-networkd"
 		}
 
 		// Add support for pmem modules to support HTTP EFI boot automatically mounting the served ISO as a livecd
@@ -691,7 +699,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 			},
 			{
 				Name:     "Add sysext module to initramfs",
-				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
 				If:       strconv.FormatBool(sysextModule),
 				Files: []schema.File{
 					{
@@ -705,7 +713,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 			},
 			{
 				Name:     "Add network module to initramfs",
-				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
 				Files: []schema.File{
 					{
 						Path:        bundled.DracutNetworkPath,
