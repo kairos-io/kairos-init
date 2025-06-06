@@ -130,7 +130,6 @@ func (v *Validator) Validate() error {
 		"KAIROS_FAMILY",
 		"KAIROS_MODEL",
 		"KAIROS_VARIANT",
-		"KAIROS_REGISTRY_AND_ORG",
 		"KAIROS_BUG_REPORT_URL", // Not critical
 		"KAIROS_HOME_URL",       // Not critical
 		"KAIROS_RELEASE",
