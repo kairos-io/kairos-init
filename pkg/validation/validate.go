@@ -24,6 +24,8 @@ func NewValidator(logger types.KairosLogger) *Validator {
 	return &Validator{Log: logger, System: sis}
 }
 
+// TODO: Validate fips, if enabled, check go binaries for boringcrypto
+
 func (v *Validator) Validate() error {
 	var multi *multierror.Error
 
