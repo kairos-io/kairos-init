@@ -5,22 +5,22 @@ import (
 	semver "github.com/hashicorp/go-version"
 	"gopkg.in/yaml.v3"
 	"os"
+	"strings"
 )
 
 // Config is the struct to track the config of the init image
 // So we can access it from anywhere
 type Config struct {
-	Model               string
-	Variant             Variant
-	TrustedBoot         bool
-	Fips                bool
-	KubernetesProvider  KubernetesProvider
-	KubernetesVersion   string
-	KairosVersion       semver.Version
-	Extensions          bool
-	VersionOverrides    VersionOverrides
-	SkipInstallPackages bool
-	SkipInstallK8s      bool
+	Model              string
+	Variant            Variant
+	TrustedBoot        bool
+	Fips               bool
+	KubernetesProvider KubernetesProvider
+	KubernetesVersion  string
+	KairosVersion      semver.Version
+	Extensions         bool
+	VersionOverrides   VersionOverrides
+	SkipSteps          []string
 }
 
 // VersionOverrides holds version overrides for binaries
@@ -94,4 +94,14 @@ func (c *Config) LoadVersionOverrides() {
 func init() {
 	// Attempt to load version overrides during initialization
 	DefaultConfig.LoadVersionOverrides()
+}
+
+// ContainsSkipStep checks if a step is in the skip steps list
+func ContainsSkipStep(step string) bool {
+	for _, s := range DefaultConfig.SkipSteps {
+		if strings.ToLower(s) == strings.ToLower(step) {
+			return true
+		}
+	}
+	return false
 }

@@ -17,11 +17,12 @@ import (
 )
 
 var (
-	trusted      string
-	version      string
-	ksProvider   = newEnumFlag([]string{string(config.K3sProvider), string(config.K0sProvider), ""}, "")
-	stageFlag    = newEnumFlag([]string{"init", "install", "all"}, "all")
-	loglevelFlag = newEnumFlag([]string{"debug", "info", "warn", "error", "trace"}, "info")
+	trusted       string
+	version       string
+	ksProvider    = newEnumFlag([]string{string(config.K3sProvider), string(config.K0sProvider), ""}, "")
+	stageFlag     = newEnumFlag([]string{"init", "install", "all"}, "all")
+	loglevelFlag  = newEnumFlag([]string{"debug", "info", "warn", "error", "trace"}, "info")
+	skipStepsFlag = newEnumSliceFlag(values.GetStepNames(), []string{})
 )
 
 // Fill the flags and set default configs for commands
@@ -44,6 +45,26 @@ func preRun(_ *cobra.Command, _ []string) {
 		// If no provider is set, set the variant to core
 		config.DefaultConfig.Variant = config.CoreVariant
 	}
+
+	config.DefaultConfig.SkipSteps = skipStepsFlag.Value
+}
+
+var stepsInfo = &cobra.Command{
+	Use:   "steps-info",
+	Short: "Get information about the steps",
+	Long:  `Get information about the steps are run`,
+	Run: func(cmd *cobra.Command, args []string) {
+		logger := types.NewKairosLogger("kairos-init", "info", false)
+		logger.Infof("Starting kairos-init version %s", values.GetVersion())
+		// Print the steps info in a human readable format
+		stepsInfo := values.StepsInfo()
+		logger.Infof("Step name & Description")
+		logger.Infof("--------------------------------------------------------")
+		for step, _ := range stepsInfo {
+			logger.Infof("\"%s\": %s", stepsInfo[step].Key, stepsInfo[step].Value)
+		}
+		logger.Infof("--------------------------------------------------------")
+	},
 }
 
 var validateCmd = &cobra.Command{
@@ -88,7 +109,6 @@ var rootCmd = &cobra.Command{
 		var runStages schema.YipConfig
 
 		if stageFlag.Value != "" {
-			logger.Infof("Running stage %s", stageFlag.Value)
 			switch stageFlag.Value {
 			case "install":
 				runStages, err = stages.RunInstallStage(logger)
@@ -130,9 +150,7 @@ func init() {
 	rootCmd.Flags().BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips kairos binary versions. For FIPS 140-2 compliance images")
 	rootCmd.Flags().StringVarP(&version, "version", "v", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
 	rootCmd.Flags().BoolVarP(&config.DefaultConfig.Extensions, "stage-extensions", "x", false, "enable stage extensions mode")
-	rootCmd.Flags().BoolVar(&config.DefaultConfig.SkipInstallPackages, "skip-packages-install", false, "Skip the install of packages. This assumes that the needed packages are already installed in the base image.")
-	rootCmd.Flags().BoolVar(&config.DefaultConfig.SkipInstallK8s, "skip-k8s-install", false, "Skip the install of k8s packages. This assumes that the needed packages are already installed in the base image.")
-
+	rootCmd.Flags().Var(skipStepsFlag, "skip-step", "Skip one or more steps. Valid values are: "+strings.Join(skipStepsFlag.Allowed, ", ")+". You can pass multiple values separated by commas, for example: --skip-step initrd,workarounds")
 	// Mark required flags
 	_ = rootCmd.MarkFlagRequired("version")
 
@@ -140,6 +158,7 @@ func init() {
 	addSharedFlags(validateCmd)
 
 	rootCmd.AddCommand(validateCmd)
+	rootCmd.AddCommand(stepsInfo)
 }
 
 func main() {
@@ -188,4 +207,46 @@ func (a *enum) Set(p string) error {
 
 func (a *enum) Type() string {
 	return "string"
+}
+
+type enumSlice struct {
+	Allowed []string
+	Value   []string
+}
+
+func (e *enumSlice) Type() string {
+	return "string,string,..."
+}
+
+// newEnumSliceFlag give a list of allowed flag parameters, where the second argument is the default. Accepts more than one value
+func newEnumSliceFlag(allowed []string, defaults []string) *enumSlice {
+	return &enumSlice{
+		Allowed: allowed,
+		Value:   defaults,
+	}
+}
+
+func (e *enumSlice) String() string {
+	return strings.Join(e.Value, ",")
+}
+
+func (e *enumSlice) Set(val string) error {
+	vals := strings.Split(val, ",")
+	var newVals []string
+	for _, v := range vals {
+		v = strings.TrimSpace(v)
+		found := false
+		for _, a := range e.Allowed {
+			if v == a {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("%s is not included in %s", v, strings.Join(e.Allowed, ","))
+		}
+		newVals = append(newVals, v)
+	}
+	e.Value = newVals
+	return nil
 }

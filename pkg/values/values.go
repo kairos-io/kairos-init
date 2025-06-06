@@ -1,5 +1,9 @@
 package values
 
+import (
+	"sort"
+)
+
 // Common Used for packages that are common to whatever key
 const Common = "common"
 
@@ -79,4 +83,53 @@ func GetTemplateParams(s System) map[string]string {
 		"arch":    s.Arch.String(),
 		"family":  s.Family.String(),
 	}
+}
+
+type StepInfo struct {
+	Key   string
+	Value string
+}
+
+// StepsInfo returns a slice of StepInfo containing the steps and their descriptions
+func StepsInfo() []StepInfo {
+	steps := map[string]string{
+		"init":             "The full init stage, which includes kairosRelease, kubernetes, initrd, services, workarounds and cleanup steps",
+		"install":          "The full install stage, which includes installPackages, kubernetes, cloudconfigs, branding, grub, services, kairosBinaries, providerBinaries, initramfsConfigs and miscellaneous steps",
+		"installPackages":  "installs the base system packages",
+		"initrd":           "generates the initrd",
+		"kairosRelease":    "creates and fills the /etc/kairos-release file",
+		"workarounds":      "applies workarounds for known issues",
+		"cleanup":          "cleans up the system of unneeded packages and files",
+		"services":         "creates and enables required services",
+		"kernel":           "installs the kernel",
+		"kubernetes":       "installs the kubernetes provider",
+		"cloudconfigs":     "installs the cloud-configs for the system",
+		"branding":         "applies the branding for the system",
+		"grub":             "configures the grub bootloader",
+		"kairosBinaries":   "installs the kairos binaries",
+		"providerBinaries": "installs the kairos provider binaries for k8s",
+		"initramfsConfigs": "configures the initramfs for the system",
+		"miscellaneous":    "applies miscellaneous configurations",
+	}
+	keys := make([]string, 0, len(steps))
+	for k := range steps {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	ordered := make([]StepInfo, 0, len(keys))
+	for _, k := range keys {
+		ordered = append(ordered, StepInfo{Key: k, Value: steps[k]})
+	}
+	return ordered
+}
+
+// GetStepNames returns a slice of step names
+func GetStepNames() []string {
+	stepsInfo := StepsInfo()
+	steps := make([]string, 0, len(stepsInfo))
+	for step := range stepsInfo {
+		steps = append(steps, stepsInfo[step].Key)
+	}
+	return steps
+
 }
