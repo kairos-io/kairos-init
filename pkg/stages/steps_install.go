@@ -4,7 +4,6 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"fmt"
-	semver "github.com/hashicorp/go-version"
 	"io"
 	"net/http"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"strconv"
 	"strings"
 
+	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/bundled"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/values"
@@ -24,7 +24,7 @@ import (
 // This file contains the stages for the install process
 
 func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Stage, error) {
-	if config.DefaultConfig.SkipInstallPackages {
+	if config.ContainsSkipStep("installPackages") {
 		logger.Logger.Warn().Msg("Skipping install packages stage")
 		return []schema.Stage{}, nil
 	}
@@ -107,7 +107,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 
 // GetInstallKubernetesStage returns the the kubernetes install stage
 func GetInstallKubernetesStage(sis values.System, logger types.KairosLogger) []schema.Stage {
-	if config.DefaultConfig.SkipInstallK8s {
+	if config.ContainsSkipStep("kubernetes") {
 		logger.Logger.Warn().Msg("Skipping installing kubernetes stage")
 		return []schema.Stage{}
 	}
@@ -210,6 +210,10 @@ func GetInstallKubernetesStage(sis values.System, logger types.KairosLogger) []s
 // TODO: Make them first class yip files in code and just dump them into the system?
 // That way they can be set as a normal yip stage maybe? a yip stage that dumps the yip stage lol
 func GetInstallOemCloudConfigs(l types.KairosLogger) error {
+	if config.ContainsSkipStep("cloudconfigs") {
+		l.Logger.Warn().Msg("Skipping installing cloudconfigs stage")
+		return nil
+	}
 	files, err := bundled.EmbeddedConfigs.ReadDir("cloudconfigs")
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to read embedded files")
@@ -249,7 +253,11 @@ func GetInstallOemCloudConfigs(l types.KairosLogger) error {
 // GetInstallBrandingStage returns the branding stage
 // This stage takes care of creating the default branding files that are used by the system
 // Thinks like interactive install or recoivery welcome text or grubmenu configs
-func GetInstallBrandingStage(_ values.System, _ types.KairosLogger) []schema.Stage {
+func GetInstallBrandingStage(_ values.System, l types.KairosLogger) []schema.Stage {
+	if config.ContainsSkipStep("branding") {
+		l.Logger.Warn().Msg("Skipping installing branding stage")
+		return []schema.Stage{}
+	}
 	var data []schema.Stage
 
 	data = append(data, []schema.Stage{
@@ -299,7 +307,11 @@ func GetInstallBrandingStage(_ values.System, _ types.KairosLogger) []schema.Sta
 
 // GetInstallGrubBootArgsStage returns the stage to write the grub configs
 // This stage takes create of creating the /etc/cos/bootargs.cfg and /etc/cos/grub.cfg
-func GetInstallGrubBootArgsStage(_ values.System, _ types.KairosLogger) []schema.Stage {
+func GetInstallGrubBootArgsStage(_ values.System, l types.KairosLogger) []schema.Stage {
+	if config.ContainsSkipStep("grub") {
+		l.Logger.Warn().Msg("Skipping installing grub stage")
+		return []schema.Stage{}
+	}
 	var data []schema.Stage
 	// On trusted boot this is useless
 	if config.DefaultConfig.TrustedBoot {
@@ -334,7 +346,11 @@ func GetInstallGrubBootArgsStage(_ values.System, _ types.KairosLogger) []schema
 // GetInstallServicesStage returns the stage to create the services
 // This installs some services that for some reason are not created by the configs
 // TODO: Ideally this should be moved to be created on boot with cc instead of install
-func GetInstallServicesStage(_ values.System, _ types.KairosLogger) []schema.Stage {
+func GetInstallServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
+	if config.ContainsSkipStep("services") {
+		l.Logger.Warn().Msg("Skipping installing services stage")
+		return []schema.Stage{}
+	}
 	var data []schema.Stage
 
 	data = append(data, []schema.Stage{
@@ -404,6 +420,10 @@ func GetInstallServicesStage(_ values.System, _ types.KairosLogger) []schema.Sta
 
 // GetInstallKairosBinaries directly installs the kairos binaries from bundled binaries
 func GetInstallKairosBinaries(sis values.System, l types.KairosLogger) error {
+	if config.ContainsSkipStep("kairosBinaries") {
+		l.Logger.Warn().Msg("Skipping installing Kairos binaries stage")
+		return nil
+	}
 	//  If versions are provided, download and install those instead? i.e. Allow online install versions?
 
 	binaries := map[string]string{
@@ -469,6 +489,10 @@ func GetInstallKairosBinaries(sis values.System, l types.KairosLogger) error {
 
 // GetInstallProviderBinaries installs the provider and edgevpn binaries
 func GetInstallProviderBinaries(sis values.System, l types.KairosLogger) error {
+	if config.ContainsSkipStep("providerBinaries") {
+		l.Logger.Warn().Msg("Skipping installing Kairos k8s provider binaries stage")
+		return nil
+	}
 	// If its core we dont do anything here
 	if config.DefaultConfig.Variant.String() == "core" {
 		return nil
@@ -565,6 +589,10 @@ func GetInstallProviderBinaries(sis values.System, l types.KairosLogger) error {
 // GetKairosInitramfsFilesStage installs the kairos initramfs files
 // This stage is used to install the initramfs files that are needed for the system to boot
 func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]schema.Stage, error) {
+	if config.ContainsSkipStep("initramfsConfigs") {
+		l.Logger.Warn().Msg("Skipping installing initramfs configs stage")
+		return []schema.Stage{}, nil
+	}
 	var data []schema.Stage
 	if config.DefaultConfig.TrustedBoot {
 		l.Logger.Info().Msg("Skipping installing initramfs files stage for trusted boot")
@@ -787,6 +815,11 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 // GetKairosMiscellaneousFilesStage installs the kairos miscellaneous files
 // Like small scripts or other files that are not part of the main install process
 func GetKairosMiscellaneousFilesStage(sis values.System, l types.KairosLogger) []schema.Stage {
+	if config.ContainsSkipStep("miscellaneous") {
+		l.Logger.Warn().Msg("Skipping installing miscellaneous configs stage")
+		return []schema.Stage{}
+	}
+
 	var data []schema.Stage
 
 	data = append(data, []schema.Stage{
