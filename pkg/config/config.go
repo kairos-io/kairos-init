@@ -10,11 +10,8 @@ import (
 // Config is the struct to track the config of the init image
 // So we can access it from anywhere
 type Config struct {
-	Level               string
-	Stage               string
 	Model               string
 	Variant             Variant
-	Registry            string
 	TrustedBoot         bool
 	Fips                bool
 	KubernetesProvider  KubernetesProvider

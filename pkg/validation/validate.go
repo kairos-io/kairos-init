@@ -52,22 +52,23 @@ func (v *Validator) Validate() error {
 	for _, binary := range binaries {
 		path, err := exec.LookPath(binary)
 		if err != nil {
-			multi = multierror.Append(multi, fmt.Errorf("could not find binary %s", binary))
+			multi = multierror.Append(multi, fmt.Errorf("[BINARIES] could not find binary %s", binary))
+		} else {
+			v.Log.Logger.Info().Str("path", path).Str("binary", binary).Msg("Found binary")
 		}
-		v.Log.Logger.Info().Str("path", path).Str("binary", binary).Msg("Found binary")
 	}
 
 	// Restore the path
 	_ = os.Setenv("PATH", originalPath)
 
-	checkfiles := []string{"/boot/vmlinuz"}
+	checkFiles := []string{"/boot/vmlinuz"}
 	if !config.DefaultConfig.TrustedBoot {
-		checkfiles = append(checkfiles, "/boot/initrd")
+		checkFiles = append(checkFiles, "/boot/initrd")
 	}
-	for _, f := range checkfiles {
+	for _, f := range checkFiles {
 		s, err := os.Lstat(f)
 		if err != nil {
-			multi = multierror.Append(multi, fmt.Errorf("file missing %s", f))
+			multi = multierror.Append(multi, fmt.Errorf("[FILES] file missing %s", f))
 			continue
 		}
 		v.Log.Logger.Info().Str("file", f).Msg("Found file")
@@ -107,7 +108,7 @@ func (v *Validator) Validate() error {
 		for _, service := range services {
 			_, err := os.Stat(fmt.Sprintf("/etc/systemd/system/%s.service", service))
 			if err != nil {
-				multi = multierror.Append(multi, fmt.Errorf("service %s not found", service))
+				multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s not found", service))
 			} else {
 				v.Log.Logger.Info().Str("service", service).Msg("Found service")
 			}
@@ -135,24 +136,24 @@ func (v *Validator) Validate() error {
 
 	vals, err := godotenv.Read("/etc/kairos-release")
 	if err != nil {
-		multi = multierror.Append(multi, fmt.Errorf("could not open kairos-release file"))
+		multi = multierror.Append(multi, fmt.Errorf("[RELEASE] could not open kairos-release file"))
 	} else {
 		for _, key := range keys {
 			if vals[key] == "" {
-				multi = multierror.Append(multi, fmt.Errorf("key %s not found or empty in kairos-release", key))
+				multi = multierror.Append(multi, fmt.Errorf("[RELEASE] key %s not found or empty in kairos-release", key))
 			}
 		}
 	}
 
 	if config.DefaultConfig.Variant == "standard" {
 		if vals["KAIROS_VARIANT"] != "standard" {
-			multi = multierror.Append(multi, fmt.Errorf("KAIROS_VARIANT is not standard"))
+			multi = multierror.Append(multi, fmt.Errorf("[RELEASE] KAIROS_VARIANT is not standard"))
 		}
 		if vals["KAIROS_SOFTWARE_VERSION"] == "" {
-			multi = multierror.Append(multi, fmt.Errorf("KAIROS_SOFTWARE_VERSION is empty"))
+			multi = multierror.Append(multi, fmt.Errorf("[RELEASE] KAIROS_SOFTWARE_VERSION is empty"))
 		}
 		if vals["KAIROS_SOFTWARE_VERSION_PREFIX"] == "" {
-			multi = multierror.Append(multi, fmt.Errorf("KAIROS_SOFTWARE_VERSION_PREFIX is empty"))
+			multi = multierror.Append(multi, fmt.Errorf("[RELEASE] KAIROS_SOFTWARE_VERSION_PREFIX is empty"))
 		}
 	}
 
@@ -160,7 +161,7 @@ func (v *Validator) Validate() error {
 
 	for _, dir := range ExpectedDirs {
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			multi = multierror.Append(multi, fmt.Errorf("directory %s does not exist", dir))
+			multi = multierror.Append(multi, fmt.Errorf("[DIRS] directory %s does not exist", dir))
 		}
 	}
 
@@ -169,16 +170,16 @@ func (v *Validator) Validate() error {
 	if !config.DefaultConfig.TrustedBoot {
 		// check dracut
 		if _, err := exec.LookPath("lsinitrd"); err != nil {
-			v.Log.Logger.Warn().Msg("lsinitrd not found, cannot check initrd contents")
+			v.Log.Logger.Warn().Msg("[INITRD] lsinitrd not found, cannot check initrd contents")
 		} else {
 			v.Log.Logger.Info().Msg("Checking initrd contents")
 			out, err := exec.Command("lsinitrd", "/boot/initrd").CombinedOutput()
 			if err != nil {
-				return err
+				multi = multierror.Append(multi, fmt.Errorf("[INITRD] failed checking initrd contents: %s", err))
 			}
 			for _, binary := range []string{"immucore", "kairos-agent"} {
 				if !strings.Contains(string(out), binary) {
-					multi = multierror.Append(multi, fmt.Errorf("did not found %s in the initrd", binary))
+					multi = multierror.Append(multi, fmt.Errorf("[INITRD] did not found %s in the initrd", binary))
 				} else {
 					v.Log.Logger.Info().Str("binary", binary).Msg("Found binary in the initrd")
 				}
@@ -189,13 +190,16 @@ func (v *Validator) Validate() error {
 	// Check if there are any ssh host keys in /etc/ssh
 	matches, err := filepath.Glob("/etc/ssh/ssh_host_*_key")
 	if err != nil {
-		multi = multierror.Append(multi, fmt.Errorf("error checking for SSH host keys: %s", err))
+		multi = multierror.Append(multi, fmt.Errorf("[SSH] error checking for SSH host keys: %s", err))
 	}
 	if len(matches) > 0 {
-		v.Log.Logger.Warn().Strs("ssh_host_keys", matches).Msg("Found SSH host keys in the system")
-		multi = multierror.Append(multi, fmt.Errorf("found SSH host keys in the system: %v", matches))
+		multi = multierror.Append(multi, fmt.Errorf("[SSH] found SSH host keys in the system: %v", matches))
 	} else {
 		v.Log.Logger.Info().Msg("No SSH host keys found bundled in the system")
+	}
+
+	if multi.ErrorOrNil() == nil {
+		v.Log.Logger.Info().Msg("System validation passed")
 	}
 
 	return multi.ErrorOrNil()

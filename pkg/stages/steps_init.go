@@ -42,7 +42,8 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 		}
 
 		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s", kernel)
-		if config.DefaultConfig.Level == "debug" {
+
+		if logger.GetLevel() == 0 {
 			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel)
 		}
 
@@ -120,22 +121,22 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 	}
 
 	env := map[string]string{
-		"KAIROS_ID":               "kairos", // What for?
-		"KAIROS_ID_LIKE":          idLike,   // What for?
-		"KAIROS_NAME":             idLike,   // What for? Same as ID_LIKE
-		"KAIROS_VERSION":          release,
-		"KAIROS_ARCH":             sis.Arch.String(),
-		"KAIROS_TARGETARCH":       sis.Arch.String(), // What for? Same as ARCH
-		"KAIROS_FLAVOR":           flavor,            // This should be in os-release as ID
-		"KAIROS_FLAVOR_RELEASE":   flavorRelease,     // This should be in os-release as VERSION_ID
-		"KAIROS_FAMILY":           sis.Family.String(),
-		"KAIROS_MODEL":            config.DefaultConfig.Model,            // NEEDED or it breaks boot!
-		"KAIROS_VARIANT":          config.DefaultConfig.Variant.String(), // TODO: Fully drop variant
-		"KAIROS_REGISTRY_AND_ORG": config.DefaultConfig.Registry,         // Needed for upgrades to search for images
-		"KAIROS_BUG_REPORT_URL":   "https://github.com/kairos-io/kairos/issues",
-		"KAIROS_HOME_URL":         "https://github.com/kairos-io/kairos",
-		"KAIROS_RELEASE":          release,
-		"KAIROS_FIPS":             fmt.Sprintf("%t", config.DefaultConfig.Fips), // Was the image built with FIPS support?
+		"KAIROS_ID":             "kairos", // What for?
+		"KAIROS_ID_LIKE":        idLike,   // What for?
+		"KAIROS_NAME":           idLike,   // What for? Same as ID_LIKE
+		"KAIROS_VERSION":        release,
+		"KAIROS_ARCH":           sis.Arch.String(),
+		"KAIROS_TARGETARCH":     sis.Arch.String(), // What for? Same as ARCH
+		"KAIROS_FLAVOR":         flavor,            // This should be in os-release as ID
+		"KAIROS_FLAVOR_RELEASE": flavorRelease,     // This should be in os-release as VERSION_ID
+		"KAIROS_FAMILY":         sis.Family.String(),
+		"KAIROS_MODEL":          config.DefaultConfig.Model,            // NEEDED or it breaks boot!
+		"KAIROS_VARIANT":        config.DefaultConfig.Variant.String(), // TODO: Fully drop variant
+		"KAIROS_BUG_REPORT_URL": "https://github.com/kairos-io/kairos/issues",
+		"KAIROS_HOME_URL":       "https://github.com/kairos-io/kairos",
+		"KAIROS_RELEASE":        release,
+		"KAIROS_FIPS":           fmt.Sprintf("%t", config.DefaultConfig.Fips),        // Was the image built with FIPS support?
+		"KAIROS_TRUSTED_BOOT":   fmt.Sprintf("%t", config.DefaultConfig.TrustedBoot), // Was the image built with Trusted Boot support?
 	}
 
 	// Get SOFTWARE_VERSION from the k3s/k0s version
