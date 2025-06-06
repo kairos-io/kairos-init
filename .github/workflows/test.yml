@@ -12,12 +12,11 @@ concurrency:
 
 jobs:
   testing_build_matrix:
-    name: ${{ matrix.platform }} - ${{ matrix.base_image }}${{ matrix.variant == 'standard' && ' - ' || '' }}${{ matrix.kubernetes_provider || '' }}${{ matrix.kubernetes_version || '' }}${{ matrix.fips == true && ' - FIPS' || '' }}
+    name: ${{ matrix.platform }} - ${{ matrix.base_image }}${{ matrix.variant == 'standard' && ' - ' || '' }} ${{ matrix.kubernetes_provider == '' && matrix.kubernetes_provider || '' }} ${{ matrix.kubernetes_version == '' && matrix.kubernetes_version || '' }}${{ matrix.fips == true && ' - FIPS' || '' }}
     runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
       matrix:
-        kubernetes_provider: [ "k3s"]
         platform: [ "amd64", "arm64" ]
         base_image: [ "ubuntu:20.04", "ubuntu:24.04", "debian:12", "fedora:41", "alpine:3.21", "opensuse/leap:15.6", "opensuse/tumbleweed", "rockylinux:9", "almalinux:9" ]
         include:
@@ -54,7 +53,7 @@ jobs:
           tags: kairos-${{ matrix.base_image }}
           build-args: |
             BASE_IMAGE=${{ matrix.base_image }}
-            KUBERNETES_PROVIDER=${{ matrix.kubernetes_provider }}
+            KUBERNETES_PROVIDER=${{ matrix.kubernetes_provider || '' }}
             KUBERNETES_VERSION=${{ matrix.kubernetes_version || '' }}
             VERSION=${{ env.VERSION }}
             FIPS=${{ matrix.fips || false }}
