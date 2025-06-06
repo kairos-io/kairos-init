@@ -25,10 +25,9 @@ COPY --from=build /app/kairos-init /kairos-init
 # Target to use the validator directly inside a generated image with kairos-init
 FROM ${VALIDATE_IMAGE} AS validate
 COPY --from=build /app/kairos-init /kairos-init
-RUN /kairos-init -l debug --validate
+RUN /kairos-init validate
 
 FROM ${BASE_IMAGE}
-ARG VARIANT=core
 ARG MODEL=generic
 ARG TRUSTED_BOOT=false
 ARG KUBERNETES_PROVIDER=k3s
@@ -37,7 +36,7 @@ ARG VERSION=v0.0.1
 ARG FIPS=false
 
 COPY --from=kairos-init /kairos-init /kairos-init
-RUN /kairos-init --registry quay.io/kairos -l debug -s install -m "${MODEL}" -v "${VARIANT}" -t "${TRUSTED_BOOT}" -k "${KUBERNETES_PROVIDER}" --k8sversion "${KUBERNETES_VERSION}" --version "${VERSION}" $(if [ "${FIPS}" = "true" ]; then echo "--fips"; fi)
-RUN /kairos-init --registry quay.io/kairos -l debug -s init -m "${MODEL}" -v "${VARIANT}" -t "${TRUSTED_BOOT}" -k "${KUBERNETES_PROVIDER}" --k8sversion "${KUBERNETES_VERSION}" --version "${VERSION}" $(if [ "${FIPS}" = "true" ]; then echo "--fips"; fi)
-RUN /kairos-init --registry quay.io/kairos -l debug --validate -m "${MODEL}" -v "${VARIANT}" -t "${TRUSTED_BOOT}" -k "${KUBERNETES_PROVIDER}" --k8sversion "${KUBERNETES_VERSION}" --version "${VERSION}" $(if [ "${FIPS}" = "true" ]; then echo "--fips"; fi)
+RUN /kairos-init -l debug -s install -m "${MODEL}" -t "${TRUSTED_BOOT}" -k "${KUBERNETES_PROVIDER}" --k8sversion "${KUBERNETES_VERSION}" --version "${VERSION}" $(if [ "${FIPS}" = "true" ]; then echo "--fips"; fi)
+RUN /kairos-init -l debug -s init -m "${MODEL}" -t "${TRUSTED_BOOT}" -k "${KUBERNETES_PROVIDER}" --k8sversion "${KUBERNETES_VERSION}" --version "${VERSION}" $(if [ "${FIPS}" = "true" ]; then echo "--fips"; fi)
+RUN /kairos-init validate -t "${TRUSTED_BOOT}"
 RUN rm /kairos-init
