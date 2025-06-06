@@ -97,7 +97,7 @@ var rootCmd = &cobra.Command{
 			case "all":
 				runStages, err = stages.RunAllStages(logger)
 			default:
-				return fmt.Errorf("unnown stage %s. Valid values are %s", stageFlag.Value, strings.Join(stageFlag.Allowed, ", "))
+				return fmt.Errorf("unknown stage %s. Valid values are %s", stageFlag.Value, strings.Join(stageFlag.Allowed, ", "))
 			}
 		}
 
