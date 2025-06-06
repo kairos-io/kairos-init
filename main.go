@@ -19,7 +19,7 @@ import (
 var (
 	trusted      string
 	version      string
-	ksProvider   = newEnumFlag([]string{string(config.K3sProvider), string(config.K0sProvider)}, "")
+	ksProvider   = newEnumFlag([]string{string(config.K3sProvider), string(config.K0sProvider), ""}, "")
 	stageFlag    = newEnumFlag([]string{"init", "install", "all"}, "all")
 	loglevelFlag = newEnumFlag([]string{"debug", "info", "warn", "error", "trace"}, "info")
 )
