@@ -179,7 +179,7 @@ func (v *Validator) Validate() error {
 			}
 			for _, binary := range []string{"immucore", "kairos-agent"} {
 				if !strings.Contains(string(out), binary) {
-					multi = multierror.Append(multi, fmt.Errorf("[INITRD] did not found %s in the initrd", binary))
+					multi = multierror.Append(multi, fmt.Errorf("[INITRD] did not find %s in the initrd", binary))
 				} else {
 					v.Log.Logger.Info().Str("binary", binary).Msg("Found binary in the initrd")
 				}
