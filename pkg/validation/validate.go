@@ -89,34 +89,6 @@ func (v *Validator) Validate() error {
 		}
 	}
 
-	// Check services are there
-	if v.System.Family != values.AlpineFamily {
-		services := []string{
-			"kairos-agent",
-			"kairos-interactive",
-			"kairos-recovery",
-			"kairos-reset",
-			"kairos-webui",
-		}
-
-		if config.DefaultConfig.Variant == "standard" {
-			switch config.DefaultConfig.KubernetesProvider {
-			case config.K3sProvider:
-				services = append(services, "k3s", "k3s-agent")
-			case config.K0sProvider:
-				services = append(services, "k0scontroller", "k0sworker")
-			}
-		}
-		for _, service := range services {
-			_, err := os.Stat(fmt.Sprintf("/etc/systemd/system/%s.service", service))
-			if err != nil {
-				multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s not found", service))
-			} else {
-				v.Log.Logger.Info().Str("service", service).Msg("Found service")
-			}
-		}
-	}
-
 	// Validate all needed keys are stored in kairos-release
 	keys := []string{
 		"KAIROS_ID",
