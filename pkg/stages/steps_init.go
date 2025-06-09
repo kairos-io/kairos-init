@@ -376,7 +376,8 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 	}
 	return []schema.Stage{
 		{
-			Name: "Configure default systemd services",
+			Name:                 "Configure default systemd services",
+			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Mask: []string{
 					"systemd-firstboot.service",
@@ -390,8 +391,9 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name:     "Enable services for Debian family",
-			OnlyIfOs: "Ubuntu.*|Debian.*",
+			Name:                 "Enable services for Debian family",
+			OnlyIfOs:             "Ubuntu.*|Debian.*",
+			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"ssh",
@@ -400,8 +402,9 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name:     "Enable services for RHEL family",
-			OnlyIfOs: "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			Name:                 "Enable services for RHEL family",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"sshd",
@@ -418,8 +421,9 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name:     "Enable services for Alpine family",
-			OnlyIfOs: "Alpine.*",
+			Name:                 "Enable services for Alpine family",
+			OnlyIfOs:             "Alpine.*",
+			OnlyIfServiceManager: "openrc",
 			Commands: []string{
 				"rc-update add sshd boot",
 				"rc-update add connman boot ",
