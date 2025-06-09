@@ -7,11 +7,15 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
+      - ARCH={{ .Arch }}
     goos:
       - linux
     goarch:
       - amd64
       - arm64
+    hooks:
+      pre:
+        - make
     ldflags:
       - -w -s -X "github.com/kairos-io/kairos-init/pkg/values.version={{.Tag}}" -X "github.com/kairos-io/kairos-init/pkg/values.gitCommit={{.ShortCommit}}"
     binary: '{{ .ProjectName }}'
