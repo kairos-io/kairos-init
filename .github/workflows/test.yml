@@ -31,6 +31,10 @@ jobs:
           - platform: "amd64"
             base_image: "fedora:41"
             fips: true
+          - platform: "amd64"
+            base_image: "ubuntu:24.04"
+            trusted_boot: "true"
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -57,3 +61,4 @@ jobs:
             KUBERNETES_VERSION=${{ matrix.kubernetes_version || '' }}
             VERSION=${{ env.VERSION }}
             FIPS=${{ matrix.fips || false }}
+            TRUSTED_BOOT=${{ matrix.trusted_boot || 'false' }}
