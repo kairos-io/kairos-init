@@ -426,7 +426,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			OnlyIfServiceManager: "openrc",
 			Commands: []string{
 				"rc-update add sshd boot",
-				"rc-update add connman boot ",
+				"rc-update add connman boot",
 				"rc-update add acpid boot",
 				"rc-update add hwclock boot",
 				"rc-update add syslog boot",
