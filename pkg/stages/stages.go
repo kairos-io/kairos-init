@@ -82,8 +82,6 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data.Stages["install"] = append(data.Stages["install"], GetInstallBrandingStage(sis, logger)...)
 	// Add the bootargs file
 	data.Stages["install"] = append(data.Stages["install"], GetInstallGrubBootArgsStage(sis, logger)...)
-	// Add the services
-	data.Stages["install"] = append(data.Stages["install"], GetInstallServicesStage(sis, logger)...)
 	// Add kubernetes
 	data.Stages["install"] = append(data.Stages["install"], GetInstallKubernetesStage(sis, logger)...)
 	// Add initrd files

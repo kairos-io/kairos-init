@@ -2,6 +2,7 @@ package stages
 
 import (
 	"fmt"
+	"github.com/kairos-io/kairos-init/pkg/bundled"
 	"os"
 	"os/exec"
 	"regexp"
@@ -294,6 +295,37 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 				"rm -f /etc/ssh/ssh_host_*_key*",
 			},
 		},
+		{
+			Name:     "Cleanup",
+			OnlyIfOs: "Ubuntu.*|Debian.*",
+			Commands: []string{
+				"apt-get clean",
+				"rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*",
+			},
+		},
+		{
+			Name:     "Cleanup",
+			OnlyIfOs: "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			Commands: []string{
+				"dnf clean all",
+				"rm -rf /var/cache/dnf/* /tmp/* /var/tmp/*",
+			},
+		},
+		{
+			Name:     "Cleanup",
+			OnlyIfOs: "Alpine.*",
+			Commands: []string{
+				"rm -rf /var/cache/apk/* /tmp/* /var/tmp/*",
+			},
+		},
+		{
+			Name:     "Cleanup",
+			OnlyIfOs: "SLES.*|[O-o]penSUSE.*",
+			Commands: []string{
+				"zypper clean -a",
+				"rm -rf /var/cache/zypp/* /tmp/* /var/tmp/*",
+			},
+		},
 	}
 
 	var pkgs []values.VersionMap
@@ -343,6 +375,19 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 		return []schema.Stage{}
 	}
 	return []schema.Stage{
+		{
+			Systemctl: schema.Systemctl{
+				Mask: []string{
+					"systemd-firstboot.service",
+				},
+				Overrides: []schema.SystemctlOverride{
+					{
+						Service: "systemd-networkd-wait-online",
+						Content: bundled.SystemdNetworkOnlineWaitOverride,
+					},
+				},
+			},
+		},
 		{
 			Name:     "Enable services for Debian family",
 			OnlyIfOs: "Ubuntu.*|Debian.*",
