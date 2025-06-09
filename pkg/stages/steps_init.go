@@ -376,6 +376,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 	}
 	return []schema.Stage{
 		{
+			Name: "Configure default systemd services",
 			Systemctl: schema.Systemctl{
 				Mask: []string{
 					"systemd-firstboot.service",
