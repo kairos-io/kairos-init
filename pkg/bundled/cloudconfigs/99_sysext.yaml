@@ -2,7 +2,7 @@ name: "sysext"
 stages:
   fs.after:
     - name: "Default sysext extensions dirs"
-      if: '[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+      only_service_manager: "systemd"
       directories:
         - path: /etc/extensions
         - path: /run/extensions
@@ -12,6 +12,7 @@ stages:
   initramfs:
     - name: "systemd-sysext uki config"
       if: '[ -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
+      only_service_manager: "systemd"
       files:
         - path: /etc/systemd/system/systemd-sysext.service.d/kairos-uki.conf
           permissions: 0644
@@ -36,6 +37,7 @@ stages:
             JobRunningTimeoutSec=5
     - name: "systemd-sysext config"
       if: '[ ! -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
+      only_service_manager: "systemd"
       files:
         - path: /etc/systemd/system/systemd-sysext.service.d/kairos.conf
           permissions: 0644
@@ -60,6 +62,7 @@ stages:
             JobRunningTimeoutSec=5
     - name: "systemd-sysext set hierarchy system-wide"
       if: '[ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
+      only_service_manager: "systemd"
       files:
         - path: /etc/profile.d/systemd-sysext.sh
           permissions: 0644
@@ -68,7 +71,7 @@ stages:
           content: |
             export SYSTEMD_SYSEXT_HIERARCHIES="/usr/local/bin:/usr/local/sbin:/usr/local/include:/usr/local/lib:/usr/local/share:/usr/local/src:/usr/bin:/usr/share:/usr/lib:/usr/include:/usr/src:/usr/sbin"
     - name: "systemd-sysext initramfs settings"
-      if: '[ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+      only_service_manager: "systemd"
       systemctl:
         enable:
           - systemd-sysext

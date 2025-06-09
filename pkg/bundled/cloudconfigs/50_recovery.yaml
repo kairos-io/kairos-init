@@ -3,8 +3,8 @@ stages:
   initramfs:
     - name: "Starts kairos-recovery and generate a temporary pass"
       if: |
-        grep -q "kairos.remote_recovery_mode" /proc/cmdline && \
-        ( [ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] )
+        grep -q "kairos.remote_recovery_mode" /proc/cmdline
+      only_service_manager: "systemd"
       files:
         - path: /etc/systemd/system/kairos-recovery.service
           permissions: 0644
@@ -38,7 +38,8 @@ stages:
         - systemctl mask getty@tty1
         - systemctl enable kairos-recovery
     - name: "Starts kairos-recovery for openRC based systems"
-      if: grep -q "kairos.remote_recovery_mode" /proc/cmdline && [ -f "/sbin/openrc" ]
+      if: grep -q "kairos.remote_recovery_mode" /proc/cmdline
+      only_service_manager: "openrc"
       commands:
         - sed -i -e 's/tty1.*//g' /etc/inittab
         - echo "tty1::respawn:/usr/bin/kairos-agent recovery tty1" >> /etc/inittab
