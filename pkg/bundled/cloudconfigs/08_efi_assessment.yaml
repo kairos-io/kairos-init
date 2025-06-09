@@ -2,7 +2,8 @@ name: "Enable EFI assessment"
 stages:
   initramfs:
     - name: "Override systemd-boot services to enable RW on /efi partition"
-      if: '([ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]) && [ -e "/run/cos/uki_boot_mode" ]'
+      if: '[ -e "/run/cos/uki_boot_mode" ]'
+      only_service_manager: "systemd"
       files:
         - path: /etc/systemd/system/systemd-bless-boot.service.d/override.conf
           permissions: 0644
@@ -27,7 +28,8 @@ stages:
             # Revert back to RO on /efi partition
             ExecStartPost=mount -o remount,ro /efi
     - name: "Enable boot assessment"
-      if: '([ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ]) && [ -e "/run/cos/uki_boot_mode" ]'
+      if: '[ -e "/run/cos/uki_boot_mode" ]'
+      only_service_manager: "systemd"
       systemctl:
         enable:
           - "systemd-bless-boot"

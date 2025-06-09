@@ -54,7 +54,7 @@ stages:
     # Run this in the after stage so it doesnt collide with other initramfs changes to the /etc/inittab
     # Otherwise this can lead to 2 steps modifying the inittab at the same time and overriding or not cleaning it properly
     - name: "Enable serial login for alpine"  # https://wiki.alpinelinux.org/wiki/Enable_Serial_Console_on_Boot
-      if: '[ -e /sbin/openrc ]'
+      only_service_manager: "openrc"
       commands:
         - sed -i -e 's/ttyS0.*//g' /etc/inittab
         - echo "ttyS0::respawn:/sbin/getty -L ttyS0 115200 vt100" >> /etc/inittab

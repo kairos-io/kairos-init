@@ -7,8 +7,8 @@ stages:
     # TODO: Drop nodepair.enable keyword in Kairos 4.0.0
     - if: |
         (grep -q "install-mode" /proc/cmdline || grep -q "nodepair.enable" /proc/cmdline ) && \
-        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ]) && \
-        ( [ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] )
+        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ])
+      only_service_manager: "systemd"
       files:
         - &webui-service
           path: /etc/systemd/system/kairos-webui.service
@@ -58,8 +58,8 @@ stages:
     # TODO: Drop nodepair.enable keyword in Kairos 4.0.0
     - if: |
         (grep -q "install-mode" /proc/cmdline || grep -q "nodepair.enable" /proc/cmdline ) && \
-        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ]) && \
-        [ -f "/sbin/openrc" ]
+        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ])
+      only_service_manager: "openrc"
       commands:
         - sed -i -e 's/tty1.*//g' /etc/inittab
         - echo "tty1::respawn:/usr/bin/kairos-agent install tty1" >> /etc/inittab
@@ -67,8 +67,8 @@ stages:
     # TODO: Drop interactive-install keyword in Kairos 4.0.0
     - if: |
         (grep -q "interactive-install" /proc/cmdline || grep -q "install-mode-interactive" /proc/cmdline) && \
-        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ]) && \
-        ( [ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] )
+        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ])
+      only_service_manager: "systemd"
       files:
         - path: /etc/systemd/system/kairos-interactive.service
           permissions: 0644
@@ -110,20 +110,20 @@ stages:
     # TODO: Drop interactive-install keyword in Kairos 4.0.0
     - if: |
         (grep -q "interactive-install" /proc/cmdline || grep -q "install-mode-interactive" /proc/cmdline) && \
-        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ]) && \
-        [ -f "/sbin/openrc" ]
+        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ])
+      only_service_manager: "openrc"
       commands:
         - sed -i -e 's/tty1.*//g' /etc/inittab
         - echo "tty1::respawn:/usr/bin/kairos-agent interactive-install --shell tty1" >> /etc/inittab
   boot:
     - if: |
-        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ]) && \
-        [ -f "/sbin/openrc" ]
+        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ])
+      only_service_manager: "openrc"
       commands:
         - rc-service kairos-webui start
     - if: |
-        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ]) && \
-        ( [ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] )
+        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ])
+      only_service_manager: "systemd"
       files:
         - <<: *webui-service
       commands:

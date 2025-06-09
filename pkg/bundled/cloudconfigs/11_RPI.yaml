@@ -6,6 +6,7 @@ stages:
     # which can lead to wrong calculations (days since login for example)
     # later in the boot process ntpd or other software clocks will trigger and update the date
     - name: "Set a safe date before user creation for RPI without hardware clocks"
-      if: '[ -f "/sbin/openrc" ] && [ -f "/proc/device-tree/model" ] && grep -i "Raspberry Pi" "/proc/device-tree/model"'
+      if: '[ -f "/proc/device-tree/model" ] && grep -i "Raspberry Pi" "/proc/device-tree/model"'
+      only_service_manager: "openrc"
       commands:
         - date -s "2006-08-14 02:34:56-06:00"

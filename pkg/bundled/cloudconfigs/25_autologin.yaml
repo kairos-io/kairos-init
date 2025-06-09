@@ -4,8 +4,8 @@ stages:
     # TODO: Drop interactive-install keyword in Kairos 4.0.0
     - if: |
         (grep -qv "interactive-install" /proc/cmdline || grep -qv "install-mode-interactive" /proc/cmdline ) && \
-        [ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ] && \
-        ( [ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] )
+        ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ])
+      only_service_manager: "systemd"
       files:
         - path: /etc/systemd/system/serial-getty@ttyS0.service.d/override.conf
           content: |
@@ -23,8 +23,8 @@ stages:
       # TODO: Drop interactive-install keyword in Kairos 4.0.0
       if: |
         (grep -qv "interactive-install" /proc/cmdline || grep -qv "install-mode-interactive" /proc/cmdline) && \
-        [ -f /run/cos/live_mode ] && \
-        [ -f "/sbin/openrc" ]
+        [ -f /run/cos/live_mode ]
+      only_service_manager: "openrc"
       files:
         - path: /etc/motd
           content: |
