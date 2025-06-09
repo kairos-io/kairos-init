@@ -3,7 +3,8 @@ stages:
   boot:
     - if: '[ ! -f "/run/cos/recovery_mode" ] && [ -d "/usr/share/systemd" ]'
       files:
-        - path: /etc/systemd/system/kairos-agent.service
+        - &agent-service
+          path: /etc/systemd/system/kairos-agent.service
           permissions: 0644
           owner: 0
           group: 0
@@ -24,20 +25,6 @@ stages:
   initramfs:
     - if: '[ ! -f "/run/cos/recovery_mode" ] && [ -d "/usr/share/systemd" ]'
       files:
-        - path: /etc/systemd/system/kairos-agent.service
-          permissions: 0644
-          owner: 0
-          group: 0
-          content: |
-            [Unit]
-            Description=kairos agent
-            After=cos-setup-network.service
-            Wants=network.target
-            [Service]
-            Restart=on-failure
-            RestartSec=5s
-            ExecStart=/usr/bin/kairos-agent start
-            [Install]
-            WantedBy=multi-user.target
+        - <<: *agent-service
       commands:
         - systemctl enable kairos-agent

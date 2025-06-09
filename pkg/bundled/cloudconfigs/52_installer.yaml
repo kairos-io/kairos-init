@@ -10,7 +10,8 @@ stages:
         ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ]) && \
         ( [ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] )
       files:
-        - path: /etc/systemd/system/kairos-webui.service
+        - &webui-service
+          path: /etc/systemd/system/kairos-webui.service
           permissions: 0644
           owner: 0
           group: 0
@@ -124,18 +125,6 @@ stages:
         ([ -f /run/cos/live_mode ] || [ -f /run/cos/uki_install_mode ]) && \
         ( [ -e "/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ] )
       files:
-        - path: /etc/systemd/system/kairos-webui.service
-          permissions: 0644
-          owner: 0
-          group: 0
-          content: |
-            [Unit]
-            Description=kairos webui installer
-            After=sysinit.target
-            [Service]
-            ExecStart=/usr/bin/kairos-agent webui
-            TimeoutStopSec=10s
-            [Install]
-            WantedBy=multi-user.target
+        - <<: *webui-service
       commands:
         - systemctl start kairos-webui
