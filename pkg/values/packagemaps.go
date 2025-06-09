@@ -486,7 +486,7 @@ var GrubPackages = PackageMap{
 				"grub2",                 // Basic grub support
 				"grub-efi-amd64-bin",    // Basic grub support for EFI
 				"grub-efi-amd64-signed", // For secure boot support
-				"grub-pc-bin",           // Basic grub support for BIOS, probably needed byt AuroraBoot to build hybrid isos?
+				"grub-pc-bin",           // Basic grub support for BIOS, probably needed by AuroraBoot to build hybrid isos?
 				"grub2-common",          // Basic grub support
 			},
 		},
