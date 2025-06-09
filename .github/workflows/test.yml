@@ -34,7 +34,10 @@ jobs:
           - platform: "amd64"
             base_image: "ubuntu:24.04"
             trusted_boot: "true"
-
+          - platform: "amd64"
+            base_image: "fedora:41"
+            trusted_boot: "true"
+            fips: false
     steps:
       - uses: actions/checkout@v4
         with:

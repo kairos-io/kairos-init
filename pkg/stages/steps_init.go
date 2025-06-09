@@ -329,19 +329,8 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 	}
 
 	var pkgs []values.VersionMap
-
-	if config.DefaultConfig.TrustedBoot {
-		// Try to remove as many packages as possible that are not needed
-		pkgs = append(pkgs, values.ImmucorePackages[sis.Distro][values.ArchCommon])
-		pkgs = append(pkgs, values.ImmucorePackages[sis.Family][values.ArchCommon])
-		pkgs = append(pkgs, values.ImmucorePackages[sis.Distro][sis.Arch])
-		pkgs = append(pkgs, values.ImmucorePackages[sis.Family][sis.Arch])
-		pkgs = append(pkgs, values.GrubPackages[sis.Distro][values.ArchCommon])
-		pkgs = append(pkgs, values.GrubPackages[sis.Family][values.ArchCommon])
-		pkgs = append(pkgs, values.GrubPackages[sis.Distro][sis.Arch])
-		pkgs = append(pkgs, values.GrubPackages[sis.Family][sis.Arch])
-	} else {
-		// Now that initramfs is built we can drop those packages
+	if !config.DefaultConfig.TrustedBoot {
+		// This packages are used to build the initramfs and are not needed anymore
 		pkgs = append(pkgs, values.ImmucorePackages[sis.Distro][values.ArchCommon])
 		pkgs = append(pkgs, values.ImmucorePackages[sis.Family][values.ArchCommon])
 		pkgs = append(pkgs, values.ImmucorePackages[sis.Distro][sis.Arch])
