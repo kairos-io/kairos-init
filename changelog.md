@@ -19,6 +19,17 @@ Multiple steps can be skipped by using `kairos-init --skip-step <step_name>,<ste
  - Fixed an issue with docker creating temporal ssh keys during the build process, which were not removed and could cause issues in the image.
  - Validation is no longer a flag in the init process but its own subcommand.
 
+Binary versions bundled
+
+| Binary            | Version | URL                                                                           |
+|-------------------|---------|-------------------------------------------------------------------------------|
+| kairos-agent      | v2.21.6 | https://github.com/kairos-io/kairos-agent/releases/tag/v2.21.6                |
+| immucore          | v0.11.1 | https://github.com/kairos-io/immucore/releases/tag/v0.11.1                    |
+| kcrypt-challenger | v0.11.2 | https://github.com/kairos-io/kcrypt-discovery-challenger/releases/tag/v0.11.2 |
+| provider-kairos   | v2.13.1 | https://github.com/kairos-io/provider-kairos/releases/tag/v2.13.1             |
+| edgevpn           | v0.30.2 | https://github.com/mudler/edgevpn/releases/tag/v0.30.2                        |
+
+
 
 ###  Full Changelog between v0.4.9 and v0.5.0
 - Fix goreleaser build (6a68184)
