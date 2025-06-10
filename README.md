@@ -150,3 +150,16 @@ stages:
 This would run the `before-install` and `install` stages as normal, but then on the `after-install` stage it would add the zfs repo and install the zfs packages.
 
 
+## Building RHEL images
+
+Before running `kairos-init`, you need to register the system with the subscription manager and attach a subscription to it. You can do this by modifying the Dockerfile to register the system before running `kairos-init`:
+
+```Dockerfile
+FROM quay.io/kairos/kairos-init:latest AS kairos-init
+
+FROM redhat/ubi9
+RUN subscription-manager register --username <your-username> --password <your-password>
+COPY --from=kairos-init /kairos-init /kairos-init
+RUN /kairos-init
+RUN rm /kairos-init
+```
