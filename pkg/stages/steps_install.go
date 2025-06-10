@@ -86,7 +86,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 	stage := []schema.Stage{
 		{
 			Name:     "Install epel-release",
-			OnlyIfOs: "CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs: "CentOS.*|Rocky.*|AlmaLinux.*",
 			Packages: schema.Packages{
 				Install: []string{
 					"epel-release",
@@ -622,6 +622,11 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 					networkModule = "network"
 				}
 			}
+		}
+
+		if sis.Distro == values.RedHat {
+			// On redhat we drop the systemd-networkd module as there is no systemd-networkd on rh9
+			networkModule = "network-legacy"
 		}
 
 		if sis.Distro == values.Fedora {

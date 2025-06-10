@@ -392,7 +392,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable services for RHEL family",
-			OnlyIfOs:             "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*",
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
