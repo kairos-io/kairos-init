@@ -90,26 +90,46 @@ type StepInfo struct {
 	Value string
 }
 
+const (
+	InitStage            = "init"             // Full init stage
+	InstallStage         = "install"          // Full install stage
+	InstallPackagesStep  = "installPackages"  // Installs the base system packages
+	InitrdStep           = "initrd"           // Generates the initrd
+	KairosReleaseStep    = "kairosRelease"    // Creates and fills the /etc/kairos-release file
+	WorkaroundsStep      = "workarounds"      // Applies workarounds for known issues
+	CleanupStep          = "cleanup"          // Cleans up the system of unneeded packages and files
+	ServicesStep         = "services"         // Creates and enables required services
+	KernelStep           = "kernel"           // Installs the kernel
+	KubernetesStep       = "kubernetes"       // Installs the kubernetes provider
+	CloudconfigsStep     = "cloudconfigs"     // Installs the cloud-configs for the system
+	BrandingStep         = "branding"         // Applies the branding for the system
+	GrubStep             = "grub"             // Configures the grub bootloader
+	KairosBinariesStep   = "kairosBinaries"   // Installs the kairos binaries
+	ProviderBinariesStep = "providerBinaries" // Installs the kairos provider binaries for k8s
+	InitramfsConfigsStep = "initramfsConfigs" // Configures the initramfs for the system
+	MiscellaneousStep    = "miscellaneous"    // Applies miscellaneous configurations
+)
+
 // StepsInfo returns a slice of StepInfo containing the steps and their descriptions
 func StepsInfo() []StepInfo {
 	steps := map[string]string{
-		"init":             "The full init stage, which includes kairosRelease, kubernetes, initrd, services, workarounds and cleanup steps",
-		"install":          "The full install stage, which includes installPackages, kubernetes, cloudconfigs, branding, grub, services, kairosBinaries, providerBinaries, initramfsConfigs and miscellaneous steps",
-		"installPackages":  "installs the base system packages",
-		"initrd":           "generates the initrd",
-		"kairosRelease":    "creates and fills the /etc/kairos-release file",
-		"workarounds":      "applies workarounds for known issues",
-		"cleanup":          "cleans up the system of unneeded packages and files",
-		"services":         "creates and enables required services",
-		"kernel":           "installs the kernel",
-		"kubernetes":       "installs the kubernetes provider",
-		"cloudconfigs":     "installs the cloud-configs for the system",
-		"branding":         "applies the branding for the system",
-		"grub":             "configures the grub bootloader",
-		"kairosBinaries":   "installs the kairos binaries",
-		"providerBinaries": "installs the kairos provider binaries for k8s",
-		"initramfsConfigs": "configures the initramfs for the system",
-		"miscellaneous":    "applies miscellaneous configurations",
+		InitStage:            "The full init stage, which includes kairosRelease, kubernetes, initrd, services, workarounds and cleanup steps",
+		InstallStage:         "The full install stage, which includes installPackages, kubernetes, cloudconfigs, branding, grub, services, kairosBinaries, providerBinaries, initramfsConfigs and miscellaneous steps",
+		InstallPackagesStep:  "installs the base system packages",
+		InitrdStep:           "generates the initrd",
+		KairosReleaseStep:    "creates and fills the /etc/kairos-release file",
+		WorkaroundsStep:      "applies workarounds for known issues",
+		CleanupStep:          "cleans up the system of unneeded packages and files",
+		ServicesStep:         "creates and enables required services",
+		KernelStep:           "installs the kernel",
+		KubernetesStep:       "installs the kubernetes provider",
+		CloudconfigsStep:     "installs the cloud-configs for the system",
+		BrandingStep:         "applies the branding for the system",
+		GrubStep:             "configures the grub bootloader",
+		KairosBinariesStep:   "installs the kairos binaries",
+		ProviderBinariesStep: "installs the kairos provider binaries for k8s",
+		InitramfsConfigsStep: "configures the initramfs for the system",
+		MiscellaneousStep:    "applies miscellaneous configurations",
 	}
 	keys := make([]string, 0, len(steps))
 	for k := range steps {

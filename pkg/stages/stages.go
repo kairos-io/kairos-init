@@ -43,7 +43,7 @@ func RunAllStages(logger types.KairosLogger) (schema.YipConfig, error) {
 // This is good if we are doing the init in layers as this will allow us to run the install stage and cache that then run
 // the init stage later so we can cache the install stage which is usually the longest
 func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
-	if config.ContainsSkipStep("install") {
+	if config.ContainsSkipStep(values.InstallStage) {
 		logger.Logger.Warn().Msg("Skipping install stage as per configuration")
 		return schema.YipConfig{Stages: map[string][]schema.Stage{}}, nil
 	}
@@ -136,7 +136,7 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 // This is good if we are doing the init in layers as this will allow us to run the install stage and cache that then run
 // the init stage later so we can cache the install stage which is usually the longest
 func RunInitStage(logger types.KairosLogger) (schema.YipConfig, error) {
-	if config.ContainsSkipStep("init") {
+	if config.ContainsSkipStep(values.InitStage) {
 		logger.Logger.Warn().Msg("Skipping init stage as per configuration")
 		return schema.YipConfig{Stages: map[string][]schema.Stage{}}, nil
 	}
