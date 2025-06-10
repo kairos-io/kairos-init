@@ -24,7 +24,7 @@ import (
 // signed during the build process
 // If we have fips, we need to add the fips support to the initrd as well
 func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stage, error) {
-	if config.ContainsSkipStep("initrd") {
+	if config.ContainsSkipStep(values.InitrdStep) {
 		logger.Logger.Warn().Msg("Skipping initrd generation stage")
 		return []schema.Stage{}, nil
 	}
@@ -81,7 +81,7 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 // For example, for upgrading the version its taken from here
 // During boot, grub checks this file to know things about the system and enable or disable stuff, like console for rpi images
 func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.Stage {
-	if config.ContainsSkipStep("kairosRelease") {
+	if config.ContainsSkipStep(values.KairosReleaseStep) {
 		log.Logger.Warn().Msg("Skipping /etc/kairos-release generation stage")
 		return []schema.Stage{}
 	}
@@ -201,7 +201,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 // and then clean it up so http uki boot works out of the box. By default the nvdimm modules needed are in that package
 // We could just install the package but its a 100+MB  package and we need just 4 or 5 modules.
 func GetWorkaroundsStage(sis values.System, l types.KairosLogger) []schema.Stage {
-	if config.ContainsSkipStep("workarounds") {
+	if config.ContainsSkipStep(values.WorkaroundsStep) {
 		l.Logger.Warn().Msg("Skipping workarounds stage")
 		return []schema.Stage{}
 	}
@@ -261,7 +261,7 @@ func GetWorkaroundsStage(sis values.System, l types.KairosLogger) []schema.Stage
 // we have build the initramfs we dont need them anymore
 // TODO: Remove package cache for all distros
 func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
-	if config.ContainsSkipStep("cleanup") {
+	if config.ContainsSkipStep(values.CleanupStep) {
 		l.Logger.Warn().Msg("Skipping cleanup stage")
 		return []schema.Stage{}
 	}
@@ -359,7 +359,7 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 // GetServicesStage Returns the services stage
 // This stage is about configuring the services to be run on the system. Either enabling or disabling them.
 func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
-	if config.ContainsSkipStep("services") {
+	if config.ContainsSkipStep(values.ServicesStep) {
 		l.Logger.Warn().Msg("Skipping services stage")
 		return []schema.Stage{}
 	}
@@ -392,7 +392,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable services for RHEL family",
-			OnlyIfOs:             "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*",
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
@@ -437,7 +437,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 // This stage also cleans up the old kernels and initrd files that are no longer needed.
 // This is a bit of a complex one, as every distro has its own way of doing things but we make it work here
 func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage, error) {
-	if config.ContainsSkipStep("kernel") {
+	if config.ContainsSkipStep(values.KernelStep) {
 		logger.Logger.Warn().Msg("Skipping kernel stage")
 		return []schema.Stage{}, nil
 	}

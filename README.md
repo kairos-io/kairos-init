@@ -42,26 +42,50 @@ docker build -t my-kairosified-image .
 
 Then you can use [Auroraboot](https://github.com/kairos-io/auroraboot) to transform that image into an ISO, RAW image or as a upgrade source for a running Kairos system.
 
+## Mandatory version flag
+
+When using kairos-init, the `--version` argument you set isn’t just cosmetic — it defines the version metadata for the image you’re building. This version is embedded into /etc/kairos-release inside the image, and it becomes critical for:
+
+ - Upgrade management: Kairos upgrade tooling checks versions to decide when and how to upgrade systems safely.
+ - Tracking changes: It helps users, automation, and debugging processes know exactly what version of a system they are running.
+ - Compatibility validation: Different components, like trusted boot artifacts or upgrade servers, rely on accurate versioning to operate properly.
+
+> Kairos-init prepares base artifacts. It’s the responsibility of the derivative project or user (you!) to define and manage the versioning  of your images. The only requirement is that versions must follow Semantic Versioning (semver.org) conventions to ensure upgrades and compatibility checks work predictably.
+
+Different users may adopt different strategies:
+
+ - A project building nightly or weekly Kairos images might automatically bump the patch or minor version each time, pulling in the latest OS package updates and security fixes.
+
+ - Another team might maintain stable, long-lived releases, only issuing a new version every six months after extensive testing, validation, and certification.
+
+Both are perfectly valid. What matters is that you track and manage your own version history, ensuring each new artifact has a clear and correct version that reflects its expected upgrade and compatibility behavior.
+
+If you don’t set a meaningful version when running kairos-init, you risk confusing upgrade flows, making troubleshooting harder, and potentially breaking compatibility guarantees for users and automated systems.
+
+Kairos releases its own artifacts with our own cadence, as we are also consumers of kairos-init. We use the same recommendations as above for our own “vanilla” Kairos releases.
+
 
 ## Building args
 
 There is several switches that you can use to customize the behavior of kairos-init and obtain the expected artifact:
 
- - `-f`: set the framework version to use (default: v2.15.3)
  - `-m`: model to build for, like generic or rpi4/rpi3/etc.. (default: generic)
  - `-t`: init the system for Trusted Boot artifact, changes bootloader to systemd. This is only available for the generic model and defaults to using SecureBoot if not enabled.
- - `-v`: variant to build (core or standard for k3s flavor)(default: core)
  - `--fips`: enable FIPS mode (default: false)
  - `--version`: set the Kairos version to use for the built artifact. This is for you to track the version of the image you are building for upgrades and such.
- - `-k`: Kubernetes provider to use, currently supports k3s and k3os (default: k3s)
- - `--k8s-version`: set the Kubernetes version to use for the given provider (default: latest)
-- `--stage-extensions`: enable the loading of stage extensions from a dir in the filesystem to extend the default stages with custom logic. See below for more details.
+ - `-k`: Kubernetes provider to use, currently supports k3s and k0s (default: k3s)
+ - `--k8sversion`: set the Kubernetes version to use for the given provider (default: latest)
+ - `-v`: set the Kubernetes version to use for the given provider (default: latest)
+ - `-x`: enable the loading of stage extensions from a dir in the filesystem to extend the default stages with custom logic. See below for more details.
+ - `--skip-steps`: skip the given steps during the image build. This is useful if you want to customize the image yourself and find that some steps collide with your customization. You can choose between `install` and `init` to skip those full stages or go into specific steps. Run `kairos-init steps-info` to see the available steps and their descriptions. You can pass more than one step, separated by comma, to skip multiple steps, for example: `--skip-steps installPackages,kernel`. 
 
 There is also two switches to help you build the image:
  - `-l`: set the log level (default: info). You can choose between info, warn, error, debug for a more verbose output. Remember to use the docker switch `--progress=plain` to see the output correctly.
  - `-s`: set the stage to run (default: all). You can choose between all, install and init to run only a specific stage of the process. Useful if you need to customize the image after the packages are installed but before the system is initialized, like adding modules to initramfs or adding extra packages or scripts.
- - `--validate`: run the validation of the image. This runs a series of tests to validate that the image conforms to the Kairos needs. This has to be run after running the install and init stages.
 
+## Validation
+
+You can validate the image you built using the `kairos-init validate` command inside the image. This will check if the image is valid and if it has all the necessary components to run Kairos.
 
 ## Stages
 
