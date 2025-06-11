@@ -338,7 +338,7 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 	}
 
 	filteredPkgs := values.FilterPackagesOnConstraint(sis, l, pkgs)
-	// Dont remove dracut packages on Debian as linux-base (KERNEL!) depends on them somehow and it means that
+	// Don't remove dracut packages on Debian as linux-base (KERNEL!) depends on them somehow and it means that
 	// removing dracut will remove the kernel package as well
 	stages = append(stages, []schema.Stage{
 		{
