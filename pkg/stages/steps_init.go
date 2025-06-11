@@ -338,18 +338,14 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 	}
 
 	filteredPkgs := values.FilterPackagesOnConstraint(sis, l, pkgs)
+	// Dont remove dracut packages on Debian as linux-base (KERNEL!) depends on them somehow and it means that
+	// removing dracut will remove the kernel package as well
 	stages = append(stages, []schema.Stage{
 		{
-			Name: "Remove unneeded packages",
+			Name:     "Remove unneeded packages",
+			OnlyIfOs: "Ubuntu.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*|Alpine.*",
 			Packages: schema.Packages{
 				Remove: filteredPkgs,
-			},
-		},
-		{ // TODO: Send this upstream to the yip Packages plugin?
-			Name:     "Auto remove packages in Debian family",
-			OnlyIfOs: "Ubuntu.*|Debian.*",
-			Commands: []string{
-				"apt-get autoremove -y",
 			},
 		},
 	}...)
