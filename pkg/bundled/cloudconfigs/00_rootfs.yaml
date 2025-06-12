@@ -55,22 +55,6 @@ stages:
           /var/lib/kairos
           /var/log
           /var/run/cilium
-    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/uki_install_mode" ]'
-      only_os: "Ubuntu.*|Debian.*"
-      name: "Extra specific layout configuration for active/passive mode (Ubuntu/Debian)"
-      environment_file: /run/cos/extra-layout.env
-      environment:
-        PERSISTENT_STATE_PATHS: >-
-          /snap
-          /var/snap
-    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/uki_install_mode" ]'
-      only_os: "Red\sHat.*|CentOS.*|Fedora.*|Rocky.*|AlmaLinux.*"
-      name: "Extra specific layout configuration for active/passive mode (Red Hat based)"
-      environment_file: /run/cos/extra-layout.env
-      environment:
-        PERSISTENT_STATE_PATHS: >-
-          /usr/share/pki/trust
-          /usr/share/pki/trust/anchors
     - if: '[ -f "/run/cos/recovery_mode" ] && grep -vq "rd.immucore.uki" /proc/cmdline'
       # omit the persistent partition on recovery mode
       name: "Layout configuration for recovery mode"
