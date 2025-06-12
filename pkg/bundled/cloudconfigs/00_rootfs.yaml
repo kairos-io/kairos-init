@@ -15,6 +15,7 @@ stages:
         VOLUMES: "LABEL=COS_PERSISTENT:/usr/local"
         OVERLAY: "tmpfs:25%"
         RW_PATHS: "/var /etc /srv"
+        PERSISTENT_STATE_BIND: "true"
         PERSISTENT_STATE_PATHS: >-
           /etc/cni
           /etc/init.d
@@ -33,10 +34,7 @@ stages:
           /home
           /opt
           /root
-          /snap
           /usr/libexec
-          /usr/share/pki/trust
-          /usr/share/pki/trust/anchors
           /var/cores
           /var/lib/ca-certificates
           /var/lib/cni
@@ -57,8 +55,22 @@ stages:
           /var/lib/kairos
           /var/log
           /var/run/cilium
+    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/uki_install_mode" ]'
+      only_os: "Ubuntu.*|Debian.*"
+      name: "Extra specific layout configuration for active/passive mode (Ubuntu/Debian)"
+      environment_file: /run/cos/extra-layout.env
+      environment:
+        PERSISTENT_STATE_PATHS: >-
+          /snap
           /var/snap
-        PERSISTENT_STATE_BIND: "true"
+    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/uki_install_mode" ]'
+      only_os: "Red\sHat.*|CentOS.*|Fedora.*|Rocky.*|AlmaLinux.*"
+      name: "Extra specific layout configuration for active/passive mode (Red Hat based)"
+      environment_file: /run/cos/extra-layout.env
+      environment:
+        PERSISTENT_STATE_PATHS: >-
+          /usr/share/pki/trust
+          /usr/share/pki/trust/anchors
     - if: '[ -f "/run/cos/recovery_mode" ] && grep -vq "rd.immucore.uki" /proc/cmdline'
       # omit the persistent partition on recovery mode
       name: "Layout configuration for recovery mode"
