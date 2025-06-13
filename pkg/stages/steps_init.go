@@ -418,6 +418,32 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
+			Name:                 "Enable services for RHEL",
+			OnlyIfOs:             "Red\\sHat.*",
+			OnlyIfServiceManager: "systemd",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"sshd",
+					"systemd-resolved",
+				},
+				Disable: []string{
+					"dnf-makecache",
+					"dnf-makecache.timer",
+				},
+			},
+		},
+		{
+			Name:                 "Enable networkd for RHEL if binary is available",
+			OnlyIfOs:             "Red\\sHat.*",
+			OnlyIfServiceManager: "systemd",
+			If:                   "test -f /usr/lib/systemd/systemd-networkd",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"systemd-networkd",
+				},
+			},
+		},
+		{
 			Name:                 "Enable services for Alpine family",
 			OnlyIfOs:             "Alpine.*",
 			OnlyIfServiceManager: "openrc",
