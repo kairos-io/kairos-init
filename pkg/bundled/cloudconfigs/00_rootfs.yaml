@@ -49,7 +49,6 @@ stages:
           /var/lib/osd
           /var/lib/rancher
           /var/lib/rook
-          /var/lib/snapd
           /var/lib/tailscale
           /var/lib/wicked
           /var/lib/kairos

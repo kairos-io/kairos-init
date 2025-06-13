@@ -12,6 +12,7 @@ stages:
         PERSISTENT_STATE_PATHS: >-
           /snap
           /var/snap
+          /var/lib/snapd
     - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/uki_install_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
       only_os: "Red.*Hat.*|CentOS.*|Fedora.*|Rocky.*|AlmaLinux.*"
       name: "Extra layout configuration for active/passive mode (Red Hat based)"
