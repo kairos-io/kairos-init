@@ -222,6 +222,18 @@ func GetWorkaroundsStage(sis values.System, l types.KairosLogger) []schema.Stage
 				"chmod 4755 /usr/bin/sudo",
 			},
 		},
+		{
+			Name:     "Create snap dir in rootfs", // Very special as its on teh rootfs so we need to create it now just in case
+			OnlyIfOs: "Ubuntu.*|Debian.*",
+			Directories: []schema.Directory{
+				{
+					Path:        "/snap",
+					Permissions: 0755,
+					Owner:       0,
+					Group:       0,
+				},
+			},
+		},
 	}
 
 	if config.DefaultConfig.TrustedBoot {

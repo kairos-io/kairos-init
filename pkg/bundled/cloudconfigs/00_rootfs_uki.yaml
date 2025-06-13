@@ -8,7 +8,7 @@
 name: "Rootfs Layout Settings for UKI"
 stages:
   rootfs:
-    - if: '[ -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
+    - if: '[ ! -e "/run/cos/recovery_mode" ] && [ -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
       name: "Layout configuration for UKI boot"
       environment_file: /run/cos/cos-layout.env
       environment:
@@ -31,10 +31,7 @@ stages:
           /home
           /opt
           /root
-          /snap
           /usr/libexec
-          /usr/share/pki/trust
-          /usr/share/pki/trust/anchors
           /var/lib/ca-certificates
           /var/lib/cni
           /var/lib/containerd
@@ -49,23 +46,6 @@ stages:
           /var/lib/wicked
           /var/lib/kairos
           /var/log
-          /var/snap
-    - if: '[ -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
-      only_os: "Ubuntu.*|Debian.*"
-      name: "Extra specific layout configuration for UKI mode (Ubuntu/Debian)"
-      environment_file: /run/cos/extra-layout.env
-      environment:
-        PERSISTENT_STATE_PATHS: >-
-          /snap
-          /var/snap
-    - if: '[ -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
-      only_os: "Red\sHat.*|CentOS.*|Fedora.*|Rocky.*|AlmaLinux.*"
-      name: "Extra specific layout configuration for UKI mode (Red Hat based)"
-      environment_file: /run/cos/extra-layout.env
-      environment:
-        PERSISTENT_STATE_PATHS: >-
-          /usr/share/pki/trust
-          /usr/share/pki/trust/anchors
     - if: '[ -e "/run/cos/uki_boot_mode" ] && ([ -e "/run/cos/recovery_mode" ] || [ -e "/run/cos/autoreset_mode" ])'
       # omit the persistent partition on recovery mode/autoreset
       name: "Layout configuration for recovery/autoreset mode on UKI"
