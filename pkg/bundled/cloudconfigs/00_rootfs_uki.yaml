@@ -8,7 +8,7 @@
 name: "Rootfs Layout Settings for UKI"
 stages:
   rootfs:
-    - if: '[ -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
+    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
       name: "Layout configuration for UKI boot"
       environment_file: /run/cos/cos-layout.env
       environment:
