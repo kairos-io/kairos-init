@@ -60,7 +60,7 @@ stages:
       environment_file: /run/cos/cos-layout.env
       environment:
         OVERLAY: "tmpfs:25%"
-    # If on UKI installer (TODO: Check why we need those paths as RW?)
+    # If on UKI installer
     - if: '[ -e "/run/cos/uki_install_mode" ]'
       # omit everything on installer, just set the ephemeral paths
       name: "Layout configuration for UKI installer"
