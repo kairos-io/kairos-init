@@ -431,6 +431,9 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 					"dnf-makecache.timer",
 				},
 			},
+			Commands: []string{
+				"systemctl unmask getty.target", // Unmask getty.target to allow login on ttys as it comes masked by default
+			},
 		},
 		{
 			Name:                 "Enable networkd for RHEL if binary is available",
