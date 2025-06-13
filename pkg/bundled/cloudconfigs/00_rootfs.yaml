@@ -8,14 +8,14 @@
 name: "Rootfs Layout Settings"
 stages:
   rootfs:
-    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/uki_install_mode" ]'
+    # If not on recovery and not on autoreset and not on UKI installer
+    - if: '[ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ] && [ ! -e "/run/cos/uki_install_mode" ]'
       name: "Layout configuration for active/passive mode"
       environment_file: /run/cos/cos-layout.env
       environment:
         VOLUMES: "LABEL=COS_PERSISTENT:/usr/local"
         OVERLAY: "tmpfs:25%"
         RW_PATHS: "/var /etc /srv"
-        PERSISTENT_STATE_BIND: "true"
         PERSISTENT_STATE_PATHS: >-
           /etc/cni
           /etc/init.d
@@ -53,17 +53,25 @@ stages:
           /var/lib/wicked
           /var/lib/kairos
           /var/log
-          /var/run/cilium
-    - if: '[ -f "/run/cos/recovery_mode" ] && grep -vq "rd.immucore.uki" /proc/cmdline'
-      # omit the persistent partition on recovery mode
-      name: "Layout configuration for recovery mode"
+    # If on recovery or autoreset mode
+    - if: '[ -e "/run/cos/recovery_mode" ] || [ -e "/run/cos/autoreset_mode" ]'
+      # omit the persistent partition on recovery/autoreset mode
+      name: "Layout configuration for recovery/autoreset mode"
       environment_file: /run/cos/cos-layout.env
       environment:
         OVERLAY: "tmpfs:25%"
-    - if: '[ -e "/sbin/systemctl" ] || [ -e "/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+    # If on UKI installer
+    - if: '[ -e "/run/cos/uki_install_mode" ]'
+      # omit everything on installer, just set the ephemeral paths
+      name: "Layout configuration for UKI installer"
+      environment_file: /run/cos/cos-layout.env
+      environment:
+        RW_PATHS: "/var /etc /srv /home"
+        OVERLAY: "tmpfs:25%"
+    - name: "Mask the commit service to avoid systemd messing with machine-id"
+      only_service_manager: "systemd"
       # Mask the commit service to avoid systemd messing with machine-id.
       # https://www.freedesktop.org/software/systemd/man/latest/systemd-machine-id-commit.service.html
-      name: "Mask the commit service to avoid systemd messing with machine-id"
       systemctl:
         mask:
           - systemd-machine-id-commit.service
@@ -94,7 +102,7 @@ stages:
           size: 0
   initramfs:
     - name: "Create journalctl /var/log/journal dir"
-      if: '[ -e "/sbin/systemctl" ] || [ -e "/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+      only_service_manager: "systemd"
       directories:
         - path: /var/log/journal
     - if: '[ ! -f "/run/cos/recovery_mode" ] && [ -s /usr/local/etc/machine-id ]'
@@ -102,7 +110,7 @@ stages:
       commands:
         - cat /usr/local/etc/machine-id > /etc/machine-id
     # If we didn't restore it already, ensure /etc/machine-id is generated
-    - if: '[ -e "/sbin/systemctl" ] || [ -e "/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
+    - only_service_manager: "systemd"
       name: "Ensure /etc/machine-id for systemd systems"
       commands:
         # https://www.freedesktop.org/software/systemd/man/latest/systemd-machine-id-setup.html
@@ -114,13 +122,15 @@ stages:
         - dbus-uuidgen --ensure  # This makes sure that the machine-id exists and its valid
         - cat /var/lib/dbus/machine-id > /etc/machine-id
   fs:
-    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -s /usr/local/etc/machine-id ] '
+    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -s /usr/local/etc/machine-id ]'
+      only_service_manager: "systemd"
       name: "Save /etc/machine-id for systemd systems"
       commands:
       - |
         mkdir -p /usr/local/etc
         cp /etc/machine-id /usr/local/etc
-    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -s /var/lib/dbus/machine-id ] && [ -f "/sbin/openrc" ]'
+    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -s /var/lib/dbus/machine-id ]'
+      only_service_manager: "openrc"
       name: "Save /etc/machine-id for openrc systems"
       commands:
         - |
