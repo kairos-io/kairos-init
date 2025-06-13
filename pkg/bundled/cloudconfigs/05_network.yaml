@@ -4,7 +4,7 @@ stages:
     - name: "Enable systemd-network config files for DHCP"  # Needed if systemd-networkd runs in the initramfs!
       only_service_manager: "systemd"
       directories:
-        - path: "/etc/systemd/network/"  # doesnt exist on initramfs
+        - path: "/etc/systemd/network"  # doesnt exist on initramfs
           permissions: 0775
           owner: 0
           group: 0
@@ -31,8 +31,6 @@ stages:
             DHCP=yes
             [DHCP]
             ClientIdentifier=mac
-      commands:
-        - networkctl reload  # make sure it reloads our config files
   initramfs:
     - name: "Enable systemd-network config files for DHCP"
       only_service_manager: "systemd"
@@ -63,6 +61,7 @@ stages:
         - networkctl reload  # make sure it reloads our config files
     - name: "Disable NetworkManager and wicked"
       only_service_manager: "systemd"
+      only_os: "Suse.*|[O-o]penSUSE.*|SLES.*|sles.*"
       systemctl:
         disable:
           - NetworkManager
