@@ -13,7 +13,7 @@ stages:
           /snap
           /var/snap
     - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/uki_install_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
-      only_os: "Red\sHat.*|CentOS.*|Fedora.*|Rocky.*|AlmaLinux.*"
+      only_os: "Red.*Hat.*|CentOS.*|Fedora.*|Rocky.*|AlmaLinux.*"
       name: "Extra layout configuration for active/passive mode (Red Hat based)"
       environment_file: /run/cos/extra-layout.env
       environment:
