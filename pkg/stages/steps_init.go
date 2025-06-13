@@ -378,6 +378,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			Systemctl: schema.Systemctl{
 				Mask: []string{
 					"systemd-firstboot.service",
+					"systemd-timesync",
 				},
 				Overrides: []schema.SystemctlOverride{
 					{

@@ -283,7 +283,6 @@ var BasePackages = PackageMap{
 				"cryptsetup",
 				"coreutils",
 				"device-mapper",
-				"fail2ban",
 				"findutils",
 				"growpart",
 				"gptfdisk",
@@ -296,7 +295,6 @@ var BasePackages = PackageMap{
 				"mdadm",
 				"multipath-tools",
 				// "nfs-utils", // Not available by default, coming from extra repo.
-				// "nohang", // Not available by default, coming from extra repo.
 				"open-iscsi",
 				"openssh",
 				"open-vm-tools",
@@ -341,7 +339,6 @@ var BasePackages = PackageMap{
 				"efibootmgr",
 				"eudev",
 				"eudev-hwids",
-				"fail2ban",
 				"findutils",
 				"findmnt",
 				"gcompat",
@@ -433,7 +430,6 @@ var BasePackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				"systemd-resolved",
-				"nohang",
 				"polkitd",
 			},
 			">=13": {
