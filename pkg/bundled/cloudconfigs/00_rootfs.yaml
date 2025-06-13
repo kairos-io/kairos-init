@@ -61,53 +61,6 @@ stages:
       environment_file: /run/cos/cos-layout.env
       environment:
         OVERLAY: "tmpfs:25%"
-    - if: grep -q "kairos.boot_live_mode" /proc/cmdline
-      name: "Layout configuration for booting local node from livecd"
-      environment_file: /run/cos/cos-layout.env
-      environment:
-        VOLUMES: "LABEL=COS_PERSISTENT:/usr/local"
-        OVERLAY: "tmpfs:25%"
-        RW_PATHS: "/var /etc /srv"
-        PERSISTENT_STATE_PATHS: >-
-          /etc/cni
-          /etc/init.d
-          /etc/iscsi
-          /etc/k0s
-          /etc/kubernetes
-          /etc/modprobe.d
-          /etc/pwx
-          /etc/rancher
-          /etc/runlevels
-          /etc/ssh
-          /etc/ssl/certs
-          /etc/sysconfig
-          /etc/systemd
-          /home
-          /opt
-          /root
-          /snap
-          /usr/libexec
-          /usr/share/pki/trust
-          /usr/share/pki/trust/anchors
-          /var/cores
-          /var/lib/ca-certificates
-          /var/lib/cni
-          /var/lib/containerd
-          /var/lib/calico
-          /var/lib/k0s
-          /var/lib/kubelet
-          /var/lib/longhorn
-          /var/lib/osd
-          /var/lib/rancher
-          /var/lib/rook
-          /var/lib/snapd
-          /var/lib/tailscale
-          /var/lib/wicked
-          /var/lib/kairos
-          /var/log
-          /var/run/cilium
-          /var/snap
-        PERSISTENT_STATE_BIND: "true"
     - if: '[ -e "/sbin/systemctl" ] || [ -e "/bin/systemctl" ] || [ -e "/usr/sbin/systemctl" ] || [ -e "/usr/bin/systemctl" ]'
       # Mask the commit service to avoid systemd messing with machine-id.
       # https://www.freedesktop.org/software/systemd/man/latest/systemd-machine-id-commit.service.html
