@@ -475,6 +475,14 @@ var BasePackages = PackageMap{
 			},
 		},
 	},
+	RedHat: {
+		ArchCommon: {
+			Common: {
+				"NetworkManager", // Default Network manager for Red Hat
+				"nmstate",        // Network manager state management, makes our life easier
+			},
+		},
+	},
 }
 
 // GrubPackages is a map of packages to install for each distro and architecture.
