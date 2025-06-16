@@ -61,7 +61,7 @@ stages:
         - networkctl reload  # make sure it reloads our config files
     - name: "Disable NetworkManager and wicked"
       only_service_manager: "systemd"
-      only_os: "Suse.*|[Oo]penSUSE.*|SLES.*|sles.*"
+      only_os: "openSUSE.*|SUSE.*"
       systemctl:
         disable:
           - NetworkManager
