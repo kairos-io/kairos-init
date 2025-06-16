@@ -284,7 +284,6 @@ var BasePackages = PackageMap{
 				"cryptsetup",
 				"coreutils",
 				"device-mapper",
-				"fail2ban",
 				"findutils",
 				"growpart",
 				"gptfdisk",
@@ -341,7 +340,6 @@ var BasePackages = PackageMap{
 				"efibootmgr",
 				"eudev",
 				"eudev-hwids",
-				"fail2ban",
 				"findutils",
 				"findmnt",
 				"gcompat",
@@ -435,7 +433,6 @@ var BasePackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				"systemd-resolved",
-				"nohang",
 				"polkitd",
 			},
 			">=13": {

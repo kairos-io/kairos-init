@@ -5,7 +5,7 @@ stages:
       only_service_manager: "systemd"
       only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|openSUSE.*"
       directories:
-        - path: "/etc/systemd/network/"  # doesnt exist on initramfs
+        - path: "/etc/systemd/network"  # doesnt exist on initramfs
           permissions: 0775
           owner: 0
           group: 0
@@ -32,8 +32,11 @@ stages:
             DHCP=yes
             [DHCP]
             ClientIdentifier=mac
+<<<<<<< small_fixes
+=======
       commands:
         - networkctl reload  # TODO: No systemd in initramfs is there?
+>>>>>>> main
   initramfs:
     - name: "Enable systemd-network config files for DHCP"
       only_service_manager: "systemd"
@@ -65,7 +68,11 @@ stages:
         - networkctl reload  # TODO: No systemd in initramfs is there?
     - name: "Disable NetworkManager and wicked" ## TODO: Check which distros this affects and set the only_os or move it to init
       only_service_manager: "systemd"
+<<<<<<< small_fixes
+      only_os: "openSUSE.*|SUSE.*"
+=======
       only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|openSUSE.*"
+>>>>>>> main
       systemctl:
         disable:
           - NetworkManager

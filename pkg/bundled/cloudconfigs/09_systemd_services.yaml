@@ -21,12 +21,7 @@ stages:
           - multi-user.target
           - getty@tty1
           - iscsid
-          - systemd-timesyncd
-          - nohang
-          - nohang-desktop
-          - fail2ban
           - logrotate.timer
-          - sshd
         mask:
           - purge-kernels
       commands:

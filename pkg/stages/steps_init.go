@@ -332,7 +332,7 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:     "Cleanup",
-			OnlyIfOs: "SLES.*|[O-o]penSUSE.*",
+			OnlyIfOs: "openSUSE.*|SUSE.*",
 			Commands: []string{
 				"zypper clean -a",
 				"rm -rf /var/cache/zypp/* /tmp/* /var/tmp/*",
@@ -378,6 +378,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			Systemctl: schema.Systemctl{
 				Mask: []string{
 					"systemd-firstboot.service",
+					"systemd-timesyncd.service",
 				},
 				Overrides: []schema.SystemctlOverride{
 					{
@@ -472,7 +473,6 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 				"rc-update add cgroups sysinit",
 				"rc-update add ntpd boot",
 				"rc-update add crond",
-				"rc-update add fail2ban",
 			},
 		},
 	}
