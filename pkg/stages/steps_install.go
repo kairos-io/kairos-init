@@ -625,10 +625,15 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 		}
 
 		if sis.Distro == values.RedHat {
-			// On redhat we drop the systemd-networkd module as there is no systemd-networkd on rh9
+			// if the user has systemd-networkd installed, we can use it
 			if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err != nil && os.IsNotExist(err) {
-				l.Logger.Debug().Str("distro", string(sis.Distro)).Msg("Dropping systemd-networkd module for redhat")
-				networkModule = "network-legacy"
+				// Check if they have NetworkManager installed
+				if _, err := os.Stat("/usr/bin/NetworkManager"); err != nil && os.IsNotExist(err) {
+					networkModule = "network-manager network-legacy"
+				} else {
+					l.Logger.Debug().Str("distro", string(sis.Distro)).Msg("Dropping systemd-networkd module for redhat")
+					networkModule = "network-legacy"
+				}
 			} else {
 				l.Logger.Debug().Str("distro", string(sis.Distro)).Msg("Keeping systemd-networkd module for redhat")
 			}

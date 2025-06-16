@@ -448,6 +448,17 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
+			Name:                 "Enable NetworkManager for RHEL if binary is available",
+			OnlyIfOs:             "Red\\sHat.*",
+			OnlyIfServiceManager: "systemd",
+			If:                   "test -f /usr/sbin/NetworkManager",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"NetworkManager",
+				},
+			},
+		},
+		{
 			Name:                 "Enable services for Alpine family",
 			OnlyIfOs:             "Alpine.*",
 			OnlyIfServiceManager: "openrc",

@@ -3,6 +3,7 @@ stages:
   rootfs.before:
     - name: "Enable systemd-network config files for DHCP"  # Needed if systemd-networkd runs in the initramfs!
       only_service_manager: "systemd"
+      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|openSUSE.*"
       directories:
         - path: "/etc/systemd/network"  # doesnt exist on initramfs
           permissions: 0775
@@ -31,9 +32,15 @@ stages:
             DHCP=yes
             [DHCP]
             ClientIdentifier=mac
+<<<<<<< small_fixes
+=======
+      commands:
+        - networkctl reload  # TODO: No systemd in initramfs is there?
+>>>>>>> main
   initramfs:
     - name: "Enable systemd-network config files for DHCP"
       only_service_manager: "systemd"
+      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|openSUSE.*"
       files:
         - path: /etc/systemd/network/20-dhcp.network
           permissions: 0644
@@ -58,37 +65,21 @@ stages:
             [DHCP]
             ClientIdentifier=mac
       commands:
-        - networkctl reload  # make sure it reloads our config files
-    - name: "Disable NetworkManager and wicked"
+        - networkctl reload  # TODO: No systemd in initramfs is there?
+    - name: "Disable NetworkManager and wicked" ## TODO: Check which distros this affects and set the only_os or move it to init
       only_service_manager: "systemd"
+<<<<<<< small_fixes
       only_os: "openSUSE.*|SUSE.*"
+=======
+      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|openSUSE.*"
+>>>>>>> main
       systemctl:
         disable:
           - NetworkManager
           - wicked
-    - name: "Enable systemd-network and systemd-resolved"
-      only_service_manager: "systemd"
-      systemctl:
-        enable:
-          - systemd-networkd
-          - systemd-resolved
     - name: "Link /etc/resolv.conf to systemd resolv.conf"
       if: '[ -f /etc/hosts ]'
       only_service_manager: "systemd"
       commands:
         - rm /etc/resolv.conf
         - ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
-  boot:
-    - name: "Reload systemd-networkd config"
-      only_service_manager: "systemd"
-      commands:
-        - networkctl reload  # make sure it reloads our config files
-  fs:
-    - name: "Reload systemd-networkd config"
-      only_service_manager: "systemd"
-      commands:
-        - networkctl reload  # make sure it reloads our config files
-#     dns:
-#      path: /etc/resolv.conf
-#      nameservers:
-#      - 8.8.8.8
