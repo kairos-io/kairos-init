@@ -332,7 +332,7 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:     "Cleanup",
-			OnlyIfOs: "openSUSE.*|SUSE.*|[O-o]penSUSE.*",
+			OnlyIfOs: "openSUSE.*|SUSE.*",
 			Commands: []string{
 				"zypper clean -a",
 				"rm -rf /var/cache/zypp/* /tmp/* /var/tmp/*",
