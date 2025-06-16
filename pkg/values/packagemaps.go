@@ -40,6 +40,7 @@ var CommonPackages = []string{
 	"e2fsprogs",  // mkfs support for ext2/3/4
 	"parted",     // Partitioning support, check if we need it anymore
 	"logrotate",  // Log rotation support
+	"fail2ban",   // Basic security tool
 }
 
 // DistroFamilyInterface is an interface to get the value of a distro or family

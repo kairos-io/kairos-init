@@ -376,6 +376,9 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			Name:                 "Configure default systemd services",
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"fail2ban",
+				},
 				Mask: []string{
 					"systemd-firstboot.service",
 					"systemd-timesyncd.service",
@@ -464,6 +467,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			OnlyIfServiceManager: "openrc",
 			Commands: []string{
 				"rc-update add sshd boot",
+				"rc-update add fail2ban boot",
 				"rc-update add connman boot",
 				"rc-update add acpid boot",
 				"rc-update add hwclock boot",
