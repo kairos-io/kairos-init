@@ -250,6 +250,7 @@ var BasePackages = PackageMap{
 				"ncurses-term",
 				"neovim",
 				"nfs-common",
+				"nfs-client",
 				"nftables",
 				"open-iscsi",
 				"openssh-server",
@@ -295,8 +296,7 @@ var BasePackages = PackageMap{
 				"lsscsi",
 				"mdadm",
 				"multipath-tools",
-				// "nfs-utils", // Not available by default, coming from extra repo.
-				// "nohang", // Not available by default, coming from extra repo.
+				"nfs-client", // NFS support, basic
 				"open-iscsi",
 				"openssh",
 				"open-vm-tools",
@@ -403,6 +403,7 @@ var BasePackages = PackageMap{
 				"cloud-utils-growpart", // grow partition use. Check if yip still needs it?
 				"device-mapper",        // Device mapper support, needed for lvm and cryptsetup
 				"iproute",              // Basic tool for networking
+				"nfs-utils",            // NFS support, basic
 				"openssh-server",
 				"openssh-clients",
 				"polkit",
