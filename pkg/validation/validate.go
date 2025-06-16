@@ -35,6 +35,7 @@ func (v *Validator) Validate() error {
 		"sudo",
 		"less",
 		"kcrypt-discovery-challenger",
+		"mount.nfs",
 	}
 
 	if config.DefaultConfig.Variant == "standard" {
@@ -56,7 +57,17 @@ func (v *Validator) Validate() error {
 		if err != nil {
 			multi = multierror.Append(multi, fmt.Errorf("[BINARIES] could not find binary %s", binary))
 		} else {
-			v.Log.Logger.Info().Str("path", path).Str("binary", binary).Msg("Found binary")
+			v.Log.Logger.Info().Str("path", path).Str("binary", binary).Msg("[BINARIES] Found binary")
+			// Check if the binary is executable
+			info, err := os.Stat(path)
+			if err != nil {
+				multi = multierror.Append(multi, fmt.Errorf("[BINARIES] could not stat binary %s: %s", binary, err))
+			}
+			if info.Mode()&0111 == 0 {
+				multi = multierror.Append(multi, fmt.Errorf("[BINARIES] binary %s is not executable", binary))
+			} else {
+				v.Log.Logger.Info().Str("binary", binary).Msg("[BINARIES] Binary is executable")
+			}
 		}
 	}
 
