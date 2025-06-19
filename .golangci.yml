@@ -1,0 +1,7 @@
+version: "2"
+issues:
+  new: true
+linters:
+  exclusions:
+    paths:
+      - "pkg/bundled/bundled.go$"
