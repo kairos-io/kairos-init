@@ -4,4 +4,4 @@ issues:
 linters:
   exclusions:
     paths:
-      - "pkg/bundled/bundled.go$"
+      - "pkg/bundled/bundled\\.go$"
