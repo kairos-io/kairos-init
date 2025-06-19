@@ -4,6 +4,7 @@ import (
 	"embed"
 )
 
+//nolint:staticcheck
 //go:embed binaries/kairos-agent
 var EmbeddedAgent []byte
 
