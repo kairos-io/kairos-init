@@ -53,8 +53,10 @@ stages:
   initramfs.after:
     # Run this in the after stage so it doesnt collide with other initramfs changes to the /etc/inittab
     # Otherwise this can lead to 2 steps modifying the inittab at the same time and overriding or not cleaning it properly
+    # Dont run this on livecd or the serial wont be available! 25_autologin.yaml takes care of setting the ttyS0 in there
     - name: "Enable serial login for alpine"  # https://wiki.alpinelinux.org/wiki/Enable_Serial_Console_on_Boot
       only_service_manager: "openrc"
+      if: "[ ! -f /run/cos/live_mode ] && [ ! -f /run/cos/uki_install_mode ]"
       commands:
         - sed -i -e 's/ttyS0.*//g' /etc/inittab
         - echo "ttyS0::respawn:/sbin/getty -L ttyS0 115200 vt100" >> /etc/inittab

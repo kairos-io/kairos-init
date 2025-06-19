@@ -125,6 +125,12 @@ func GetInstallKubernetesStage(sis values.System, logger types.KairosLogger) []s
 		if config.DefaultConfig.KubernetesVersion != "" {
 			cmd = fmt.Sprintf("INSTALL_K3S_VERSION=%s %s", config.DefaultConfig.KubernetesVersion, cmd)
 		}
+
+		// Remove k3s.env file if it exists
+		// this is shipped by the installer with the default value, but the script to start k3s already provides the proper
+		// values. If we ship this, it turns into a problem to override the values
+		// So instead just fully remove and let people override the service values by adding the k3s.env file themselves
+
 		stages = append(stages, []schema.Stage{
 			{
 				Name: "Install Kubernetes packages",
@@ -133,6 +139,13 @@ func GetInstallKubernetesStage(sis values.System, logger types.KairosLogger) []s
 					"chmod +x installer.sh",
 					fmt.Sprintf("%s sh installer.sh", cmd),
 					fmt.Sprintf("%s sh installer.sh agent", cmd),
+				},
+			},
+			{
+				Name: "Remove k3s env file",
+				If:   "test -f /etc/rancher/k3s/k3s.env",
+				Commands: []string{
+					"rm /etc/rancher/k3s/k3s.env",
 				},
 			},
 		}...)
