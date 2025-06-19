@@ -29,6 +29,7 @@ var EmbeddedKairosProvider []byte
 //go:embed binaries/fips/provider-kairos
 var EmbeddedKairosProviderFips []byte
 
+//nolint:staticcheck
 //go:embed binaries/edgevpn
 var EmbeddedEdgeVPN []byte
 
