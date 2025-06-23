@@ -2,30 +2,30 @@ name: "Datasource handling"
 stages:
   rootfs.before:
     - &datasource
-      if: '[ ! -e /oem/userdata ] && ([ ! -f /run/cos/uki_boot_mode ] || grep -q "kairos.pull_datasources" /proc/cmdline )'
+      if: '[ ! -e /oem/95_userdata ] && ([ ! -f /run/cos/uki_boot_mode ] || grep -q "kairos.pull_datasources" /proc/cmdline )'
       name: "Pull data from provider"
       datasource:
         providers: ["cdrom", "gcp", "openstack", "aws", "azure", "hetzner", "packet", "vultr", "digitalocean", "metaldata", "vmware", "config-drive"]
-        path: "/oem/userdata"
-    - if: '[ ! -e /oem/userdata ]'
+        path: "/oem/95_userdata"
+    - if: '[ ! -e /oem/95_userdata ]'
       name: "Sentinel file for userdata"
       files:
       - path: /run/.userdata_load
   initramfs.before:
     - <<: *datasource
-    - if: '[ ! -e /oem/userdata ]'
+    - if: '[ ! -e /oem/95_userdata ]'
       files:
       - path: /run/.userdata_load
   # After network, if no datasource could be pulled, we stop trying
   network:
     - <<: *datasource
-    - if: '[ -e /oem/userdata ] && [ -f /run/.userdata_load ]'
+    - if: '[ -e /oem/95_userdata ] && [ -f /run/.userdata_load ]'
       name: "Run stages if userdata is found"
       commands:
-      - kairos-agent run-stage initramfs --override-cloud-init-paths /oem/userdata
-      - kairos-agent run-stage boot --override-cloud-init-paths /oem/userdata
+      - kairos-agent run-stage initramfs --override-cloud-init-paths /oem/95_userdata
+      - kairos-agent run-stage boot --override-cloud-init-paths /oem/95_userdata
       - rm -rf /run/.userdata_load
-    - if: '[ ! -e /oem/userdata ] && [ -f /run/.userdata_load ]'
+    - if: '[ ! -e /oem/95_userdata ] && [ -f /run/.userdata_load ]'
       name: "Remove userdata sentinel"
       commands:
       - rm -rf /run/.userdata_load
