@@ -625,6 +625,17 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 		}
 
 		if sis.Distro == values.RedHat {
+			ver, err := semver.NewVersion(sis.Version)
+			if err != nil {
+				l.Logger.Error().Msgf("Failed to parse the version %s: %s", sis.Version, err)
+				return []schema.Stage{}, err
+			}
+			constraint, _ := semver.NewConstraint("<9.0")
+			// If its < 9.0 we need to disable sysext
+			if constraint.Check(ver) {
+				l.Logger.Debug().Str("distro", string(sis.Distro)).Str("version", sis.Version).Msg("Disabling sysext")
+				sysextModule = false
+			}
 			// if the user has systemd-networkd installed, we can use it
 			if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err != nil && os.IsNotExist(err) {
 				// Check if they have NetworkManager installed

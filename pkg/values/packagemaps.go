@@ -2,12 +2,14 @@ package values
 
 import (
 	"bytes"
+
 	"github.com/kairos-io/kairos-init/pkg/config"
+
+	"text/template"
 
 	semver "github.com/hashicorp/go-version"
 	sdkTypes "github.com/kairos-io/kairos-sdk/types"
 )
-import "text/template"
 
 // packagemaps is a map of packages to install for each distro.
 // so we can deal with stupid different names between distros.
@@ -407,12 +409,14 @@ var BasePackages = PackageMap{
 				"openssh-clients",
 				"polkit",
 				"qemu-guest-agent",
-				"systemd", // Basic tool.
-				"systemd-resolved",
+				"systemd",    // Basic tool.
 				"which",      // Basic tool. Basepackages?
 				"cryptsetup", // For encrypted partitions support, needed for trusted boot and dracut building
 				"tpm2-tss",   // For TPM support, mainly trusted boot
 				"xz",         // explicitly install it otherwise it will be autoremoved when the cleanup is done
+			},
+			">=9.0": {
+				"systemd-resolved", // systemd-resolved is tech preview in systemd before 9.0
 			},
 		},
 	},
