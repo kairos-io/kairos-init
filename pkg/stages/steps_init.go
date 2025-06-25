@@ -2,12 +2,13 @@ package stages
 
 import (
 	"fmt"
-	"github.com/kairos-io/kairos-init/pkg/bundled"
 	"os"
 	"os/exec"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/kairos-io/kairos-init/pkg/bundled"
 
 	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/config"
@@ -538,7 +539,7 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 		{ // On Fedora, if we don't have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
 			// TODO: Check if this is needed on AlmaLinux/RockyLinux/Red\sHatLinux
 			Name:     "Copy kernel for Fedora Trusted Boot",
-			OnlyIfOs: "Fedora.*",
+			OnlyIfOs: "Fedora.*|Red\\sHat.*",
 			If:       fmt.Sprintf("test ! -f /boot/vmlinuz-%s && test -f /usr/lib/modules/%s/vmlinuz", kernel, kernel),
 			Commands: []string{
 				fmt.Sprintf("cp /usr/lib/modules/%s/vmlinuz /boot/vmlinuz-%s", kernel, kernel),
