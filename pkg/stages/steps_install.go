@@ -202,6 +202,185 @@ func GetInstallKubernetesStage(sis values.System, logger types.KairosLogger) []s
 				},
 			}...)
 		}
+	case config.KubeadmProvider:
+		stages = append(stages, []schema.Stage{
+			{
+				Name: "Install K8s",
+				Downloads: []schema.Download{
+					{
+						Path:        "/usr/bin/kubeadm",
+						URL:         fmt.Sprintf("https://dl.k8s.io/v%s/bin/linux/amd64/kubeadm", config.DefaultConfig.KubernetesVersion),
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+					},
+					{
+						Path:        "/usr/bin/kubelet",
+						URL:         fmt.Sprintf("https://dl.k8s.io/v%s/bin/linux/amd64/kubelet", config.DefaultConfig.KubernetesVersion),
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+					},
+					{
+						Path:        "/usr/bin/kubectl",
+						URL:         fmt.Sprintf("https://dl.k8s.io/v%s/bin/linux/amd64/kubectl", config.DefaultConfig.KubernetesVersion),
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+					},
+				},
+			},
+			{
+				Name: "Create Directory /opt/cni/bin",
+				Directories: []schema.Directory{
+					{
+						Path:        "/opt/cni/bin",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+					},
+				},
+			},
+			{
+				Name: "Download binaries",
+				Commands: []string{
+					// TODO FIPS Flag
+					"curl -sSL https://github.com/containerd/containerd/releases/download/v1.6.4/containerd-1.6.4-linux-amd64.tar.gz | tar -C /opt/ -xz",
+					"curl -SL -o runc \"https://github.com/opencontainers/runc/releases/download/v1.1.4/runc.amd64\"",
+					"curl -sSL https://github.com/containernetworking/plugins/releases/download/v1.1.1/cni-plugins-linux-amd64-v1.1.1.tgz | tar -C /opt/cni/bin/ -xz",
+					"install -m 755 runc /opt/bin/runc",
+					"curl -sSL \"https://raw.githubusercontent.com/containerd/containerd/main/containerd.service\" | sed \"s?ExecStart=/usr/local/bin/containerd?ExecStart=/opt/bin/containerd?\" | tee /etc/systemd/system/containerd.service",
+				},
+			},
+			{
+				Name: "Containerd Config",
+				Files: []schema.File{
+					{
+						Path:        "/etc/containerd/config.toml",
+						Permissions: 0644,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.ContainerdConfig,
+					},
+				},
+			},
+			{
+				Name: "Kubeadm Scripts",
+				Files: []schema.File{
+					{
+						Path:        "/opt/kubeadm/scripts/kube-init.sh",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.KubeadmKubeInit,
+					},
+					{
+						Path:        "/opt/kubeadm/scripts/kube-upgrade.sh",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.KubeadmKubeUpgrade,
+					},
+					{
+						Path:        "/opt/kubeadm/scripts/kube-reconfigure.sh",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.KubeadmKubeReconfigure,
+					},
+					{
+						Path:        "/opt/kubeadm/scripts/kube-reset.sh",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.KubeadmKubeReset,
+					},
+					{
+						Path:        "/opt/kubeadm/scripts/kube-pre-init.sh",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.KubeadmKubePreInit,
+					},
+					{
+						Path:        "/opt/kubeadm/scripts/kube-post-init.sh",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.KubeadmKubePostInit,
+					},
+					{
+						Path:        "/opt/kubeadm/scripts/kube-join.sh",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.KubeadmKubeJoin,
+					},
+					{
+						Path:        "/opt/kubeadm/scripts/kube-images-load.sh",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.KubeadmKubeImagesLoad,
+					},
+					{
+						Path:        "/opt/kubeadm/scripts/import.sh",
+						Permissions: 0755,
+						Owner:       0,
+						Group:       0,
+						Content:     bundled.KubeadmKubeImport,
+					},
+				},
+			},
+		}...)
+
+		if sis.Family.String() == "alpine" {
+			// Add openrc services
+			stages = append(stages, []schema.Stage{
+				{
+					Name: "Create kubeadm services for openrc",
+					Files: []schema.File{
+						{
+							Path:        "/etc/init.d/kubeadmcontroller",
+							Permissions: 0755,
+							Owner:       0,
+							Group:       0,
+							Content:     bundled.KubeadmControllerOpenrc,
+						},
+						{
+							Path:        "/etc/init.d/kubeadmworker",
+							Permissions: 0755,
+							Owner:       0,
+							Group:       0,
+							Content:     bundled.KubeadmWorkerOpenrc,
+						},
+					},
+				},
+			}...)
+		} else {
+			// Add systemd services
+			stages = append(stages, []schema.Stage{
+				{
+					Name: "Create kubeadm services for systemd",
+					Files: []schema.File{
+						{
+							Path:        "/etc/systemd/system/kubeadmcontroller.service",
+							Permissions: 0644,
+							Owner:       0,
+							Group:       0,
+							Content:     bundled.KubeadmControllerSystemd,
+						},
+						{
+							Path:        "/etc/systemd/system/kubeadmworker.service",
+							Permissions: 0644,
+							Owner:       0,
+							Group:       0,
+							Content:     bundled.KubeadmWorkerSystemd,
+						},
+					},
+				},
+			}...)
+		}
 	}
 	return stages
 }
@@ -429,9 +608,20 @@ func GetInstallProviderBinaries(sis values.System, l types.KairosLogger) error {
 		return err
 	}
 
+	// Determine the provider binary name based on the configured provider
+	providerBinaryName := "kairos" // default fallback
+	switch config.DefaultConfig.KubernetesProvider {
+	case config.K3sProvider:
+		providerBinaryName = "kairos"
+	case config.K0sProvider:
+		providerBinaryName = "kairos"
+	case config.KubeadmProvider:
+		providerBinaryName = "kubeadm"
+	}
+
 	binaries := map[string]string{
-		"/system/providers/agent-provider-kairos": config.DefaultConfig.VersionOverrides.Provider,
-		"/usr/bin/edgevpn":                        config.DefaultConfig.VersionOverrides.EdgeVpn,
+		fmt.Sprintf("/system/providers/agent-provider-%s", providerBinaryName): config.DefaultConfig.VersionOverrides.Provider,
+		"/usr/bin/edgevpn": config.DefaultConfig.VersionOverrides.EdgeVpn,
 	}
 
 	for dest, version := range binaries {
@@ -475,7 +665,7 @@ func GetInstallProviderBinaries(sis values.System, l types.KairosLogger) error {
 			// Use embedded binaries
 			var data []byte
 			switch dest {
-			case "/system/providers/agent-provider-kairos":
+			case fmt.Sprintf("/system/providers/agent-provider-%s", providerBinaryName):
 				if config.DefaultConfig.Fips {
 					data = bundled.EmbeddedKairosProviderFips
 				} else {
@@ -503,7 +693,8 @@ func GetInstallProviderBinaries(sis values.System, l types.KairosLogger) error {
 
 	// Link /system/providers/agent-provider-kairos to /usr/bin/kairos, not sure what uses it?
 	// TODO: Check if this is needed, maybe we can remove it?
-	err = os.Symlink("/system/providers/agent-provider-kairos", "/usr/bin/kairos")
+	providerPath := fmt.Sprintf("/system/providers/agent-provider-%s", providerBinaryName)
+	err = os.Symlink(providerPath, "/usr/bin/kairos")
 	if err != nil {
 		l.Logger.Error().Err(err).Msg("Failed to create symlink")
 		return err

@@ -2,10 +2,11 @@ package config
 
 import (
 	"fmt"
-	semver "github.com/hashicorp/go-version"
-	"gopkg.in/yaml.v3"
 	"os"
 	"strings"
+
+	semver "github.com/hashicorp/go-version"
+	"gopkg.in/yaml.v3"
 )
 
 // Config is the struct to track the config of the init image
@@ -64,7 +65,7 @@ type KubernetesProvider string
 func (v *KubernetesProvider) FromString(provider string) error {
 	*v = KubernetesProvider(provider)
 	switch *v {
-	case K3sProvider, K0sProvider:
+	case K3sProvider, K0sProvider, KubeadmProvider:
 		return nil
 	default:
 		return fmt.Errorf("invalid Kubernetes provider: %s, possible values are %s", provider, ValidProviders)
@@ -73,8 +74,9 @@ func (v *KubernetesProvider) FromString(provider string) error {
 
 const K3sProvider KubernetesProvider = "k3s"
 const K0sProvider KubernetesProvider = "k0s"
+const KubeadmProvider KubernetesProvider = "kubeadm"
 
-var ValidProviders = []KubernetesProvider{K3sProvider, K0sProvider}
+var ValidProviders = []KubernetesProvider{K3sProvider, K0sProvider, KubeadmProvider}
 
 // LoadVersionOverrides initializes the VersionOverrides from a file
 func (c *Config) LoadVersionOverrides() {

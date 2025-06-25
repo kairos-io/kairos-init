@@ -2,12 +2,13 @@ package stages
 
 import (
 	"fmt"
-	"github.com/kairos-io/kairos-init/pkg/bundled"
 	"os"
 	"os/exec"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/kairos-io/kairos-init/pkg/bundled"
 
 	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/config"
@@ -175,6 +176,12 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 			out, err := exec.Command("k0s", "version").CombinedOutput()
 			if err != nil {
 				log.Logger.Error().Msgf("Failed to get the k0s version: %s", err)
+			}
+			k8sVersion = strings.TrimSpace(string(out))
+		case config.KubeadmProvider:
+			out, err := exec.Command("kubeadm", "version", "-o", "short").CombinedOutput()
+			if err != nil {
+				log.Logger.Error().Msgf("Failed to get the kubeadm version: %s", err)
 			}
 			k8sVersion = strings.TrimSpace(string(out))
 		}
