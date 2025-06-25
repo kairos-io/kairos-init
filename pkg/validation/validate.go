@@ -2,16 +2,17 @@ package validation
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/joho/godotenv"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 type Validator struct {
@@ -45,6 +46,9 @@ func (v *Validator) Validate() error {
 		}
 		if config.DefaultConfig.KubernetesProvider == config.K0sProvider {
 			binaries = append(binaries, "k0s")
+		}
+		if config.DefaultConfig.KubernetesProvider == config.KubeadmProvider {
+			binaries = append(binaries, "kubeadm", "kubelet", "kubectl")
 		}
 	}
 

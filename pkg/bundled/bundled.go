@@ -652,3 +652,102 @@ depend() {
 }`
 
 // K0s Services end here
+
+// Kubeadm Services start here
+
+const KubeadmControllerSystemd = `[Unit]
+Description=kubeadm - Kubernetes Cluster Bootstrap Tool
+Documentation=https://kubernetes.io/docs/reference/setup-tools/kubeadm/
+ConditionFileIsExecutable=/usr/bin/kubeadm
+
+After=network-online.target 
+Wants=network-online.target 
+
+[Service]
+StartLimitInterval=5
+StartLimitBurst=10
+ExecStart=/usr/bin/kubeadm init --config=/etc/kubernetes/kubeadm-config.yaml
+
+RestartSec=10
+Delegate=yes
+KillMode=process
+LimitCORE=infinity
+TasksMax=infinity
+TimeoutStartSec=0
+LimitNOFILE=999999
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target`
+
+const KubeadmWorkerSystemd = `[Unit]
+Description=kubeadm - Kubernetes Cluster Bootstrap Tool
+Documentation=https://kubernetes.io/docs/reference/setup-tools/kubeadm/
+ConditionFileIsExecutable=/usr/bin/kubeadm
+
+After=network-online.target 
+Wants=network-online.target 
+
+[Service]
+StartLimitInterval=5
+StartLimitBurst=10
+ExecStart=/usr/bin/kubeadm join --config=/etc/kubernetes/kubeadm-join-config.yaml
+
+RestartSec=10
+Delegate=yes
+KillMode=process
+LimitCORE=infinity
+TasksMax=infinity
+TimeoutStartSec=0
+LimitNOFILE=999999
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target`
+
+const KubeadmControllerOpenrc = `#!/sbin/openrc-run
+supervisor=supervise-daemon
+description="kubeadm - Kubernetes Cluster Bootstrap Tool"
+command=/usr/bin/kubeadm
+command_args="'init' '--config=/etc/kubernetes/kubeadm-config.yaml'"
+name=$(basename $(readlink -f $command))
+supervise_daemon_args="--stdout /var/log/${name}.log --stderr /var/log/${name}.err"
+
+: "${rc_ulimit=-n 1048576 -u unlimited}"
+depend() { 
+	need cgroups 
+	need net 
+	use dns 
+	after firewall
+}`
+
+const KubeadmWorkerOpenrc = `#!/sbin/openrc-run
+supervisor=supervise-daemon
+description="kubeadm - Kubernetes Cluster Bootstrap Tool"
+command=/usr/bin/kubeadm
+command_args="'join' '--config=/etc/kubernetes/kubeadm-join-config.yaml'"
+name=$(basename $(readlink -f $command))
+supervise_daemon_args="--stdout /var/log/${name}.log --stderr /var/log/${name}.err"
+
+: "${rc_ulimit=-n 1048576 -u unlimited}"
+depend() { 
+	need cgroups 
+	need net 
+	use dns 
+	after firewall
+}`
+
+// Kubeadm Services end here
+
+const ContainerdConfig = `version = 2
+root="/opt/containerd"
+imports = ["/etc/containerd/conf.d/*.toml"]
+
+[plugins]
+  [plugins."io.containerd.grpc.v1.cri"]
+    sandbox_image = "k8s.gcr.io/pause:3.6"
+    [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
+      runtime_type = "io.containerd.runc.v2"
+      [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc.options]
+        BinaryName = "/opt/bin/runc"
+        SystemdCgroup = true`
