@@ -59,8 +59,8 @@ type ModelPackageMap map[DistroFamilyInterface]map[Architecture]map[Model]Versio
 type VersionMap map[string][]string
 
 // ImmucorePackages are the minimum set of packages that immucore needs.
-// Otherwise you wont be able to build the initrd with immucore on it.
-// This packages are removed afterwards, so we can keep the image as small as possible
+// Otherwise, you won't be able to build the initrd with immucore on it.
+// These packages are removed afterward, so we can keep the image as small as possible
 var ImmucorePackages = PackageMap{
 	DebianFamily: {
 		ArchCommon: {
@@ -412,6 +412,8 @@ var BasePackages = PackageMap{
 				"device-mapper",        // Device mapper support, needed for lvm and cryptsetup
 				"iproute",              // Basic tool for networking
 				"nfs-utils",            // NFS support, basic
+				"NetworkManager",       // Default Network manager for Red Hat
+				"nmstate",              // Network manager state management, makes our life easier
 				"openssh-server",
 				"openssh-clients",
 				"polkit",
@@ -424,20 +426,6 @@ var BasePackages = PackageMap{
 			},
 			">=9.0": {
 				"systemd-resolved", // systemd-resolved is tech preview in systemd before 9.0
-			},
-		},
-	},
-	RockyLinux: {
-		ArchCommon: {
-			Common: {
-				"systemd-networkd",
-			},
-		},
-	},
-	AlmaLinux: {
-		ArchCommon: {
-			Common: {
-				"systemd-networkd",
 			},
 		},
 	},
@@ -479,16 +467,7 @@ var BasePackages = PackageMap{
 	Fedora: {
 		ArchCommon: {
 			Common: {
-				"haveged",          // Random number generator, check if needed?
-				"systemd-networkd", // Not available in other distros, too old version maybe?
-			},
-		},
-	},
-	RedHat: {
-		ArchCommon: {
-			Common: {
-				"NetworkManager", // Default Network manager for Red Hat
-				"nmstate",        // Network manager state management, makes our life easier
+				"haveged", // Random number generator, check if needed?
 			},
 		},
 	},
