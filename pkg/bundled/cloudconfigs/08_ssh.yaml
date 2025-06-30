@@ -1,0 +1,11 @@
+# SSH Kairos OEM configuration file
+#
+# This file is part of Kairos and will get reset during upgrades.
+
+name: "Default config"
+stages:
+  initramfs:
+    - name: "Generate host keys"
+      # Make sure the host always has available keys
+      commands:
+        - ssh-keygen -A
