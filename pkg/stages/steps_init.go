@@ -383,13 +383,22 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 				},
 				Mask: []string{
 					"systemd-firstboot.service",
-					"systemd-timesyncd.service",
 				},
 				Overrides: []schema.SystemctlOverride{
 					{
 						Service: "systemd-networkd-wait-online",
 						Content: bundled.SystemdNetworkOnlineWaitOverride,
 					},
+				},
+			},
+		},
+		{
+			Name:                 "Enable timesyncd service",
+			OnlyIfServiceManager: "systemd",
+			OnlyIfOs:             "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|SLES.*|[O-o]penSUSE.*", // RHEL family
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"systemd-timesyncd",
 				},
 			},
 		},
