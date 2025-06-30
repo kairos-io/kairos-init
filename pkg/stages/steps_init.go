@@ -148,6 +148,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_RELEASE":        release,
 		"KAIROS_FIPS":           fmt.Sprintf("%t", config.DefaultConfig.Fips),        // Was the image built with FIPS support?
 		"KAIROS_TRUSTED_BOOT":   fmt.Sprintf("%t", config.DefaultConfig.TrustedBoot), // Was the image built with Trusted Boot support?
+		"KAIROS_INIT_VERSION":   values.GetVersion(),                                 // The version of the kairos-init binary
 	}
 
 	// Get SOFTWARE_VERSION from the k3s/k0s version
