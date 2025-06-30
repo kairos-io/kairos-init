@@ -216,6 +216,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_HOME_URL":         "https://github.com/kairos-io/kairos",
 		"KAIROS_RELEASE":          release,
 		"KAIROS_FIPS":             fmt.Sprintf("%t", config.DefaultConfig.Fips), // Was the image built with FIPS support?
+		"KAIROS_INIT_VERSION":     values.GetVersion(),
 	}
 
 	// Get SOFTWARE_VERSION from the k3s/k0s version
