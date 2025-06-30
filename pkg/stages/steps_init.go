@@ -380,10 +380,10 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"fail2ban",
+					"systemd-timesyncd",
 				},
 				Mask: []string{
 					"systemd-firstboot.service",
-					"systemd-timesyncd.service",
 				},
 				Overrides: []schema.SystemctlOverride{
 					{
