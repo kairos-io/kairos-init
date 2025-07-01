@@ -1,9 +1,9 @@
 name: "Fix home directory permissions (kairos issue #2797)"
 stages:
   network:
-    - name: "Create home dir ownership script"
+    - name: "Fix home dir ownership"
       files:
-        - path: /usr/sbin/fix-home-dir-ownership
+        - path: /usr/local/bin/fix-home-dir-ownership
           permissions: 0755
           content: |
             #!/bin/bash
@@ -27,8 +27,5 @@ stages:
             # Write the sentinel file
             mkdir -p "$(dirname $SENTINEL_FILE)"
             echo "https://github.com/kairos-io/kairos/issues/2843" > $SENTINEL_FILE
-  network.after:
-    - name: "Fix home dir ownership"
-      if: '[ -f /usr/sbin/fix-home-dir-ownership ]'
       commands:
-        - "/usr/sbin/fix-home-dir-ownership"
+        - "/usr/local/bin/fix-home-dir-ownership"
