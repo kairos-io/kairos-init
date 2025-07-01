@@ -766,38 +766,12 @@ func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 	}
 	// If trusted boot is enabled, we need to install the trusted boot packages
 	if config.DefaultConfig.TrustedBoot {
-		// Kernel packages by model
-		if config.DefaultConfig.Model == Generic.String() {
-			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][ArchCommon]) // Common kernel packages to both arches
-			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][ArchCommon]) // Common kernel packages to both arches by family
-			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][s.Arch])     // Specific kernel packages for the arch
-			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][s.Arch])     // Specific kernel packages for the arch by family
-		} else {
-			// Get specific packages for the model
-			// TODO: No support for trusted boot on models yet, so this part is probably useless for now?
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][ArchCommon][Model(config.DefaultConfig.Model)])
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][ArchCommon][Model(config.DefaultConfig.Model)])
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][s.Arch][Model(config.DefaultConfig.Model)])
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][s.Arch][Model(config.DefaultConfig.Model)])
-		}
 		// Install only systemd-boot packages
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Distro][ArchCommon])
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Family][ArchCommon])
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Distro][s.Arch])
 		filteredPackages = append(filteredPackages, SystemdPackages[s.Family][s.Arch])
 	} else {
-		if config.DefaultConfig.Model == Generic.String() {
-			filteredPackages = append(filteredPackages, KernelPackages[s.Distro][ArchCommon]) // Common kernel packages to both arches
-			filteredPackages = append(filteredPackages, KernelPackages[s.Family][ArchCommon]) // Common kernel packages to both arches by family
-			filteredPackages = append(filteredPackages, KernelPackages[s.Distro][s.Arch])     // Specific kernel packages for the arch
-			filteredPackages = append(filteredPackages, KernelPackages[s.Family][s.Arch])     // Specific kernel packages for the arch by family
-		} else {
-			// Get specific packages for the model
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][ArchCommon][Model(config.DefaultConfig.Model)])
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][ArchCommon][Model(config.DefaultConfig.Model)])
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][s.Arch][Model(config.DefaultConfig.Model)])
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][s.Arch][Model(config.DefaultConfig.Model)])
-		}
 		// install grub and immucore packages
 		filteredPackages = append(filteredPackages, GrubPackages[s.Distro][ArchCommon])
 		filteredPackages = append(filteredPackages, GrubPackages[s.Family][ArchCommon])
@@ -812,6 +786,43 @@ func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 	mergedPkgs = append(mergedPkgs, FilterPackagesOnConstraint(s, l, filteredPackages)...)
 
 	return mergedPkgs, nil
+}
+
+func GetKernelPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
+	// Get the kernel packages for the system
+	var filteredPackages []VersionMap
+
+	if config.DefaultConfig.TrustedBoot {
+		// Kernel packages by model
+		if config.DefaultConfig.Model == Generic.String() {
+			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][ArchCommon]) // Common kernel packages to both arches
+			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][ArchCommon]) // Common kernel packages to both arches by family
+			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][s.Arch])     // Specific kernel packages for the arch
+			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+		} else {
+			// Get specific packages for the model
+			// TODO: No support for trusted boot on models yet, so this part is probably useless for now?
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][ArchCommon][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][ArchCommon][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][s.Arch][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][s.Arch][Model(config.DefaultConfig.Model)])
+		}
+	} else {
+		if config.DefaultConfig.Model == Generic.String() {
+			filteredPackages = append(filteredPackages, KernelPackages[s.Distro][ArchCommon]) // Common kernel packages to both arches
+			filteredPackages = append(filteredPackages, KernelPackages[s.Family][ArchCommon]) // Common kernel packages to both arches by family
+			filteredPackages = append(filteredPackages, KernelPackages[s.Distro][s.Arch])     // Specific kernel packages for the arch
+			filteredPackages = append(filteredPackages, KernelPackages[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+		} else {
+			// Get specific packages for the model
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][ArchCommon][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][ArchCommon][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][s.Arch][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][s.Arch][Model(config.DefaultConfig.Model)])
+		}
+	}
+	// Return filtered packages
+	return FilterPackagesOnConstraint(s, l, filteredPackages), nil
 }
 
 // FilterPackagesOnConstraint filters the packages based on the system version and the constraints in the package map

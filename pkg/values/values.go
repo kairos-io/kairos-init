@@ -94,6 +94,7 @@ const (
 	InitStage            = "init"             // Full init stage
 	InstallStage         = "install"          // Full install stage
 	InstallPackagesStep  = "installPackages"  // Installs the base system packages
+	InstallKernelStep    = "installKernel"    // Installs the kernel packages
 	InitrdStep           = "initrd"           // Generates the initrd
 	KairosReleaseStep    = "kairosRelease"    // Creates and fills the /etc/kairos-release file
 	WorkaroundsStep      = "workarounds"      // Applies workarounds for known issues
@@ -116,6 +117,7 @@ func StepsInfo() []StepInfo {
 		InitStage:            "The full init stage, which includes kairosRelease, kubernetes, initrd, services, workarounds and cleanup steps",
 		InstallStage:         "The full install stage, which includes installPackages, kubernetes, cloudconfigs, branding, grub, services, kairosBinaries, providerBinaries, initramfsConfigs and miscellaneous steps",
 		InstallPackagesStep:  "installs the base system packages",
+		InstallKernelStep:    "installs the kernel packages",
 		InitrdStep:           "generates the initrd",
 		KairosReleaseStep:    "creates and fills the /etc/kairos-release file",
 		WorkaroundsStep:      "applies workarounds for known issues",

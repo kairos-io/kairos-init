@@ -78,6 +78,14 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 		return data, err
 	}
 	data.Stages["install"] = installStage
+
+	// Get kernel stage
+	kernelStage, err := GetKernelStage(sis, logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to get the kernel stage: %s", err)
+		return data, err
+	}
+	data.Stages["install"] = append(data.Stages["install"], kernelStage...)
 	// Add the branding files
 	data.Stages["install"] = append(data.Stages["install"], GetInstallBrandingStage(sis, logger)...)
 	// Add the bootargs file

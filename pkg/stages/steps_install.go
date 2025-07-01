@@ -47,8 +47,49 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		return []schema.Stage{}, err
 	}
 
+	// TODO(rhel): Add zfs packages? Currently we add the repos to alma+rocky but we don't install the packages so?
+	stage := []schema.Stage{
+		{
+			Name:     "Install epel-release",
+			OnlyIfOs: "CentOS.*|Rocky.*|AlmaLinux.*",
+			Packages: schema.Packages{
+				Install: []string{
+					"epel-release",
+				},
+			},
+		},
+		{
+			Name: "Install base packages",
+			Packages: schema.Packages{
+				Install: finalMergedPkgs,
+				Refresh: true,
+				Upgrade: true,
+			},
+		},
+	}
+	return stage, nil
+}
+
+func GetInstallKernelStage(sis values.System, logger types.KairosLogger) ([]schema.Stage, error) {
+	if config.ContainsSkipStep(values.InstallKernelStep) {
+		logger.Logger.Warn().Msg("Skipping install kernel stage")
+		return []schema.Stage{}, nil
+	}
+
+	// Get the packages
+	packages, err := values.GetKernelPackages(sis, logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to get the packages: %s", err)
+		return []schema.Stage{}, err
+	}
+	// Now parse the packages with the templating engine
+	finalMergedPkgs, err := values.PackageListToTemplate(packages, values.GetTemplateParams(sis), logger)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to parse the packages: %s", err)
+		return []schema.Stage{}, err
+	}
+
 	// For trusted boot we need to select the correct kernel packages manually
-	// TODO: Have a flag in the config to add the full linux-firmware package?
 	if config.DefaultConfig.TrustedBoot {
 		// TODO: Check for other distros/families
 		if sis.Distro == values.Ubuntu {
@@ -82,19 +123,9 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		}
 	}
 
-	// TODO(rhel): Add zfs packages? Currently we add the repos to alma+rocky but we don't install the packages so?
 	stage := []schema.Stage{
 		{
-			Name:     "Install epel-release",
-			OnlyIfOs: "CentOS.*|Rocky.*|AlmaLinux.*",
-			Packages: schema.Packages{
-				Install: []string{
-					"epel-release",
-				},
-			},
-		},
-		{
-			Name: "Install base packages",
+			Name: "Install kernel packages",
 			Packages: schema.Packages{
 				Install: finalMergedPkgs,
 				Refresh: true,
@@ -102,6 +133,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 			},
 		},
 	}
+
 	return stage, nil
 }
 
