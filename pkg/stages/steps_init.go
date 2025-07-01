@@ -415,7 +415,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Disable Wicked for SUSE family", // Collides with systemd-networkd
-			OnlyIfOs:             "SLES.*|[O-o]penSUSE.*",
+			OnlyIfOs:             "SLES.*|openSUSE.*",
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Disable: []string{
@@ -428,7 +428,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable services for SUSE family",
-			OnlyIfOs:             "SLES.*|[O-o]penSUSE.*",
+			OnlyIfOs:             "SLES.*|openSUSE.*",
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
