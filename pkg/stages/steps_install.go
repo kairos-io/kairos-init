@@ -123,7 +123,7 @@ func GetInstallKubernetesStage(sis values.System, logger types.KairosLogger) []s
 		cmd := "INSTALL_K3S_BIN_DIR=/usr/bin INSTALL_K3S_SKIP_ENABLE=true INSTALL_K3S_SKIP_SELINUX_RPM=true"
 		// Append version if any, otherwise default to latest
 		if config.DefaultConfig.KubernetesVersion != "" {
-			cmd = fmt.Sprintf("INSTALL_K3S_VERSION=%s %s", config.KubeadmProvider, cmd)
+			cmd = fmt.Sprintf("INSTALL_K3S_VERSION=%s %s", config.DefaultConfig.KubernetesVersion, cmd)
 		}
 		stages = append(stages, []schema.Stage{
 			{
@@ -204,27 +204,28 @@ func GetInstallKubernetesStage(sis values.System, logger types.KairosLogger) []s
 		}
 	case config.KubeadmProvider:
 		// How to do this?
+		fmt.Println(config.DefaultConfig.KubernetesVersion)
 		stages = append(stages, []schema.Stage{
 			{
 				Name: "Install K8s",
 				Downloads: []schema.Download{
 					{
 						Path:        "/usr/bin/kubeadm",
-						URL:         fmt.Sprintf("https://dl.k8s.io/v%s/bin/linux/amd64/kubeadm", "v1.32.3"),
+						URL:         fmt.Sprintf("https://dl.k8s.io/v%s/bin/linux/amd64/kubeadm", config.DefaultConfig.KubernetesVersion),
 						Permissions: 0755,
 						Owner:       0,
 						Group:       0,
 					},
 					{
 						Path:        "/usr/bin/kubelet",
-						URL:         fmt.Sprintf("https://dl.k8s.io/v%s/bin/linux/amd64/kubelet", "v1.32.3"),
+						URL:         fmt.Sprintf("https://dl.k8s.io/v%s/bin/linux/amd64/kubelet", config.DefaultConfig.KubernetesVersion),
 						Permissions: 0755,
 						Owner:       0,
 						Group:       0,
 					},
 					{
 						Path:        "/usr/bin/kubectl",
-						URL:         fmt.Sprintf("https://dl.k8s.io/v%s/bin/linux/amd64/kubectl", "v1.32.3"),
+						URL:         fmt.Sprintf("https://dl.k8s.io/v%s/bin/linux/amd64/kubectl", config.DefaultConfig.KubernetesVersion),
 						Permissions: 0755,
 						Owner:       0,
 						Group:       0,
