@@ -148,6 +148,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_RELEASE":        release,
 		"KAIROS_FIPS":           fmt.Sprintf("%t", config.DefaultConfig.Fips),        // Was the image built with FIPS support?
 		"KAIROS_TRUSTED_BOOT":   fmt.Sprintf("%t", config.DefaultConfig.TrustedBoot), // Was the image built with Trusted Boot support?
+		"KAIROS_INIT_VERSION":   values.GetVersion(),                                 // The version of the kairos-init binary
 	}
 
 	// Get SOFTWARE_VERSION from the k3s/k0s version
@@ -388,13 +389,22 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 				},
 				Mask: []string{
 					"systemd-firstboot.service",
-					"systemd-timesyncd.service",
 				},
 				Overrides: []schema.SystemctlOverride{
 					{
 						Service: "systemd-networkd-wait-online",
 						Content: bundled.SystemdNetworkOnlineWaitOverride,
 					},
+				},
+			},
+		},
+		{
+			Name:                 "Enable timesyncd service",
+			OnlyIfServiceManager: "systemd",
+			OnlyIfOs:             "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|SLES.*|[O-o]penSUSE.*", // RHEL family
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"systemd-timesyncd",
 				},
 			},
 		},
@@ -545,7 +555,7 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 		{ // On Fedora, if we don't have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
 			// TODO: Check if this is needed on AlmaLinux/RockyLinux/Red\sHatLinux
 			Name:     "Copy kernel for Fedora Trusted Boot",
-			OnlyIfOs: "Fedora.*",
+			OnlyIfOs: "Fedora.*|Red\\sHat.*",
 			If:       fmt.Sprintf("test ! -f /boot/vmlinuz-%s && test -f /usr/lib/modules/%s/vmlinuz", kernel, kernel),
 			Commands: []string{
 				fmt.Sprintf("cp /usr/lib/modules/%s/vmlinuz /boot/vmlinuz-%s", kernel, kernel),
