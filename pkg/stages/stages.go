@@ -80,7 +80,7 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data.Stages["install"] = installStage
 
 	// Get kernel stage
-	kernelStage, err := GetKernelStage(sis, logger)
+	kernelStage, err := GetInstallKernelStage(sis, logger)
 	if err != nil {
 		logger.Logger.Error().Msgf("Failed to get the kernel stage: %s", err)
 		return data, err
