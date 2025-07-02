@@ -654,9 +654,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 		}
 
 		if sis.Family == values.RedHatFamily && sis.Distro != values.Fedora {
-			// For RedHat, Rocky and AlmaLinux we need to check the version
-			// If its < 9.0 we need to disable sysext
-			// and use the network-legacy module
+			// Check sysext first
 			ver, err := semver.NewVersion(sis.Version)
 			if err != nil {
 				l.Logger.Error().Msgf("Failed to parse the version %s: %s", sis.Version, err)
@@ -668,22 +666,36 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 				l.Logger.Debug().Str("distro", string(sis.Distro)).Str("version", sis.Version).Msg("Disabling sysext")
 				sysextModule = false
 			}
-			// if the user has systemd-networkd installed, we can use it
-			if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err != nil && os.IsNotExist(err) {
-				// Check if they have NetworkManager installed
-				if _, err := os.Stat("/usr/bin/NetworkManager"); err != nil && os.IsNotExist(err) {
-					networkModule = "network-manager network-legacy"
-				} else {
-					l.Logger.Debug().Str("distro", string(sis.Distro)).Msg("Dropping systemd-networkd module for redhat")
-					networkModule = "network-legacy"
-				}
-			} else {
-				l.Logger.Debug().Str("distro", string(sis.Distro)).Msg("Keeping systemd-networkd module for redhat")
+
+			// Now network
+			// we default to networmanager
+			// if systemd-network is available we use it instead
+			// depending on the version we might add network-legacy
+			// Start from scratch
+			networkModule = ""
+
+			// Do we have networkmanmager?
+			if _, err := os.Stat("/usr/bin/NetworkManager"); err == nil {
+				networkModule = "network-manager"
 			}
+
+			// Do we have systemd-networkd?
+			if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err == nil {
+				networkModule = "systemd-networkd"
+			}
+
+			constraint, _ = semver.NewConstraint("<10")
+			// If its > 9.0 we cant add network-legacy
+			if constraint.Check(ver) {
+				networkModule += " network-legacy"
+			} else {
+				networkModule += " network"
+			}
+
 		}
 
 		if sis.Distro == values.Fedora {
-			// On Fedora we drop the network-legacy module
+			// On Fedora we use systemd-networkd directly
 			networkModule = "systemd-networkd"
 		}
 
