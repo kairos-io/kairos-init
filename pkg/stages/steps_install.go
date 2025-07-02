@@ -47,17 +47,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		return []schema.Stage{}, err
 	}
 
-	// TODO(rhel): Add zfs packages? Currently we add the repos to alma+rocky but we don't install the packages so?
 	stage := []schema.Stage{
-		{
-			Name:     "Install epel-release",
-			OnlyIfOs: "CentOS.*|Rocky.*|AlmaLinux.*",
-			Packages: schema.Packages{
-				Install: []string{
-					"epel-release",
-				},
-			},
-		},
 		{
 			Name: "Install base packages",
 			Packages: schema.Packages{
