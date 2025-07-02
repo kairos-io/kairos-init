@@ -646,7 +646,10 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 			}
 		}
 
-		if sis.Distro == values.RedHat {
+		if sis.Family == values.RedHatFamily && sis.Distro != values.Fedora {
+			// For RedHat, Rocky and AlmaLinux we need to check the version
+			// If its < 9.0 we need to disable sysext
+			// and use the network-legacy module
 			ver, err := semver.NewVersion(sis.Version)
 			if err != nil {
 				l.Logger.Error().Msgf("Failed to parse the version %s: %s", sis.Version, err)
@@ -676,6 +679,8 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 			// On Fedora we drop the network-legacy module
 			networkModule = "systemd-networkd"
 		}
+
+		l.Logger.Debug().Str("networkModule", networkModule).Bool("sysextModule", sysextModule).Msg("Adding dracut modules to initramfs")
 
 		// Add support for pmem modules to support HTTP EFI boot automatically mounting the served ISO as a livecd
 		// This means the UEFI firmware will expose the loaded HTTP Iso memory as a block device for the kernel
