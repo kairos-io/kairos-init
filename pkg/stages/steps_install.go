@@ -47,12 +47,26 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		return []schema.Stage{}, err
 	}
 
+	// Get the full version from the system info parsed so we can use the major version
+	fullVersion, err := semver.NewSemver(sis.Version)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to parse the version %s: %s", sis.Version, err)
+		return []schema.Stage{}, err
+	}
+
 	stage := []schema.Stage{
 		{
 			Name:     "Install epel repository",
-			OnlyIfOs: "AlmaLinux.*|Rocky.*|CentOS.*|Red\\sHat.*",
+			OnlyIfOs: "AlmaLinux.*|Rocky.*|CentOS.*",
 			Packages: schema.Packages{
 				Install: []string{"epel-release"},
+			},
+		},
+		{
+			Name:     "Install epel repository for Red Hat",
+			OnlyIfOs: "Red\\sHat.*",
+			Commands: []string{
+				fmt.Sprintf("dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-%d.noarch.rpm", fullVersion.Segments()[0]),
 			},
 		},
 		{
