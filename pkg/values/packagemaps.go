@@ -42,7 +42,6 @@ var CommonPackages = []string{
 	"e2fsprogs",  // mkfs support for ext2/3/4
 	"parted",     // Partitioning support, check if we need it anymore
 	"logrotate",  // Log rotation support
-	"fail2ban",   // Basic security tool
 }
 
 // DistroFamilyInterface is an interface to get the value of a distro or family
@@ -233,6 +232,7 @@ var BasePackages = PackageMap{
 				"debianutils",
 				"ethtool",
 				"fuse3",
+				"fail2ban", // Basic security tool
 				"gdisk",
 				"gnupg",
 				"gnupg1-l10n",
@@ -287,6 +287,7 @@ var BasePackages = PackageMap{
 				"cryptsetup",
 				"coreutils",
 				"device-mapper",
+				"fail2ban", // Basic security tool
 				"findutils",
 				"growpart",
 				"gptfdisk",
@@ -350,6 +351,7 @@ var BasePackages = PackageMap{
 				"efibootmgr",
 				"eudev",
 				"eudev-hwids",
+				"fail2ban", // Basic security tool
 				"findutils",
 				"findmnt",
 				"gcompat",
@@ -467,7 +469,8 @@ var BasePackages = PackageMap{
 	Fedora: {
 		ArchCommon: {
 			Common: {
-				"haveged", // Random number generator, check if needed?
+				"fail2ban", // Basic security tool
+				"haveged",  // Random number generator, check if needed?
 			},
 		},
 	},
