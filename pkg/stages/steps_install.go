@@ -49,6 +49,13 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 
 	stage := []schema.Stage{
 		{
+			Name:     "Install epel repository",
+			OnlyIfOs: "AlmaLinux.*|Rocky.*|CentOS.*|Red\\sHat.*",
+			Packages: schema.Packages{
+				Install: []string{"epel-release"},
+			},
+		},
+		{
 			Name: "Install base packages",
 			Packages: schema.Packages{
 				Install: finalMergedPkgs,

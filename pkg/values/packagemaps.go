@@ -94,7 +94,9 @@ var ImmucorePackages = PackageMap{
 				"dracut-network",
 				"dracut-squash",
 				"squashfs-tools",
-				"dhcp-client",
+			},
+			"<10": {
+				"dhcp-client", // On RHEL 9 and below, we need to install the dhcp-client package for network support
 			},
 		},
 	},
