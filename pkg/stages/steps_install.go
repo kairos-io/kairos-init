@@ -653,7 +653,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 			}
 		}
 
-		if sis.Family == values.RedHatFamily && sis.Distro != values.Fedora {
+		if sis.Family == values.RedHatFamily {
 			// Check sysext first
 			ver, err := semver.NewVersion(sis.Version)
 			if err != nil {
@@ -692,11 +692,6 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 				networkModule += " network"
 			}
 
-		}
-
-		if sis.Distro == values.Fedora {
-			// On Fedora we use systemd-networkd directly
-			networkModule = "systemd-networkd"
 		}
 
 		l.Logger.Debug().Str("networkModule", networkModule).Bool("sysextModule", sysextModule).Msg("Adding dracut modules to initramfs")
