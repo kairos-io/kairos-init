@@ -762,7 +762,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 		// If its ubuntu <= 22.04 we need to disable sysext
 		// If its ubuntu <= 20.04 we need to use the plain network module
 		// network-legacy is needed for ipxe as it comes up very fast which makes the livenet stuff work properly
-		// otherwise systemd-networkd doest not trigger the dracut hooks to let it know that its up and running
+		// otherwise systemd-networkd does not trigger the dracut hooks to let it know that its up and running
 		// https://github.com/dracutdevs/dracut/issues/1822
 		networkModule := "systemd-networkd network-legacy"
 		sysextModule := true
