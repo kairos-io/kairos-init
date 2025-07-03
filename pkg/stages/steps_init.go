@@ -2,12 +2,13 @@ package stages
 
 import (
 	"fmt"
-	"github.com/kairos-io/kairos-init/pkg/bundled"
 	"os"
 	"os/exec"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/kairos-io/kairos-init/pkg/bundled"
 
 	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/config"
@@ -147,6 +148,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_RELEASE":        release,
 		"KAIROS_FIPS":           fmt.Sprintf("%t", config.DefaultConfig.Fips),        // Was the image built with FIPS support?
 		"KAIROS_TRUSTED_BOOT":   fmt.Sprintf("%t", config.DefaultConfig.TrustedBoot), // Was the image built with Trusted Boot support?
+		"KAIROS_INIT_VERSION":   values.GetVersion(),                                 // The version of the kairos-init binary
 	}
 
 	// Get SOFTWARE_VERSION from the k3s/k0s version
@@ -376,18 +378,45 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			Name:                 "Configure default systemd services",
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
-				Enable: []string{
-					"fail2ban",
-				},
 				Mask: []string{
 					"systemd-firstboot.service",
-					"systemd-timesyncd.service",
 				},
 				Overrides: []schema.SystemctlOverride{
 					{
 						Service: "systemd-networkd-wait-online",
 						Content: bundled.SystemdNetworkOnlineWaitOverride,
 					},
+				},
+			},
+		},
+		{
+			Name:                 "Enable fail2ban service for RHEL family",
+			OnlyIfServiceManager: "systemd",
+			If:                   "test -f /usr/bin/fail2ban-server",
+			OnlyIfOs:             "CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"fail2ban",
+				},
+			},
+		},
+		{
+			Name:                 "Enable fail2ban service",
+			OnlyIfServiceManager: "systemd",
+			OnlyIfOs:             "Ubuntu.*|Debian.*|SLES.*|openSUSE.*|Fedora.*", // RHEL family has it optinally installed
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"fail2ban",
+				},
+			},
+		},
+		{
+			Name:                 "Enable timesyncd service",
+			OnlyIfServiceManager: "systemd",
+			OnlyIfOs:             "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|SLES.*|[O-o]penSUSE.*", // RHEL family has it optinally installed
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"systemd-timesyncd",
 				},
 			},
 		},
@@ -403,6 +432,31 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
+			Name:                 "Disable Wicked for SUSE family", // Collides with systemd-networkd
+			OnlyIfOs:             "SLES.*|openSUSE.*",
+			OnlyIfServiceManager: "systemd",
+			Systemctl: schema.Systemctl{
+				Disable: []string{
+					"wicked",
+				},
+				Mask: []string{
+					"wicked",
+				},
+			},
+		},
+		{
+			Name:                 "Enable services for SUSE family",
+			OnlyIfOs:             "SLES.*|openSUSE.*",
+			OnlyIfServiceManager: "systemd",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"sshd",
+					"systemd-networkd",
+					"systemd-resolved",
+				},
+			},
+		},
+		{
 			Name:                 "Enable services for RHEL family",
 			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*",
 			OnlyIfServiceManager: "systemd",
@@ -410,7 +464,6 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 				Enable: []string{
 					"sshd",
 					"systemd-resolved",
-					"systemd-networkd",
 				},
 				Disable: []string{
 					"dnf-makecache",
@@ -440,8 +493,8 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name:                 "Enable networkd for RHEL if binary is available",
-			OnlyIfOs:             "Red\\sHat.*",
+			Name:                 "Enable networkd for RHEL family if binary is available",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Red\\sHat.*",
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/lib/systemd/systemd-networkd",
 			Systemctl: schema.Systemctl{
@@ -452,7 +505,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable NetworkManager for RHEL if binary is available",
-			OnlyIfOs:             "Red\\sHat.*",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Red\\sHat.*",
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/sbin/NetworkManager",
 			Systemctl: schema.Systemctl{
@@ -538,7 +591,7 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 		{ // On Fedora, if we don't have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
 			// TODO: Check if this is needed on AlmaLinux/RockyLinux/Red\sHatLinux
 			Name:     "Copy kernel for Fedora Trusted Boot",
-			OnlyIfOs: "Fedora.*",
+			OnlyIfOs: "Fedora.*|Red\\sHat.*",
 			If:       fmt.Sprintf("test ! -f /boot/vmlinuz-%s && test -f /usr/lib/modules/%s/vmlinuz", kernel, kernel),
 			Commands: []string{
 				fmt.Sprintf("cp /usr/lib/modules/%s/vmlinuz /boot/vmlinuz-%s", kernel, kernel),

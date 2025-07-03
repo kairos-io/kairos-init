@@ -26,10 +26,6 @@ stages:
           - purge-kernels
       commands:
         - systemctl set-default multi-user.target
-    - name: "Generate host keys"
-      # Make sure the host always has available keys
-      commands:
-      - ssh-keygen -A
     - name: "Create systemd services"
       only_service_manager: "systemd"
       files:
