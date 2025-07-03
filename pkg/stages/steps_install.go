@@ -47,15 +47,26 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		return []schema.Stage{}, err
 	}
 
-	// TODO(rhel): Add zfs packages? Currently we add the repos to alma+rocky but we don't install the packages so?
+	// Get the full version from the system info parsed so we can use the major version
+	fullVersion, err := semver.NewSemver(sis.Version)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to parse the version %s: %s", sis.Version, err)
+		return []schema.Stage{}, err
+	}
+
 	stage := []schema.Stage{
 		{
-			Name:     "Install epel-release",
-			OnlyIfOs: "CentOS.*|Rocky.*|AlmaLinux.*",
+			Name:     "Install epel repository",
+			OnlyIfOs: "AlmaLinux.*|Rocky.*|CentOS.*",
 			Packages: schema.Packages{
-				Install: []string{
-					"epel-release",
-				},
+				Install: []string{"epel-release"},
+			},
+		},
+		{
+			Name:     "Install epel repository for Red Hat",
+			OnlyIfOs: "Red\\sHat.*",
+			Commands: []string{
+				fmt.Sprintf("dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-%d.noarch.rpm", fullVersion.Segments()[0]),
 			},
 		},
 		{
@@ -656,7 +667,8 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 			}
 		}
 
-		if sis.Distro == values.RedHat {
+		if sis.Family == values.RedHatFamily {
+			// Check sysext first
 			ver, err := semver.NewVersion(sis.Version)
 			if err != nil {
 				l.Logger.Error().Msgf("Failed to parse the version %s: %s", sis.Version, err)
@@ -668,24 +680,35 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 				l.Logger.Debug().Str("distro", string(sis.Distro)).Str("version", sis.Version).Msg("Disabling sysext")
 				sysextModule = false
 			}
-			// if the user has systemd-networkd installed, we can use it
-			if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err != nil && os.IsNotExist(err) {
-				// Check if they have NetworkManager installed
-				if _, err := os.Stat("/usr/bin/NetworkManager"); err != nil && os.IsNotExist(err) {
-					networkModule = "network-manager network-legacy"
-				} else {
-					l.Logger.Debug().Str("distro", string(sis.Distro)).Msg("Dropping systemd-networkd module for redhat")
-					networkModule = "network-legacy"
-				}
-			} else {
-				l.Logger.Debug().Str("distro", string(sis.Distro)).Msg("Keeping systemd-networkd module for redhat")
+
+			// Now network
+			// we default to networmanager
+			// if systemd-network is available we use it instead
+			// depending on the version we might add network-legacy
+			// Start from scratch
+			networkModule = ""
+
+			// Do we have networkmanmager?
+			if _, err := os.Stat("/usr/bin/NetworkManager"); err == nil {
+				networkModule = "network-manager"
 			}
+
+			// Do we have systemd-networkd?
+			if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err == nil {
+				networkModule = "systemd-networkd"
+			}
+
+			constraint, _ = semver.NewConstraint("<10")
+			// If its > 9.0 we cant add network-legacy
+			if constraint.Check(ver) {
+				networkModule += " network-legacy"
+			} else {
+				networkModule += " network"
+			}
+
 		}
 
-		if sis.Distro == values.Fedora {
-			// On Fedora we drop the network-legacy module
-			networkModule = "systemd-networkd"
-		}
+		l.Logger.Debug().Str("networkModule", networkModule).Bool("sysextModule", sysextModule).Msg("Adding dracut modules to initramfs")
 
 		// Add support for pmem modules to support HTTP EFI boot automatically mounting the served ISO as a livecd
 		// This means the UEFI firmware will expose the loaded HTTP Iso memory as a block device for the kernel

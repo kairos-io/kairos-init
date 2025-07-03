@@ -150,6 +150,22 @@ stages:
 This would run the `before-install` and `install` stages as normal, but then on the `after-install` stage it would add the zfs repo and install the zfs packages.
 
 
+## Using systemd-networkd in RHEL family (RHEL, CentOS, Rocky, AlmaLinux, etc.)
+
+When building RHEL family images, the default is to use NetworkManager for networking. If systemd-networkd is preferred, you should install it before running `kairos-init` and it will be used instead.
+
+## Epel repos in RHEL family
+
+When building RHEL family images, the epel repository is added automaticallyy as some packages that are needed are only available there.
+If you want to remove the repository, first run the `install` stage and then you can remove the epel repository by running:
+
+```bash
+dmf remove epel-release
+```
+
+in your dockerfile after the `kairos-init` step. This will remove the epel repository from the image.
+
+
 ## Building RHEL images
 
 Before running `kairos-init`, you need to register the system with the subscription manager and attach a subscription to it. You can do this by modifying the Dockerfile to register the system before running `kairos-init`:

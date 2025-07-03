@@ -378,9 +378,6 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			Name:                 "Configure default systemd services",
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
-				Enable: []string{
-					"fail2ban",
-				},
 				Mask: []string{
 					"systemd-firstboot.service",
 				},
@@ -393,9 +390,30 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
+			Name:                 "Enable fail2ban service for RHEL family",
+			OnlyIfServiceManager: "systemd",
+			If:                   "test -f /usr/bin/fail2ban-server",
+			OnlyIfOs:             "CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"fail2ban",
+				},
+			},
+		},
+		{
+			Name:                 "Enable fail2ban service",
+			OnlyIfServiceManager: "systemd",
+			OnlyIfOs:             "Ubuntu.*|Debian.*|SLES.*|openSUSE.*|Fedora.*", // RHEL family has it optinally installed
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"fail2ban",
+				},
+			},
+		},
+		{
 			Name:                 "Enable timesyncd service",
 			OnlyIfServiceManager: "systemd",
-			OnlyIfOs:             "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|SLES.*|[O-o]penSUSE.*", // RHEL family
+			OnlyIfOs:             "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|SLES.*|[O-o]penSUSE.*", // RHEL family has it optinally installed
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"systemd-timesyncd",
@@ -446,7 +464,6 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 				Enable: []string{
 					"sshd",
 					"systemd-resolved",
-					"systemd-networkd",
 				},
 				Disable: []string{
 					"dnf-makecache",
@@ -476,8 +493,8 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name:                 "Enable networkd for RHEL if binary is available",
-			OnlyIfOs:             "Red\\sHat.*",
+			Name:                 "Enable networkd for RHEL family if binary is available",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Red\\sHat.*",
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/lib/systemd/systemd-networkd",
 			Systemctl: schema.Systemctl{
@@ -488,7 +505,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable NetworkManager for RHEL if binary is available",
-			OnlyIfOs:             "Red\\sHat.*",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Red\\sHat.*",
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/sbin/NetworkManager",
 			Systemctl: schema.Systemctl{

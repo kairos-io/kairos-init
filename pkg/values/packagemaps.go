@@ -42,7 +42,6 @@ var CommonPackages = []string{
 	"e2fsprogs",  // mkfs support for ext2/3/4
 	"parted",     // Partitioning support, check if we need it anymore
 	"logrotate",  // Log rotation support
-	"fail2ban",   // Basic security tool
 }
 
 // DistroFamilyInterface is an interface to get the value of a distro or family
@@ -59,8 +58,8 @@ type ModelPackageMap map[DistroFamilyInterface]map[Architecture]map[Model]Versio
 type VersionMap map[string][]string
 
 // ImmucorePackages are the minimum set of packages that immucore needs.
-// Otherwise you wont be able to build the initrd with immucore on it.
-// This packages are removed afterwards, so we can keep the image as small as possible
+// Otherwise, you won't be able to build the initrd with immucore on it.
+// These packages are removed afterward, so we can keep the image as small as possible
 var ImmucorePackages = PackageMap{
 	DebianFamily: {
 		ArchCommon: {
@@ -95,7 +94,9 @@ var ImmucorePackages = PackageMap{
 				"dracut-network",
 				"dracut-squash",
 				"squashfs-tools",
-				"dhcp-client",
+			},
+			"<10": {
+				"dhcp-client", // On RHEL 9 and below, we need to install the dhcp-client package for network support
 			},
 		},
 	},
@@ -233,6 +234,7 @@ var BasePackages = PackageMap{
 				"debianutils",
 				"ethtool",
 				"fuse3",
+				"fail2ban", // Basic security tool
 				"gdisk",
 				"gnupg",
 				"gnupg1-l10n",
@@ -287,6 +289,7 @@ var BasePackages = PackageMap{
 				"cryptsetup",
 				"coreutils",
 				"device-mapper",
+				"fail2ban", // Basic security tool
 				"findutils",
 				"growpart",
 				"gptfdisk",
@@ -350,6 +353,7 @@ var BasePackages = PackageMap{
 				"efibootmgr",
 				"eudev",
 				"eudev-hwids",
+				"fail2ban", // Basic security tool
 				"findutils",
 				"findmnt",
 				"gcompat",
@@ -412,6 +416,8 @@ var BasePackages = PackageMap{
 				"device-mapper",        // Device mapper support, needed for lvm and cryptsetup
 				"iproute",              // Basic tool for networking
 				"nfs-utils",            // NFS support, basic
+				"NetworkManager",       // Default Network manager for Red Hat
+				"nmstate",              // Network manager state management, makes our life easier
 				"openssh-server",
 				"openssh-clients",
 				"polkit",
@@ -424,20 +430,6 @@ var BasePackages = PackageMap{
 			},
 			">=9.0": {
 				"systemd-resolved", // systemd-resolved is tech preview in systemd before 9.0
-			},
-		},
-	},
-	RockyLinux: {
-		ArchCommon: {
-			Common: {
-				"systemd-networkd",
-			},
-		},
-	},
-	AlmaLinux: {
-		ArchCommon: {
-			Common: {
-				"systemd-networkd",
 			},
 		},
 	},
@@ -479,16 +471,8 @@ var BasePackages = PackageMap{
 	Fedora: {
 		ArchCommon: {
 			Common: {
-				"haveged",          // Random number generator, check if needed?
-				"systemd-networkd", // Not available in other distros, too old version maybe?
-			},
-		},
-	},
-	RedHat: {
-		ArchCommon: {
-			Common: {
-				"NetworkManager", // Default Network manager for Red Hat
-				"nmstate",        // Network manager state management, makes our life easier
+				"fail2ban", // Basic security tool
+				"haveged",  // Random number generator, check if needed?
 			},
 		},
 	},
