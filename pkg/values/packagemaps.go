@@ -88,9 +88,6 @@ var ImmucorePackages = PackageMap{
 	},
 	RedHatFamily: {
 		ArchCommon: {
-			"=<9": {
-				"dhcp-client",
-			},
 			Common: {
 				"dracut",
 				"dracut-live",
