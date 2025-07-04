@@ -7,7 +7,6 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -97,40 +96,6 @@ func GetInstallKernelStage(sis values.System, logger types.KairosLogger) ([]sche
 	if err != nil {
 		logger.Logger.Error().Msgf("Failed to parse the packages: %s", err)
 		return []schema.Stage{}, err
-	}
-
-	// For trusted boot we need to select the correct kernel packages manually
-	if config.DefaultConfig.TrustedBoot {
-		// TODO: Check for other distros/families
-		if sis.Distro == values.Ubuntu {
-			// First update the package list so we can search for the kernel packages properly
-			err = exec.Command("apt-get", "update").Run()
-			if err != nil {
-				logger.Logger.Error().Msgf("Failed to update the package list: %s", err)
-				return []schema.Stage{}, err
-			}
-
-			out, err := exec.Command("apt-cache", "search", "linux-image").CombinedOutput()
-			if err != nil {
-				logger.Logger.Error().Msgf("Failed to get the kernel packages: %s", err)
-				return []schema.Stage{}, err
-			}
-			// Get the latest kernel image and modules version
-			// package is in format linux-image-5.4.0-104-generic
-			// modules are in format linux-modules-5.4.0-104-generic
-			// we need to extract the number only
-			re, _ := regexp.Compile(`linux-image-(\d+\.\d+\.\d+-\d+)-generic`)
-			if re.Match(out) {
-				match := re.FindStringSubmatch(string(out))
-				logger.Logger.Debug().Str("kernel", match[1]).Msg("Found the kernel package")
-				finalMergedPkgs = append(finalMergedPkgs, fmt.Sprintf("linux-image-%s-generic", match[1]))
-				finalMergedPkgs = append(finalMergedPkgs, fmt.Sprintf("linux-modules-%s-generic", match[1]))
-			} else {
-				logger.Logger.Error().Err(err).Msgf("Failed to get the kernel packages")
-				logger.Logger.Debug().Str("output", string(out)).Msgf("Failed to get the kernel packages")
-				return []schema.Stage{}, err
-			}
-		}
 	}
 
 	stage := []schema.Stage{
