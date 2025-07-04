@@ -92,12 +92,6 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data.Stages["install"] = append(data.Stages["install"], GetInstallGrubBootArgsStage(sis, logger)...)
 	// Add kubernetes
 	data.Stages["install"] = append(data.Stages["install"], GetInstallKubernetesStage(sis, logger)...)
-	// Add initrd files
-	initrdStage, err := GetKairosInitramfsFilesStage(sis, logger)
-	if err != nil {
-		return data, err
-	}
-	data.Stages["install"] = append(data.Stages["install"], initrdStage...)
 	// Add the miscellaneous files
 	data.Stages["install"] = append(data.Stages["install"], GetKairosMiscellaneousFilesStage(sis, logger)...)
 
@@ -169,6 +163,15 @@ func RunInitStage(logger types.KairosLogger) (schema.YipConfig, error) {
 		return data, err
 	}
 	data.Stages["init"] = append(data.Stages["init"], kernelStage...)
+
+	// Add initrd files before rebuilding initrd
+	initrdFilesStage, err := GetKairosInitramfsFilesStage(sis, logger)
+	if err != nil {
+		return data, err
+	}
+	data.Stages["init"] = append(data.Stages["init"], initrdFilesStage...)
+
+	// Rebuild the initrd
 	initrdStage, err := GetInitrdStage(sis, logger)
 	if err != nil {
 		logger.Logger.Error().Msgf("Failed to get the initrd stage: %s", err)
