@@ -67,6 +67,16 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 			},
 		},
 		{
+			Name:     "Disable grub2 probe trigger", // Grub2 will try to probe the system on install, which fails due it being on a container
+			OnlyIfOs: "Alpine.*",
+			Files: []schema.File{
+				{
+					Path:    "/etc/update-grub.conf",
+					Content: "disable_trigger=1",
+				},
+			},
+		},
+		{
 			Name: "Install base packages",
 			Packages: schema.Packages{
 				Install: finalMergedPkgs,
