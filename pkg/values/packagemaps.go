@@ -266,7 +266,6 @@ var BasePackages = PackageMap{
 				"pkg-config",
 				"psmisc",
 				"publicsuffix",
-				"python3-pynvim",
 				"shared-mime-info",
 				"systemd", // Basic tool.
 				"systemd-timesyncd",
