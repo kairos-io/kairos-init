@@ -77,11 +77,29 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 			},
 		},
 		{
+			Name:     "Disable mkinitfs trigger", // mkinitfs will generate an initramfs file but we dont need it
+			OnlyIfOs: "Alpine.*",
+			Files: []schema.File{
+				{
+					Path:    "/etc/mkinitfs/mkinitfs.conf",
+					Content: "disable_trigger=true",
+				},
+			},
+		},
+		{
 			Name: "Install base packages",
 			Packages: schema.Packages{
 				Install: finalMergedPkgs,
 				Refresh: true,
 				Upgrade: true,
+			},
+		},
+		{
+			Name:     "Restore mkinitfs default config", // restore the mkinitfs default config to its proper place
+			OnlyIfOs: "Alpine.*",
+			If:       "test -f /etc/mkinitfs/mkinitfs.conf.apk-new",
+			Commands: []string{
+				"mv /etc/mkinitfs/mkinitfs.conf.apk-new /etc/mkinitfs/mkinitfs.conf",
 			},
 		},
 	}
