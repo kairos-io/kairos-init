@@ -11,16 +11,17 @@ import (
 // Config is the struct to track the config of the init image
 // So we can access it from anywhere
 type Config struct {
-	Model              string
-	Variant            Variant
-	TrustedBoot        bool
-	Fips               bool
-	KubernetesProvider KubernetesProvider
-	KubernetesVersion  string
-	KairosVersion      semver.Version
-	Extensions         bool
-	VersionOverrides   VersionOverrides
-	SkipSteps          []string
+	Model                string
+	Variant              Variant
+	TrustedBoot          bool
+	Fips                 bool
+	KubernetesProvider   string
+	KubernetesVersion    string
+	KubernetesConfigFile string // Config file to pass to the provider. We dont care about its contents, its the provider the one that will use it
+	KairosVersion        semver.Version
+	Extensions           bool
+	VersionOverrides     VersionOverrides
+	SkipSteps            []string
 }
 
 // VersionOverrides holds version overrides for binaries
@@ -58,23 +59,6 @@ const CoreVariant Variant = "core"
 const StandardVariant Variant = "standard"
 
 var ValidVariants = []Variant{CoreVariant, StandardVariant}
-
-type KubernetesProvider string
-
-func (v *KubernetesProvider) FromString(provider string) error {
-	*v = KubernetesProvider(provider)
-	switch *v {
-	case K3sProvider, K0sProvider:
-		return nil
-	default:
-		return fmt.Errorf("invalid Kubernetes provider: %s, possible values are %s", provider, ValidProviders)
-	}
-}
-
-const K3sProvider KubernetesProvider = "k3s"
-const K0sProvider KubernetesProvider = "k0s"
-
-var ValidProviders = []KubernetesProvider{K3sProvider, K0sProvider}
 
 // LoadVersionOverrides initializes the VersionOverrides from a file
 func (c *Config) LoadVersionOverrides() {
