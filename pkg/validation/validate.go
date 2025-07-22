@@ -49,12 +49,6 @@ func (v *Validator) Validate() error {
 
 	if config.DefaultConfig.Variant == "standard" {
 		binaries = append(binaries, "agent-provider-kairos", "kairos", "edgevpn")
-		if config.DefaultConfig.KubernetesProvider == config.K3sProvider {
-			binaries = append(binaries, "k3s")
-		}
-		if config.DefaultConfig.KubernetesProvider == config.K0sProvider {
-			binaries = append(binaries, "k0s")
-		}
 	}
 
 	// Alter path to include our providers path

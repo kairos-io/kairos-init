@@ -3,8 +3,6 @@ package stages
 import (
 	"fmt"
 	"os"
-	"os/exec"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -150,41 +148,6 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_FIPS":           fmt.Sprintf("%t", config.DefaultConfig.Fips),        // Was the image built with FIPS support?
 		"KAIROS_TRUSTED_BOOT":   fmt.Sprintf("%t", config.DefaultConfig.TrustedBoot), // Was the image built with Trusted Boot support?
 		"KAIROS_INIT_VERSION":   values.GetVersion(),                                 // The version of the kairos-init binary
-	}
-
-	// Get SOFTWARE_VERSION from the k3s/k0s version
-	if config.DefaultConfig.Variant == config.StandardVariant {
-		log.Logger.Debug().Msg("Getting the k8s version for the kairos-release stage")
-		var k8sVersion string
-
-		switch config.DefaultConfig.KubernetesProvider {
-		case config.K3sProvider:
-			out, err := exec.Command("k3s", "--version").CombinedOutput()
-			if err != nil {
-				log.Logger.Error().Msgf("Failed to get the k3s version: %s", err)
-			}
-			// 2 lines in this format:
-			// k3s version v1.21.4+k3s1 (3781f4b7)
-			// go version go1.16.5
-			// We need the first line
-			re := regexp.MustCompile(`k3s version (v\d+\.\d+\.\d+\+k3s\d+)`)
-			if re.MatchString(string(out)) {
-				match := re.FindStringSubmatch(string(out))
-				k8sVersion = match[1]
-			} else {
-				log.Logger.Error().Msgf("Failed to parse the k3s version: %s", string(out))
-			}
-		case config.K0sProvider:
-			out, err := exec.Command("k0s", "version").CombinedOutput()
-			if err != nil {
-				log.Logger.Error().Msgf("Failed to get the k0s version: %s", err)
-			}
-			k8sVersion = strings.TrimSpace(string(out))
-		}
-
-		log.Logger.Debug().Str("k8sVersion", k8sVersion).Msg("Got the k8s version")
-		env["KAIROS_SOFTWARE_VERSION"] = k8sVersion
-		env["KAIROS_SOFTWARE_VERSION_PREFIX"] = string(config.DefaultConfig.KubernetesProvider)
 	}
 
 	log.Logger.Debug().Interface("env", env).Msg("Kairos release stage")

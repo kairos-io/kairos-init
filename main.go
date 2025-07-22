@@ -21,7 +21,6 @@ import (
 var (
 	trusted       string
 	version       string
-	ksProvider    = newEnumFlag([]string{string(config.K3sProvider), string(config.K0sProvider), ""}, "")
 	stageFlag     = newEnumFlag([]string{"init", "install", "all"}, "all")
 	loglevelFlag  = newEnumFlag([]string{"debug", "info", "warn", "error", "trace"}, "info")
 	skipStepsFlag = newEnumSliceFlag(values.GetStepNames(), []string{})
@@ -34,10 +33,7 @@ func preRun(_ *cobra.Command, _ []string) {
 		config.DefaultConfig.TrustedBoot = true
 	}
 
-	if ksProvider.Value != "" {
-		// Try to load the kubernetes provider. As its an enum, there's no need to check if the value is valid
-		_ = config.DefaultConfig.KubernetesProvider.FromString(ksProvider.Value)
-
+	if config.DefaultConfig.KubernetesProvider != "" {
 		if config.DefaultConfig.KubernetesVersion == "latest" {
 			// Set the kubernetes version to empty if latest is set so the latest is used
 			config.DefaultConfig.KubernetesVersion = ""
@@ -168,10 +164,11 @@ func init() {
 	// enum flags
 	rootCmd.Flags().VarP(stageFlag, "stage", "s", fmt.Sprintf("set the stage to run (%s)", strings.Join(stageFlag.Allowed, ", ")))
 	rootCmd.Flags().VarP(loglevelFlag, "level", "l", fmt.Sprintf("set the log level (%s)", strings.Join(loglevelFlag.Allowed, ", ")))
-	rootCmd.Flags().VarP(ksProvider, "kubernetes-provider", "k", fmt.Sprintf("Kubernetes provider (%s)", strings.Join(ksProvider.Allowed, ", ")))
 	// rest of the flags
+	rootCmd.Flags().StringVarP(&config.DefaultConfig.KubernetesProvider, "kubernetes-provider", "k", "", fmt.Sprintf("Kubernetes provider"))
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Model, "model", "m", "generic", "model to build for, like generic or rpi4")
 	rootCmd.Flags().StringVar(&config.DefaultConfig.KubernetesVersion, "k8sversion", "latest", "Kubernetes version for provider")
+	rootCmd.Flags().StringVar(&config.DefaultConfig.KubernetesConfigFile, "k8config", "", "Kubernetes configuration for provider")
 	rootCmd.Flags().BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips kairos binary versions. For FIPS 140-2 compliance images")
 	rootCmd.Flags().StringVarP(&version, "version", "v", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
 	rootCmd.Flags().BoolVarP(&config.DefaultConfig.Extensions, "stage-extensions", "x", false, "enable stage extensions mode")
