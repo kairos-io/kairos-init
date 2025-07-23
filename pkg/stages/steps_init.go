@@ -1,6 +1,7 @@
 package stages
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"sort"
@@ -12,7 +13,9 @@ import (
 	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/values"
+	"github.com/kairos-io/kairos-sdk/bus"
 	"github.com/kairos-io/kairos-sdk/types"
+	"github.com/mudler/go-pluggable"
 	"github.com/mudler/yip/pkg/schema"
 )
 
@@ -150,6 +153,12 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_INIT_VERSION":   values.GetVersion(),                                 // The version of the kairos-init binary
 	}
 
+	versionInfo, err := getK8sInfo(log)
+	if err == nil && versionInfo.Provider != "" && versionInfo.Version != "" {
+		env["KAIROS_SOFTWARE_VERSION"] = versionInfo.Provider
+		env["KAIROS_SOFTWARE_VERSION_PREFIX"] = versionInfo.Version
+	}
+
 	log.Logger.Debug().Interface("env", env).Msg("Kairos release stage")
 
 	return []schema.Stage{
@@ -159,6 +168,33 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 			EnvironmentFile: "/etc/kairos-release",
 		},
 	}
+}
+
+func getK8sInfo(logger types.KairosLogger) (bus.ProviderInstalledVersionPayload, error) {
+	versionInfo := bus.ProviderInstalledVersionPayload{}
+	manager := bus.NewBus()
+	manager.Initialize(bus.WithLogger(&logger))
+	manager.Response(bus.InitProviderInfo, func(p *pluggable.Plugin, resp *pluggable.EventResponse) {
+		logger.Logger.Debug().Str("at", p.Executable).Interface("resp", resp).Msg("Received info event from provider")
+		if resp.Errored() {
+			logger.Logger.Error().Msgf("Provider info event failed: %s", resp.Error)
+			return
+		}
+		if resp.State == bus.EventResponseNotApplicable {
+			logger.Logger.Info().Msg("Provider info event is non-applicable, skipping")
+			return
+		}
+		if err := json.Unmarshal([]byte(resp.Data), &versionInfo); err != nil {
+			logger.Logger.Error().Msgf("Failed to unmarshal provider info event: %s", err)
+			return
+		}
+	})
+	_, err := manager.Publish(bus.InitProviderInfo, nil)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to publish provider info event: %s", err)
+		return versionInfo, err
+	}
+	return versionInfo, nil
 }
 
 // GetWorkaroundsStage Returns the workarounds stage

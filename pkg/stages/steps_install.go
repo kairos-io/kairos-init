@@ -567,8 +567,10 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 		logger.Logger.Warn().Msg("Skipping calling build for providers stage")
 		return nil
 	}
+
+	logger.Logger.Info().Msg("Triggering provider install event")
 	// Trigger provider build-install event
-	manager := bus.NewBus()
+	manager := bus.NewBus(bus.InitProviderInstall)
 	manager.Initialize(bus.WithLogger(&logger))
 	manager.Response(bus.InitProviderInstall, func(p *pluggable.Plugin, resp *pluggable.EventResponse) {
 		logger.Logger.Debug().Str("at", p.Executable).Interface("resp", resp).Msg("Received build-install event from provider")
@@ -576,15 +578,23 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 			logger.Logger.Error().Msgf("Provider build-install event failed: %s", resp.Error)
 			return
 		}
+		if resp.State == bus.EventResponseNotApplicable {
+			logger.Logger.Info().Msg("Provider build-install event is non-applicable, skipping")
+			return
+		}
+		if resp.State == bus.EventResponseSuccess {
+			logger.Logger.Info().Msg("Provider install event succeeded")
+		}
 	})
 
 	logger.Logger.Debug().Msg("Publishing provider build-install event")
 	// TODO: Make this a struct and store it in the sdk types? So both the provider and the init can use it
-	dataSend := ProviderPayload{
+	dataSend := bus.ProviderPayload{
 		Provider: config.DefaultConfig.KubernetesProvider,
 		Version:  config.DefaultConfig.KubernetesVersion,
 		LogLevel: logger.Logger.GetLevel().String(),
 		Config:   config.DefaultConfig.KubernetesConfigFile,
+		Family:   sis.Family.String(),
 	}
 	_, err := manager.Publish(bus.InitProviderInstall, dataSend)
 	if err != nil {
@@ -593,11 +603,4 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 	}
 
 	return nil
-}
-
-type ProviderPayload struct {
-	Provider string `json:"provider"` // What provider the user requested
-	Version  string `json:"version"`  // What version of the provider, can be empty to signal latest
-	LogLevel string `json:"logLevel"` // The log level to use for the provider
-	Config   string `json:"config"`   // The config file to pass to the provider, can be empty if not needed
 }
