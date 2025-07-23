@@ -842,7 +842,7 @@ func FilterPackagesOnConstraint(s System, l sdkTypes.KairosLogger, pkgsToFilter 
 				c = strings.TrimSpace(c)
 				semverConstraint, err := semver.NewConstraint(c)
 				if err != nil {
-					l.Logger.Error().Err(err).Str("constraint", constraint).Msg("Error parsing constraint.")
+					l.Logger.Error().Err(err).Str("constraint", c).Msg("Error parsing constraint.")
 					continue
 				}
 				if semverConstraint.Check(systemVersion) {
