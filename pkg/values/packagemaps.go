@@ -848,6 +848,7 @@ func FilterPackagesOnConstraint(s System, l sdkTypes.KairosLogger, pkgsToFilter 
 				if semverConstraint.Check(systemVersion) {
 					l.Logger.Debug().Strs("packages", values).Msg("Constraint matches, adding packages")
 					pkgs = append(pkgs, values...)
+					break
 				}
 			}
 		}
