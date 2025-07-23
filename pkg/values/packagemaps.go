@@ -2,6 +2,7 @@ package values
 
 import (
 	"bytes"
+	"strings"
 
 	"github.com/kairos-io/kairos-init/pkg/config"
 
@@ -122,7 +123,7 @@ var KernelPackages = PackageMap{
 				"linux-image-generic-hwe-{{.version}}",
 			},
 			// 24.10 uses the 24.04 hwe kernel as it is the same hwe track https://ubuntu.com/kernel/lifecycle
-			"24.10, 25.04, 25.10": {"linux-image-generic-hwe-24.04"},
+			"24.10 || 25.04 || 25.10": {"linux-image-generic-hwe-24.04"},
 		},
 	},
 	Debian: {
@@ -826,15 +827,29 @@ func FilterPackagesOnConstraint(s System, l sdkTypes.KairosLogger, pkgsToFilter 
 				pkgs = append(pkgs, values...)
 				continue
 			}
-			semverConstraint, err := semver.NewConstraint(constraint)
-			if err != nil {
-				l.Logger.Error().Err(err).Str("constraint", constraint).Msg("Error parsing constraint.")
-				continue
+
+			// if the constraint has "||" it means we have multiple constraints, so we split them
+			// as we validate each constraint independently like an OR operation
+			// otherwise just treat it as AND and leave it as is, a single constraint
+			// This is because the underlying lib does not handle OR easily so we do it ourselves
+			var constraintList []string
+			if strings.Contains(constraint, "||") {
+				constraintList = strings.Split(constraint, "||")
+			} else {
+				constraintList = []string{constraint}
 			}
-			// Also add them if the constraint matches
-			if semverConstraint.Check(systemVersion) {
-				l.Logger.Debug().Strs("packages", values).Msg("Constraint matches, adding packages")
-				pkgs = append(pkgs, values...)
+			for _, c := range constraintList {
+				c = strings.TrimSpace(c)
+				semverConstraint, err := semver.NewConstraint(c)
+				if err != nil {
+					l.Logger.Error().Err(err).Str("constraint", c).Msg("Error parsing constraint.")
+					continue
+				}
+				if semverConstraint.Check(systemVersion) {
+					l.Logger.Debug().Strs("packages", values).Msg("Constraint matches, adding packages")
+					pkgs = append(pkgs, values...)
+					break
+				}
 			}
 		}
 	}
