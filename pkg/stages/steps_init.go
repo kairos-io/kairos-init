@@ -355,10 +355,11 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 	filteredPkgs := values.FilterPackagesOnConstraint(sis, l, pkgs)
 	// Don't remove dracut packages on Debian as linux-base (KERNEL!) depends on them somehow and it means that
 	// removing dracut will remove the kernel package as well
+	// Don't remove dracut packages on Ubuntu as they are needed for the livenet module
 	stages = append(stages, []schema.Stage{
 		{
 			Name:     "Remove unneeded packages",
-			OnlyIfOs: "Ubuntu.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*|Alpine.*",
+			OnlyIfOs: "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*|Alpine.*",
 			Packages: schema.Packages{
 				Remove: filteredPkgs,
 			},
