@@ -117,7 +117,7 @@ var ImmucorePackages = PackageMap{
 var KernelPackages = PackageMap{
 	Ubuntu: {
 		ArchCommon: {
-			"20.04 || 22.04 || 24.04": {
+			"20.04 || 22.04 || 24.04 || 26.04 || 28.04": {
 				// Note: this logic only works for LTS release (x.04), any odd year or x.10 will not work
 				// This is a template, so we can replace the version with the actual version of the system
 				"linux-image-generic-hwe-{{.version}}",
@@ -653,7 +653,7 @@ var KernelPackagesModels = ModelPackageMap{
 				},
 				"20.04": {"linux-firmware-raspi2"},
 				"22.04": {"linux-firmware-raspi", "linux-modules-extra-raspi"},
-				"20.04 || 22.04 || 24.04": {
+				"20.04 || 22.04 || 24.04 || 26.04 || 28.04": {
 					// Note: this logic only works for LTS release (x.04), any odd year or x.10 will not work
 					// This is a template, so we can replace the version with the actual version of the system
 					"linux-image-generic-hwe-{{.version}}",
@@ -667,7 +667,7 @@ var KernelPackagesModels = ModelPackageMap{
 				},
 				"20.04": {"linux-firmware-raspi2"},
 				"22.04": {"linux-firmware-raspi", "linux-modules-extra-raspi"},
-				"20.04 || 22.04 || 24.04": {
+				"20.04 || 22.04 || 24.04 || 26.04 || 28.04": {
 					// Note: this logic only works for LTS release (x.04), any odd year or x.10 will not work
 					// This is a template, so we can replace the version with the actual version of the system
 					"linux-image-generic-hwe-{{.version}}",

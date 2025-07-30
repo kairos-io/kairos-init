@@ -49,10 +49,10 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 			return []schema.Stage{}, err
 		}
 
-		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s", kernel)
+		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s --no-hostonly", kernel)
 
 		if logger.GetLevel() == 0 {
-			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel)
+			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s --no-hostonly", kernel)
 		}
 
 		stage = append(stage, []schema.Stage{
@@ -355,11 +355,10 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 	filteredPkgs := values.FilterPackagesOnConstraint(sis, l, pkgs)
 	// Don't remove dracut packages on Debian as linux-base (KERNEL!) depends on them somehow and it means that
 	// removing dracut will remove the kernel package as well
-	// Don't remove dracut packages on Ubuntu as they are needed for the livenet module
 	stages = append(stages, []schema.Stage{
 		{
 			Name:     "Remove unneeded packages",
-			OnlyIfOs: "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*|Alpine.*",
+			OnlyIfOs: "Ubuntu.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*|Alpine.*",
 			Packages: schema.Packages{
 				Remove: filteredPkgs,
 			},
@@ -803,7 +802,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 			}
 
 			// Now network
-			// we default to networmanager
+			// we default to networmanmager
 			// if systemd-network is available we use it instead
 			// depending on the version we might add network-legacy
 			// Start from scratch
