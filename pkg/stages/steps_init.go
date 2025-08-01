@@ -49,10 +49,10 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 			return []schema.Stage{}, err
 		}
 
-		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s", kernel)
+		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s --no-hostonly", kernel)
 
 		if logger.GetLevel() == 0 {
-			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel)
+			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s --no-hostonly", kernel)
 		}
 
 		stage = append(stage, []schema.Stage{
@@ -802,7 +802,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 			}
 
 			// Now network
-			// we default to networmanager
+			// we default to networkmanager
 			// if systemd-network is available we use it instead
 			// depending on the version we might add network-legacy
 			// Start from scratch
