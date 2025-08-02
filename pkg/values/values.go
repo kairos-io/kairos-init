@@ -107,6 +107,7 @@ const (
 	GrubStep             = "grub"             // Configures the grub bootloader
 	KairosBinariesStep   = "kairosBinaries"   // Installs the kairos binaries
 	ProviderBinariesStep = "providerBinaries" // Installs the kairos provider binaries for k8s
+	BuildProviderStep    = "buildProvider"    // Builds the provider binaries
 	InitramfsConfigsStep = "initramfsConfigs" // Configures the initramfs for the system
 	MiscellaneousStep    = "miscellaneous"    // Applies miscellaneous configurations
 )
@@ -130,6 +131,7 @@ func StepsInfo() []StepInfo {
 		GrubStep:             "configures the grub bootloader",
 		KairosBinariesStep:   "installs the kairos binaries",
 		ProviderBinariesStep: "installs the kairos provider binaries for k8s",
+		BuildProviderStep:    "builds the provider binaries",
 		InitramfsConfigsStep: "configures the initramfs for the system",
 		MiscellaneousStep:    "applies miscellaneous configurations",
 	}

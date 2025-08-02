@@ -90,21 +90,15 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 	data.Stages["install"] = append(data.Stages["install"], GetInstallBrandingStage(sis, logger)...)
 	// Add the bootargs file
 	data.Stages["install"] = append(data.Stages["install"], GetInstallGrubBootArgsStage(sis, logger)...)
-	// Add kubernetes
-	data.Stages["install"] = append(data.Stages["install"], GetInstallKubernetesStage(sis, logger)...)
 	// Add the miscellaneous files
 	data.Stages["install"] = append(data.Stages["install"], GetKairosMiscellaneousFilesStage(sis, logger)...)
-
 	// Add extensions from disk
 	data.Stages["install"] = append(data.Stages["install"], GetStageExtensions("install", logger)...)
-
 	// Run things after we install packages and framework
 	data.Stages["after-install"] = []schema.Stage{}
-
 	// Add extensions from disk
 	data.Stages["after-install"] = append(data.Stages["after-install"], GetStageExtensions("after-install", logger)...)
 
-	// Run install first, as kernel and initrd resolution depend on the installed packages
 	for _, st := range []string{"before-install", "install", "after-install"} {
 		err = initExecutor.Run(st, vfs.OSFS, yipConsole, data.ToString())
 		if err != nil {
@@ -127,6 +121,12 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 
 	// Bring provider binaries
 	err = GetInstallProviderBinaries(sis, logger)
+	if err != nil {
+		return schema.YipConfig{}, err
+	}
+
+	// Trigger the build install event for providers
+	err = ProviderBuildInstallEvent(sis, logger)
 	if err != nil {
 		return schema.YipConfig{}, err
 	}
