@@ -24,9 +24,9 @@ immucore-fips_URL := $(call URL_TEMPLATE,immucore,$(IMMUCORE_VERSION),-fips)
 kcrypt-discovery-challenger-fips_URL := $(call URL_TEMPLATE,kcrypt-discovery-challenger,$(KCRYPT_DISCOVERY_CHALLENGER_VERSION),-fips)
 provider-kairos-fips_URL := $(call URL_TEMPLATE,provider-kairos,$(PROVIDER_KAIROS_VERSION),-fips)
 
-.PHONY: all prepare download compress cleanup
+.PHONY: all prepare download compress cleanup version-info
 
-all: prepare download compress cleanup
+all: prepare download compress cleanup version-info
 
 # Clean the output directory
 prepare:
@@ -83,3 +83,15 @@ cleanup:
 	@echo "Cleaning up non-binary files..."
 	@find $(OUTPUT_DIR) -type f ! -exec file {} \; | grep -v "executable" | awk -F: '{print $$1}' | xargs -r rm -f
 	@find $(OUTPUT_DIR_FIPS) -type f ! -exec file {} \; | grep -v "executable" | awk -F: '{print $$1}' | xargs -r rm -f
+
+# Add version info config to the bundled binaries dir into a single yaml file
+version-info:
+	@echo "Adding version info to the bundled binaries directory..."
+	@mkdir -p $(OUTPUT_DIR)
+	@echo "kairos-agent: $(AGENT_VERSION)" > $(OUTPUT_DIR)/version-info.yaml
+	@echo "immucore: $(IMMUCORE_VERSION)" >> $(OUTPUT_DIR)/version-info.yaml
+	@echo "kcrypt-discovery-challenger: $(KCRYPT_DISCOVERY_CHALLENGER_VERSION)" >> $(OUTPUT_DIR)/version-info.yaml
+	@echo "provider-kairos: $(PROVIDER_KAIROS_VERSION)" >> $(OUTPUT_DIR)/version-info.yaml
+	@echo "edgevpn: $(EDGEVPN_VERSION)" >> $(OUTPUT_DIR)/version-info.yaml
+	@echo "version-info.yaml created in $(OUTPUT_DIR)"
+

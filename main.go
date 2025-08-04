@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"github.com/kairos-io/kairos-init/pkg/bundled"
+	"gopkg.in/yaml.v3"
 	"os"
 	"strings"
 
@@ -64,6 +66,29 @@ var stepsInfo = &cobra.Command{
 			logger.Infof("\"%s\": %s", stepsInfo[step].Key, stepsInfo[step].Value)
 		}
 		logger.Infof("--------------------------------------------------------")
+	},
+}
+
+var versionCmd = &cobra.Command{
+	Use:   "version",
+	Short: "Print the version of kairos-init and bundled binaries",
+	Long:  `Print the version of kairos-init and bundled binaries. If other binary versions are selected, those are not shown, only the embedded ones`,
+	Run: func(cmd *cobra.Command, args []string) {
+		logger := types.NewKairosLogger("kairos-init", "info", false)
+		logger.Infof("kairos-init version %s", values.GetVersion())
+		logger.Debug(litter.Sdump(values.GetFullVersion()))
+
+		// parse embeded version info for binaries
+		versionInfo := map[string]string{}
+		err := yaml.Unmarshal(bundled.EmbeddedVersionInfo, &versionInfo)
+		if err != nil {
+			logger.Errorf("Error parsing embedded version info: %v", err)
+			return
+		}
+		logger.Infof("Embedded version info:")
+		for key, value := range versionInfo {
+			logger.Infof("%s: %s", key, value)
+		}
 	},
 }
 
@@ -159,6 +184,7 @@ func init() {
 
 	rootCmd.AddCommand(validateCmd)
 	rootCmd.AddCommand(stepsInfo)
+	rootCmd.AddCommand(versionCmd)
 }
 
 func main() {
