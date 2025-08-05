@@ -33,6 +33,9 @@ var EmbeddedKairosProviderFips []byte
 //go:embed binaries/edgevpn
 var EmbeddedEdgeVPN []byte
 
+//go:embed binaries/version-info.yaml
+var EmbeddedVersionInfo []byte
+
 // EmbeddedConfigs contains the cloudconfigs that go into /system/oem
 //
 //go:embed cloudconfigs/*
