@@ -317,6 +317,10 @@ var BasePackages = PackageMap{
 				"tmux",
 				"vim",
 				"which",
+			},
+		},
+		ArchAMD64: {
+			Common: {
 				"tpm2*",
 			},
 		},
