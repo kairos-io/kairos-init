@@ -151,8 +151,7 @@ compress="xz"
 i18n_install_all="yes"
 show_modules="yes"
 install_items+=" /etc/hosts "
-omit_dracutmodules+=" multipath "
-add_dracutmodules+=" livenet dmsquash-live immucore network "
+add_dracutmodules+=" livenet dmsquash-live immucore network multipath"
 `
 
 // ImmucoreGeneratorDracut is the dracut generator script that is used to generate the sysroot.mount file
