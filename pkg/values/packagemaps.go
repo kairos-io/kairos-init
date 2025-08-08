@@ -77,6 +77,8 @@ var ImmucorePackages = PackageMap{
 		ArchCommon: {
 			">=22.04": {
 				"dracut-live", // Livenet support for dracut, split into a separate package on 22.04
+				// Ubuntu 20.04 does not support multipath + dracut.
+				"multipath-tools",
 			},
 		},
 	},
@@ -84,6 +86,8 @@ var ImmucorePackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				"dracut-live",
+				"multipath-tools", // For multipath support, needed for dracut
+				"multipath-tools-boot", // For multipath support, needed for dracut
 			},
 		},
 	},
@@ -94,6 +98,7 @@ var ImmucorePackages = PackageMap{
 				"dracut-live",
 				"dracut-network",
 				"dracut-squash",
+				"device-mapper-multipath", // For multipath support, needed for dracut
 				"squashfs-tools",
 			},
 			"<10": {
