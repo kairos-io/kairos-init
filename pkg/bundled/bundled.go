@@ -263,7 +263,9 @@ install() {
 const DracutFipsConfig = `omit_dracutmodules+=" iscsi iscsiroot "
 add_dracutmodules+=" fips "`
 
-const DracutConfigUbuntu2504 = `omit_dracutmodules+=" livenet network dmsquash-live "`
+const DracutConfigUbuntu2504 = `add_drivers+=" loop dm_mod squashfs overlay "
+add_dracutmodules+=" dmsquash-live livenet network url-lib img-lib "
+install_items+=" /usr/bin/curl /usr/bin/wget "`
 
 // DracutPmemConfig is the dracut config file that is used to enable pmem support in the initramfs
 const DracutPmemConfig = `add_drivers+=" nfit libnvdimm nd_pmem dax_pmem "`
@@ -466,7 +468,7 @@ function setKernelCmd {
     # baseExtraArgs -> extra needed args
     set baseCmd="console=tty1 net.ifnames=1 rd.cos.oemlabel=COS_OEM rd.cos.oemtimeout=10 panic=5 rd.emergency=reboot rd.shell=0 systemd.crash_reboot=yes"
     if [ -n "$recoverylabel" ]; then
-        set baseRootCmd="root=live:LABEL=$recoverylabel rd.live.dir=/ rd.live.squashimg=$img"
+        set baseRootCmd="root=live:LABEL=$recoverylabel rd.live.dir=/ rd.live.squashimg=$img rd.live.ram=1"
     else
         set baseRootCmd="root=LABEL=$label cos-img/filename=$img"
     fi
