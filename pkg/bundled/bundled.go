@@ -136,6 +136,7 @@ const LogRotateConfig = `/var/log/kairos/*.log {
 const (
 	DracutPmemPath                = "/etc/dracut.conf.d/kairos-pmem.conf"
 	DracutFipsPath                = "/etc/dracut.conf.d/kairos-fips.conf"
+	DracutConfigUbuntu2504Path    = "/etc/dracut.conf.d/11-ubuntu-25.04.conf"
 	DracutSysextPath              = "/etc/dracut.conf.d/kairos-sysext.conf"
 	DracutNetworkPath             = "/etc/dracut.conf.d/kairos-network.conf"
 	DracutConfigPath              = "/etc/dracut.conf.d/10-immucore.conf"
@@ -261,6 +262,8 @@ install() {
 // DracutFipsConfig is the dracut config file that is used to enable FIPS mode in the initramfs
 const DracutFipsConfig = `omit_dracutmodules+=" iscsi iscsiroot "
 add_dracutmodules+=" fips "`
+
+const DracutConfigUbuntu2504 = `omit_dracutmodules+=" livenet network dmsquash-live "`
 
 // DracutPmemConfig is the dracut config file that is used to enable pmem support in the initramfs
 const DracutPmemConfig = `add_drivers+=" nfit libnvdimm nd_pmem dax_pmem "`

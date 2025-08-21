@@ -49,10 +49,10 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 			return []schema.Stage{}, err
 		}
 
-		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s --no-hostonly", kernel)
+		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s", kernel)
 
 		if logger.GetLevel() == 0 {
-			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s --no-hostonly", kernel)
+			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel)
 		}
 
 		stage = append(stage, []schema.Stage{
@@ -909,6 +909,20 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 						Group:       0,
 						Permissions: 0644,
 						Content:     bundled.ImmucoreServiceDracut,
+					},
+				},
+			},
+			{
+				Name:            "Add dracut config for Ubuntu 25.04",
+				OnlyIfOs:        "Ubuntu.*",
+				OnlyIfOsVersion: "25.04",
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutConfigUbuntu2504Path,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.DracutConfigUbuntu2504,
 					},
 				},
 			},
