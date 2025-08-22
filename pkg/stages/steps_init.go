@@ -49,10 +49,10 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 			return []schema.Stage{}, err
 		}
 
-		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s --no-hostonly", kernel)
+		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s", kernel)
 
 		if logger.GetLevel() == 0 {
-			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s --no-hostonly", kernel)
+			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel)
 		}
 
 		stage = append(stage, []schema.Stage{
