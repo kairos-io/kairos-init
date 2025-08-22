@@ -49,16 +49,16 @@ func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stag
 			return []schema.Stage{}, err
 		}
 
-		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s --no-hostonly", kernel)
+		dracutCmd := fmt.Sprintf("dracut -f /boot/initrd %s", kernel)
 
 		if logger.GetLevel() == 0 {
-			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s --no-hostonly", kernel)
+			dracutCmd = fmt.Sprintf("dracut -v -f /boot/initrd %s", kernel)
 		}
 
 		stage = append(stage, []schema.Stage{
 			{
 				Name:     "Create new initrd",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*|SUSE.*",
 				Commands: []string{
 					fmt.Sprintf("depmod -a %s", kernel),
 					dracutCmd,
@@ -434,7 +434,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Disable Wicked for SUSE family", // Collides with systemd-networkd
-			OnlyIfOs:             "SLES.*|openSUSE.*",
+			OnlyIfOs:             "SLES.*|openSUSE.*|SUSE.*",
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Disable: []string{
@@ -447,7 +447,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable services for SUSE family",
-			OnlyIfOs:             "SLES.*|openSUSE.*",
+			OnlyIfOs:             "SLES.*|openSUSE.*|SUSE.*",
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Enable: []string{

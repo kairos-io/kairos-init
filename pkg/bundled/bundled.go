@@ -139,7 +139,7 @@ const (
 	DracutSysextPath              = "/etc/dracut.conf.d/kairos-sysext.conf"
 	DracutNetworkPath             = "/etc/dracut.conf.d/kairos-network.conf"
 	DracutMultipathPath           = "/etc/dracut.conf.d/kairos-multipath.conf"
-	DracutConfigPath              = "/etc/dracut.conf.d/10-immucore.conf"
+	DracutConfigPath              = "/etc/dracut.conf.d/99-immucore.conf"
 	DracutImmucoreModuleSetupPath = "/usr/lib/dracut/modules.d/28immucore/module-setup.sh"
 	DracutImmucoreGeneratorPath   = "/usr/lib/dracut/modules.d/28immucore/generator.sh"
 	DracutImmucoreServicePath     = "/usr/lib/dracut/modules.d/28immucore/immucore.service"
