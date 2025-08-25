@@ -138,6 +138,7 @@ const (
 	DracutFipsPath                = "/etc/dracut.conf.d/kairos-fips.conf"
 	DracutSysextPath              = "/etc/dracut.conf.d/kairos-sysext.conf"
 	DracutNetworkPath             = "/etc/dracut.conf.d/kairos-network.conf"
+	DracutMultipathPath           = "/etc/dracut.conf.d/kairos-multipath.conf"
 	DracutConfigPath              = "/etc/dracut.conf.d/99-immucore.conf"
 	DracutImmucoreModuleSetupPath = "/usr/lib/dracut/modules.d/28immucore/module-setup.sh"
 	DracutImmucoreGeneratorPath   = "/usr/lib/dracut/modules.d/28immucore/generator.sh"
@@ -151,8 +152,7 @@ compress="xz"
 i18n_install_all="yes"
 show_modules="yes"
 install_items+=" /etc/hosts "
-omit_dracutmodules+=" multipath "
-add_dracutmodules+=" livenet dmsquash-live immucore network "
+add_dracutmodules+=" livenet dmsquash-live immucore network"
 `
 
 // ImmucoreGeneratorDracut is the dracut generator script that is used to generate the sysroot.mount file
@@ -261,6 +261,14 @@ install() {
 // DracutFipsConfig is the dracut config file that is used to enable FIPS mode in the initramfs
 const DracutFipsConfig = `omit_dracutmodules+=" iscsi iscsiroot "
 add_dracutmodules+=" fips "`
+
+// Skips any multipath module for Ubuntu 20.04 and below. Also matches new versions in the future
+// such as 30.04, 31.56 etc. This assumes Ubuntu sticks with the versioning scheme of
+// <major>.<minor> where major is 20, 21, 22,
+const UbuntuSupportedMultipathVersions = `(2[1-9]|[3-9][0-9]).+`
+
+// DracutMultipathConfig is the dracut config file that is used to enable multipath support in the initramfs
+const DracutMultipathConfig = `add_dracutmodules+=" multipath "`
 
 // DracutPmemConfig is the dracut config file that is used to enable pmem support in the initramfs
 const DracutPmemConfig = `add_drivers+=" nfit libnvdimm nd_pmem dax_pmem "`
