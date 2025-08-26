@@ -1,15 +1,15 @@
 module github.com/kairos-io/kairos-init
 
-go 1.24.2
+go 1.25.0
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.7.0
 	github.com/joho/godotenv v1.5.1
-	github.com/kairos-io/kairos-sdk v0.9.4
+	github.com/kairos-io/kairos-sdk v0.9.8
 	github.com/mudler/yip v1.16.5
 	github.com/onsi/ginkgo/v2 v2.25.1
-	github.com/onsi/gomega v1.38.1
+	github.com/onsi/gomega v1.38.2
 	github.com/sanity-io/litter v1.5.8
 	github.com/spf13/cobra v1.9.1
 	github.com/twpayne/go-vfs/v5 v5.0.5
