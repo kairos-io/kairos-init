@@ -2,16 +2,17 @@ package validation
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strings"
+
 	"github.com/hashicorp/go-multierror"
 	"github.com/joho/godotenv"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 type Validator struct {
@@ -188,8 +189,49 @@ func (v *Validator) Validate() error {
 		v.Log.Logger.Info().Msg("No SSH host keys found bundled in the system")
 	}
 
+	// Check RHEL family specific service validations
+	if err := v.ValidateRHELServices(); err != nil {
+		multi = multierror.Append(multi, err)
+	}
+
 	if multi.ErrorOrNil() == nil {
 		v.Log.Logger.Info().Msg("System validation passed")
+	}
+
+	return multi.ErrorOrNil()
+}
+
+// ValidateRHELServices checks that critical systemd services are not masked on RHEL family systems
+func (v *Validator) ValidateRHELServices() error {
+	return v.ValidateRHELServicesWithPath("/etc/systemd/system")
+}
+
+// ValidateRHELServicesWithPath checks that critical systemd services are not masked on RHEL family systems
+// This method is used for testing by allowing a custom systemd system directory path
+func (v *Validator) ValidateRHELServicesWithPath(systemdSystemPath string) error {
+	var multi *multierror.Error
+
+	if v.System.Family != values.RedHatFamily {
+		// Not a RHEL family system, skip validation
+		return nil
+	}
+
+	v.Log.Logger.Info().Msg("Checking RHEL family service validations")
+	services := []string{"systemd-udevd", "systemd-logind"}
+
+	for _, service := range services {
+		// Check if service is masked by looking for symlink to /dev/null
+		maskPath := filepath.Join(systemdSystemPath, fmt.Sprintf("%s.service", service))
+		if _, err := os.Lstat(maskPath); err == nil {
+			// Check if it's a symlink pointing to /dev/null (masked)
+			if target, err := os.Readlink(maskPath); err == nil && target == "/dev/null" {
+				multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s is masked on RHEL family system", service))
+			} else {
+				v.Log.Logger.Info().Str("service", service).Msg("Service is not masked")
+			}
+		} else {
+			v.Log.Logger.Info().Str("service", service).Msg("Service mask file not found (service not masked)")
+		}
 	}
 
 	return multi.ErrorOrNil()
