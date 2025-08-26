@@ -95,3 +95,22 @@ version-info:
 	@echo "edgevpn: $(EDGEVPN_VERSION)" >> $(OUTPUT_DIR)/version-info.yaml
 	@echo "version-info.yaml created in $(OUTPUT_DIR)"
 
+# Run tests
+test:
+	@echo "Running tests..."
+	@ginkgo -v ./pkg/validation
+
+# Run tests with coverage
+test-coverage:
+	@echo "Running tests with coverage..."
+	@ginkgo -v -cover ./pkg/validation
+
+# Run linter
+lint:
+	@echo "Running linter..."
+	@golangci-lint run ./...
+
+# Run linter with fix
+lint-fix:
+	@echo "Running linter with auto-fix..."
+	@golangci-lint run --fix ./...

@@ -1,4 +1,4 @@
-name: docker images test
+name: Tests
 
 on:
   pull_request:
@@ -11,6 +11,66 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [1.24]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Install Ginkgo
+        run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Run tests
+        run: make test
+
+      - name: Run tests with coverage
+        run: make test-coverage
+
+  test-coverage-report:
+    name: Test Coverage Report
+    runs-on: ubuntu-latest
+    needs: unit-tests
+    if: github.event_name == 'pull_request'
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+          cache: true
+
+      - name: Install Ginkgo
+        run: go install github.com/onsi/ginkgo/v2/ginkgo@latest
+
+      - name: Generate coverage report
+        run: |
+          ginkgo -v -cover -coverprofile=coverage.out ./pkg/validation
+          go tool cover -html=coverage.out -o coverage.html
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.html
+          retention-days: 30
+
   testing_build_matrix:
     name: ${{ matrix.platform }} - ${{ matrix.base_image }}${{ matrix.trusted_boot && '-uki' || ''}}${{ matrix.variant == 'standard' && ' - ' || '' }} ${{ matrix.kubernetes_provider != '' && matrix.kubernetes_provider || '' }} ${{ matrix.kubernetes_version != '' && matrix.kubernetes_version || '' }}${{ matrix.fips == true && ' - FIPS' || '' }}
     runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
