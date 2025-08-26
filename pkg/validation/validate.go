@@ -206,7 +206,7 @@ func (v *Validator) ValidateRHELServices() error {
 	return v.ValidateRHELServicesWithPath("/etc/systemd/system")
 }
 
-// ValidateRHELServicesWithPath checks that critical systemd services are not masked on RHEL family systems
+// ValidateRHELServicesWithPath checks that critical systemd services exist and are not masked on RHEL family systems
 // This method is used for testing by allowing a custom systemd system directory path
 func (v *Validator) ValidateRHELServicesWithPath(systemdSystemPath string) error {
 	var multi *multierror.Error
@@ -220,17 +220,24 @@ func (v *Validator) ValidateRHELServicesWithPath(systemdSystemPath string) error
 	services := []string{"systemd-udevd", "systemd-logind"}
 
 	for _, service := range services {
-		// Check if service is masked by looking for symlink to /dev/null
-		maskPath := filepath.Join(systemdSystemPath, fmt.Sprintf("%s.service", service))
-		if _, err := os.Lstat(maskPath); err == nil {
-			// Check if it's a symlink pointing to /dev/null (masked)
-			if target, err := os.Readlink(maskPath); err == nil && target == "/dev/null" {
-				multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s is masked on RHEL family system", service))
-			} else {
-				v.Log.Logger.Info().Str("service", service).Msg("Service is not masked")
-			}
+		servicePath := filepath.Join(systemdSystemPath, fmt.Sprintf("%s.service", service))
+
+		// Check if service file exists
+		if _, err := os.Lstat(servicePath); os.IsNotExist(err) {
+			// Service doesn't exist at all - this is an error
+			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s does not exist on RHEL family system", service))
+			continue
+		} else if err != nil {
+			// Some other error occurred
+			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] error checking service %s: %s", service, err))
+			continue
+		}
+
+		// Service exists, now check if it's masked (symlink to /dev/null)
+		if target, err := os.Readlink(servicePath); err == nil && target == "/dev/null" {
+			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s is masked on RHEL family system", service))
 		} else {
-			v.Log.Logger.Info().Str("service", service).Msg("Service mask file not found (service not masked)")
+			v.Log.Logger.Info().Str("service", service).Msg("Service exists and is not masked")
 		}
 	}
 
