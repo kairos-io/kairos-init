@@ -104,3 +104,13 @@ test:
 test-coverage:
 	@echo "Running tests with coverage..."
 	@ginkgo -v -cover ./pkg/validation
+
+# Run linter
+lint:
+	@echo "Running linter..."
+	@golangci-lint run ./...
+
+# Run linter with fix
+lint-fix:
+	@echo "Running linter with auto-fix..."
+	@golangci-lint run --fix ./...
