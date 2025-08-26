@@ -261,6 +261,111 @@ var _ = Describe("Validator", func() {
 		})
 	})
 
+	Describe("validateGettyServices", func() {
+		Context("when system is Alpine family", func() {
+			It("should not validate services", func() {
+				logger := createTestLogger()
+				validator := &validation.Validator{
+					Log: logger,
+					System: values.System{
+						Family: values.AlpineFamily, // Alpine uses OpenRC, not systemd
+					},
+				}
+
+				err := validator.ValidateGettyServices()
+				Expect(err).NotTo(HaveOccurred(), "Should not validate services on Alpine family systems")
+			})
+		})
+
+		Context("when system is systemd-based", func() {
+			var (
+				logger    types.KairosLogger
+				validator *validation.Validator
+				tempDir   string
+			)
+
+			BeforeEach(func() {
+				logger = createTestLogger()
+				validator = &validation.Validator{
+					Log: logger,
+					System: values.System{
+						Family: values.DebianFamily, // Systemd-based family
+					},
+				}
+			})
+
+			Context("with getty.target not masked", func() {
+				BeforeEach(func() {
+					var err error
+					tempDir, err = os.MkdirTemp("", "systemd-system")
+					Expect(err).NotTo(HaveOccurred())
+
+					// Create a regular getty.target file (not masked)
+					gettyPath := filepath.Join(tempDir, "getty.target")
+					err = os.WriteFile(gettyPath, []byte("[Unit]\nDescription=Getty Target"), 0644)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					if tempDir != "" {
+						os.RemoveAll(tempDir)
+					}
+				})
+
+				It("should not error", func() {
+					err := validator.ValidateGettyServicesWithPath(tempDir)
+					Expect(err).NotTo(HaveOccurred(), "Should not error when getty.target is not masked")
+				})
+			})
+
+			Context("with getty.target masked", func() {
+				BeforeEach(func() {
+					var err error
+					tempDir, err = os.MkdirTemp("", "systemd-system")
+					Expect(err).NotTo(HaveOccurred())
+
+					// Create a masked getty.target file (symlink to /dev/null)
+					gettyPath := filepath.Join(tempDir, "getty.target")
+					err = os.Symlink("/dev/null", gettyPath)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				AfterEach(func() {
+					if tempDir != "" {
+						os.RemoveAll(tempDir)
+					}
+				})
+
+				It("should error when getty.target is masked", func() {
+					err := validator.ValidateGettyServicesWithPath(tempDir)
+					Expect(err).To(HaveOccurred(), "Should error when getty.target is masked")
+					Expect(err.Error()).To(ContainSubstring("getty.target is masked on systemd-based system"))
+				})
+			})
+
+			Context("with getty.target missing", func() {
+				BeforeEach(func() {
+					var err error
+					tempDir, err = os.MkdirTemp("", "systemd-system")
+					Expect(err).NotTo(HaveOccurred())
+					// Don't create getty.target - it should be missing
+				})
+
+				AfterEach(func() {
+					if tempDir != "" {
+						os.RemoveAll(tempDir)
+					}
+				})
+
+				It("should error when getty.target doesn't exist", func() {
+					err := validator.ValidateGettyServicesWithPath(tempDir)
+					Expect(err).To(HaveOccurred(), "Should error when getty.target doesn't exist")
+					Expect(err.Error()).To(ContainSubstring("getty.target does not exist on systemd-based system"))
+				})
+			})
+		})
+	})
+
 	Describe("Validate", func() {
 		It("should run full validation without panicking", func() {
 			logger := createTestLogger()

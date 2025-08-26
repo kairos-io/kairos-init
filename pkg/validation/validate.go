@@ -189,13 +189,30 @@ func (v *Validator) Validate() error {
 		v.Log.Logger.Info().Msg("No SSH host keys found bundled in the system")
 	}
 
-	// Check RHEL family specific service validations
-	if err := v.ValidateRHELServices(); err != nil {
+	// Check service validations
+	if err := v.ValidateServices(); err != nil {
 		multi = multierror.Append(multi, err)
 	}
 
 	if multi.ErrorOrNil() == nil {
 		v.Log.Logger.Info().Msg("System validation passed")
+	}
+
+	return multi.ErrorOrNil()
+}
+
+// ValidateServices performs comprehensive service validations for all systemd-based flavors
+func (v *Validator) ValidateServices() error {
+	var multi *multierror.Error
+
+	// Check RHEL family specific service validations
+	if err := v.ValidateRHELServices(); err != nil {
+		multi = multierror.Append(multi, err)
+	}
+
+	// Check getty service validations for all systemd-based flavors
+	if err := v.ValidateGettyServices(); err != nil {
+		multi = multierror.Append(multi, err)
 	}
 
 	return multi.ErrorOrNil()
@@ -236,6 +253,50 @@ func (v *Validator) ValidateRHELServicesWithPath(systemdSystemPath string) error
 		// Service exists, now check if it's masked (symlink to /dev/null)
 		if target, err := os.Readlink(servicePath); err == nil && target == "/dev/null" {
 			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s is masked on RHEL family system", service))
+		} else {
+			v.Log.Logger.Info().Str("service", service).Msg("Service exists and is not masked")
+		}
+	}
+
+	return multi.ErrorOrNil()
+}
+
+// ValidateGettyServices checks that getty.target is not masked on systemd-based flavors
+func (v *Validator) ValidateGettyServices() error {
+	return v.ValidateGettyServicesWithPath("/etc/systemd/system")
+}
+
+// ValidateGettyServicesWithPath checks that getty.target is not masked on systemd-based flavors
+// This method is used for testing by allowing a custom systemd system directory path
+func (v *Validator) ValidateGettyServicesWithPath(systemdSystemPath string) error {
+	var multi *multierror.Error
+
+	// Only validate on systemd-based flavors (skip Alpine which uses OpenRC)
+	if v.System.Family == values.AlpineFamily {
+		// Alpine uses OpenRC, not systemd, so skip validation
+		return nil
+	}
+
+	v.Log.Logger.Info().Msg("Checking getty service validations")
+	services := []string{"getty.target"}
+
+	for _, service := range services {
+		servicePath := filepath.Join(systemdSystemPath, service)
+
+		// Check if service file exists
+		if _, err := os.Lstat(servicePath); os.IsNotExist(err) {
+			// Service doesn't exist at all - this is an error
+			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s does not exist on systemd-based system", service))
+			continue
+		} else if err != nil {
+			// Some other error occurred
+			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] error checking service %s: %s", service, err))
+			continue
+		}
+
+		// Service exists, now check if it's masked (symlink to /dev/null)
+		if target, err := os.Readlink(servicePath); err == nil && target == "/dev/null" {
+			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s is masked on systemd-based system", service))
 		} else {
 			v.Log.Logger.Info().Str("service", service).Msg("Service exists and is not masked")
 		}
