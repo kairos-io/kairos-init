@@ -472,7 +472,9 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 				},
 			},
 			Commands: []string{
-				"systemctl unmask getty.target", // Unmask getty.target to allow login on ttys as it comes masked by default
+				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
+				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
+				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
 			},
 		},
 		{
@@ -490,7 +492,9 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 				},
 			},
 			Commands: []string{
-				"systemctl unmask getty.target", // Unmask getty.target to allow login on ttys as it comes masked by default
+				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
+				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
+				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
 			},
 		},
 		{
