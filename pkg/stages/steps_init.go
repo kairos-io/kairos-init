@@ -916,6 +916,38 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 					},
 				},
 			},
+			// Ubuntu 20.04 does not support the dracut multipath module 
+			// therefore we don't support multipath for Ubuntu 20.04 and below
+			{
+				Name:     "Add Multipath module to initramfs for Ubuntu 21.04 and above",
+				OnlyIfOs: "Ubuntu.*",
+				// Skips the multipath module for Ubuntu 20.04 and below
+				// This uses a regex expression and Go does not support lookaheads
+				// so we have to hackily use a or condition
+				OnlyIfOsVersion: bundled.UbuntuSupportedMultipathVersions,
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutMultipathPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.DracutMultipathConfig,
+					},
+				},
+			},
+			{
+				Name:     "Add Multipath module to initramfs",
+				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|openSUSE.*|SUSE.*|[O-o]penSUSE.*",
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutMultipathPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.DracutMultipathConfig,
+					},
+				},
+			},
 		}...)
 
 		if config.DefaultConfig.Fips {
