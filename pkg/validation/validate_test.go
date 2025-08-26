@@ -47,9 +47,10 @@ var _ = Describe("Validator", func() {
 
 		Context("when system is RHEL family", func() {
 			var (
-				logger    types.KairosLogger
-				validator *validation.Validator
-				tempDir   string
+				logger      types.KairosLogger
+				validator   *validation.Validator
+				tempDir     string
+				searchPaths []string
 			)
 
 			BeforeEach(func() {
@@ -75,6 +76,9 @@ var _ = Describe("Validator", func() {
 						err = os.WriteFile(servicePath, []byte("[Unit]\nDescription=Test Service"), 0644)
 						Expect(err).NotTo(HaveOccurred())
 					}
+
+					// Set up search paths for testing
+					searchPaths = []string{tempDir}
 				})
 
 				AfterEach(func() {
@@ -83,9 +87,9 @@ var _ = Describe("Validator", func() {
 					}
 				})
 
-				It("should not error", func() {
-					err := validator.ValidateRHELServicesWithPath(tempDir)
-					Expect(err).NotTo(HaveOccurred(), "Should not error when services exist and are not masked")
+				It("should not error when services exist in system path and are not masked", func() {
+					err := validator.ValidateRHELServicesWithPaths(searchPaths)
+					Expect(err).NotTo(HaveOccurred(), "Should not error when services exist in system path and are not masked")
 				})
 			})
 
@@ -93,6 +97,11 @@ var _ = Describe("Validator", func() {
 				BeforeEach(func() {
 					var err error
 					tempDir, err = os.MkdirTemp("", "systemd-system")
+					Expect(err).NotTo(HaveOccurred())
+
+					// Create a regular service file
+					regularServicePath := filepath.Join(tempDir, "systemd-logind.service")
+					err = os.WriteFile(regularServicePath, []byte("[Unit]\nDescription=Login Service"), 0644)
 					Expect(err).NotTo(HaveOccurred())
 
 					// Create a masked service file (symlink to /dev/null) for only one service
@@ -104,6 +113,8 @@ var _ = Describe("Validator", func() {
 					target, err := os.Readlink(maskedServicePath)
 					Expect(err).NotTo(HaveOccurred())
 					Expect(target).To(Equal("/dev/null"), "Symlink should point to /dev/null")
+
+					searchPaths = []string{tempDir}
 				})
 
 				AfterEach(func() {
@@ -113,7 +124,7 @@ var _ = Describe("Validator", func() {
 				})
 
 				It("should error when a service is masked", func() {
-					err := validator.ValidateRHELServicesWithPath(tempDir)
+					err := validator.ValidateRHELServicesWithPaths(searchPaths)
 					Expect(err).To(HaveOccurred(), "Should error when a service is masked")
 					Expect(err.Error()).To(ContainSubstring("systemd-udevd is masked on RHEL family system"))
 				})
@@ -137,6 +148,8 @@ var _ = Describe("Validator", func() {
 						Expect(err).NotTo(HaveOccurred())
 						Expect(target).To(Equal("/dev/null"), "Symlink should point to /dev/null")
 					}
+
+					searchPaths = []string{tempDir}
 				})
 
 				AfterEach(func() {
@@ -146,7 +159,7 @@ var _ = Describe("Validator", func() {
 				})
 
 				It("should error when both services are masked", func() {
-					err := validator.ValidateRHELServicesWithPath(tempDir)
+					err := validator.ValidateRHELServicesWithPaths(searchPaths)
 					Expect(err).To(HaveOccurred(), "Should error when services are masked")
 					Expect(err.Error()).To(ContainSubstring("systemd-udevd is masked on RHEL family system"))
 					Expect(err.Error()).To(ContainSubstring("systemd-logind is masked on RHEL family system"))
@@ -166,6 +179,8 @@ var _ = Describe("Validator", func() {
 						err = os.WriteFile(servicePath, []byte("[Unit]\nDescription=Test Service"), 0644)
 						Expect(err).NotTo(HaveOccurred())
 					}
+
+					searchPaths = []string{tempDir}
 				})
 
 				AfterEach(func() {
@@ -175,7 +190,7 @@ var _ = Describe("Validator", func() {
 				})
 
 				It("should not error when services are regular files", func() {
-					err := validator.ValidateRHELServicesWithPath(tempDir)
+					err := validator.ValidateRHELServicesWithPaths(searchPaths)
 					Expect(err).NotTo(HaveOccurred(), "Should not error when services are regular files")
 				})
 			})
@@ -195,6 +210,8 @@ var _ = Describe("Validator", func() {
 					regularServicePath := filepath.Join(tempDir, "systemd-logind.service")
 					err = os.WriteFile(regularServicePath, []byte("[Unit]\nDescription=Login Service"), 0644)
 					Expect(err).NotTo(HaveOccurred())
+
+					searchPaths = []string{tempDir}
 				})
 
 				AfterEach(func() {
@@ -204,7 +221,7 @@ var _ = Describe("Validator", func() {
 				})
 
 				It("should error when any service is masked", func() {
-					err := validator.ValidateRHELServicesWithPath(tempDir)
+					err := validator.ValidateRHELServicesWithPaths(searchPaths)
 					Expect(err).To(HaveOccurred(), "Should error when any service is masked")
 					Expect(err.Error()).To(ContainSubstring("systemd-udevd is masked on RHEL family system"))
 				})
@@ -212,20 +229,12 @@ var _ = Describe("Validator", func() {
 
 			Context("with missing services", func() {
 				BeforeEach(func() {
-					var err error
-					tempDir, err = os.MkdirTemp("", "systemd-system")
-					Expect(err).NotTo(HaveOccurred())
-					// Don't create any service files - they should be missing
-				})
-
-				AfterEach(func() {
-					if tempDir != "" {
-						os.RemoveAll(tempDir)
-					}
+					// Don't create any directories or files - they should be missing
+					searchPaths = []string{"/nonexistent/path"}
 				})
 
 				It("should error when services don't exist", func() {
-					err := validator.ValidateRHELServicesWithPath(tempDir)
+					err := validator.ValidateRHELServicesWithPaths(searchPaths)
 					Expect(err).To(HaveOccurred(), "Should error when services don't exist")
 					Expect(err.Error()).To(ContainSubstring("systemd-udevd does not exist on RHEL family system"))
 					Expect(err.Error()).To(ContainSubstring("systemd-logind does not exist on RHEL family system"))
@@ -243,6 +252,8 @@ var _ = Describe("Validator", func() {
 					err = os.WriteFile(servicePath, []byte("[Unit]\nDescription=Test Service"), 0644)
 					Expect(err).NotTo(HaveOccurred())
 					// systemd-logind.service is missing
+
+					searchPaths = []string{tempDir}
 				})
 
 				AfterEach(func() {
@@ -252,7 +263,7 @@ var _ = Describe("Validator", func() {
 				})
 
 				It("should error when one service is missing", func() {
-					err := validator.ValidateRHELServicesWithPath(tempDir)
+					err := validator.ValidateRHELServicesWithPaths(searchPaths)
 					Expect(err).To(HaveOccurred(), "Should error when one service is missing")
 					Expect(err.Error()).To(ContainSubstring("systemd-logind does not exist on RHEL family system"))
 					Expect(err.Error()).NotTo(ContainSubstring("systemd-udevd does not exist"))
@@ -279,9 +290,10 @@ var _ = Describe("Validator", func() {
 
 		Context("when system is systemd-based", func() {
 			var (
-				logger    types.KairosLogger
-				validator *validation.Validator
-				tempDir   string
+				logger      types.KairosLogger
+				validator   *validation.Validator
+				tempDir     string
+				searchPaths []string
 			)
 
 			BeforeEach(func() {
@@ -300,10 +312,12 @@ var _ = Describe("Validator", func() {
 					tempDir, err = os.MkdirTemp("", "systemd-system")
 					Expect(err).NotTo(HaveOccurred())
 
-					// Create a regular getty.target file (not masked)
+					// Create a regular getty.target file
 					gettyPath := filepath.Join(tempDir, "getty.target")
 					err = os.WriteFile(gettyPath, []byte("[Unit]\nDescription=Getty Target"), 0644)
 					Expect(err).NotTo(HaveOccurred())
+
+					searchPaths = []string{tempDir}
 				})
 
 				AfterEach(func() {
@@ -313,7 +327,7 @@ var _ = Describe("Validator", func() {
 				})
 
 				It("should not error", func() {
-					err := validator.ValidateGettyServicesWithPath(tempDir)
+					err := validator.ValidateGettyServicesWithPaths(searchPaths)
 					Expect(err).NotTo(HaveOccurred(), "Should not error when getty.target is not masked")
 				})
 			})
@@ -325,9 +339,11 @@ var _ = Describe("Validator", func() {
 					Expect(err).NotTo(HaveOccurred())
 
 					// Create a masked getty.target file (symlink to /dev/null)
-					gettyPath := filepath.Join(tempDir, "getty.target")
-					err = os.Symlink("/dev/null", gettyPath)
+					maskedGettyPath := filepath.Join(tempDir, "getty.target")
+					err = os.Symlink("/dev/null", maskedGettyPath)
 					Expect(err).NotTo(HaveOccurred())
+
+					searchPaths = []string{tempDir}
 				})
 
 				AfterEach(func() {
@@ -337,7 +353,7 @@ var _ = Describe("Validator", func() {
 				})
 
 				It("should error when getty.target is masked", func() {
-					err := validator.ValidateGettyServicesWithPath(tempDir)
+					err := validator.ValidateGettyServicesWithPaths(searchPaths)
 					Expect(err).To(HaveOccurred(), "Should error when getty.target is masked")
 					Expect(err.Error()).To(ContainSubstring("getty.target is masked on systemd-based system"))
 				})
@@ -345,20 +361,12 @@ var _ = Describe("Validator", func() {
 
 			Context("with getty.target missing", func() {
 				BeforeEach(func() {
-					var err error
-					tempDir, err = os.MkdirTemp("", "systemd-system")
-					Expect(err).NotTo(HaveOccurred())
-					// Don't create getty.target - it should be missing
-				})
-
-				AfterEach(func() {
-					if tempDir != "" {
-						os.RemoveAll(tempDir)
-					}
+					// Don't create any directories or files - getty.target should be missing
+					searchPaths = []string{"/nonexistent/path"}
 				})
 
 				It("should error when getty.target doesn't exist", func() {
-					err := validator.ValidateGettyServicesWithPath(tempDir)
+					err := validator.ValidateGettyServicesWithPaths(searchPaths)
 					Expect(err).To(HaveOccurred(), "Should error when getty.target doesn't exist")
 					Expect(err.Error()).To(ContainSubstring("getty.target does not exist on systemd-based system"))
 				})

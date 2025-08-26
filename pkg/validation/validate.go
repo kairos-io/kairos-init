@@ -15,6 +15,14 @@ import (
 	"github.com/kairos-io/kairos-sdk/types"
 )
 
+// Default systemd search paths in order of precedence
+var defaultSystemdSearchPaths = []string{
+	"/usr/lib/systemd/system",
+	"/lib/systemd/system",
+	"/etc/systemd/system",
+	"/run/systemd/system",
+}
+
 type Validator struct {
 	Log    types.KairosLogger
 	System values.System
@@ -218,14 +226,27 @@ func (v *Validator) ValidateServices() error {
 	return multi.ErrorOrNil()
 }
 
-// ValidateRHELServices checks that critical systemd services are not masked on RHEL family systems
-func (v *Validator) ValidateRHELServices() error {
-	return v.ValidateRHELServicesWithPath("/etc/systemd/system")
+// lookupSystemdServiceFile checks if a service file exists in the provided systemd search paths
+// Returns the path where the service was found, or an error if not found
+func (v *Validator) lookupSystemdServiceFile(serviceName string, searchPaths []string) (string, error) {
+	for _, path := range searchPaths {
+		servicePath := filepath.Join(path, serviceName)
+		if _, err := os.Stat(servicePath); err == nil {
+			return servicePath, nil
+		}
+	}
+
+	return "", fmt.Errorf("service %s not found in systemd search paths", serviceName)
 }
 
-// ValidateRHELServicesWithPath checks that critical systemd services exist and are not masked on RHEL family systems
-// This method is used for testing by allowing a custom systemd system directory path
-func (v *Validator) ValidateRHELServicesWithPath(systemdSystemPath string) error {
+// ValidateRHELServices checks that critical systemd services are not masked on RHEL family systems
+func (v *Validator) ValidateRHELServices() error {
+	return v.ValidateRHELServicesWithPaths(defaultSystemdSearchPaths)
+}
+
+// ValidateRHELServicesWithPaths checks that critical systemd services exist and are not masked on RHEL family systems
+// This method is used for testing by allowing custom systemd search paths
+func (v *Validator) ValidateRHELServicesWithPaths(searchPaths []string) error {
 	var multi *multierror.Error
 
 	if v.System.Family != values.RedHatFamily {
@@ -237,20 +258,16 @@ func (v *Validator) ValidateRHELServicesWithPath(systemdSystemPath string) error
 	services := []string{"systemd-udevd", "systemd-logind"}
 
 	for _, service := range services {
-		servicePath := filepath.Join(systemdSystemPath, fmt.Sprintf("%s.service", service))
+		serviceName := fmt.Sprintf("%s.service", service)
 
-		// Check if service file exists
-		if _, err := os.Lstat(servicePath); os.IsNotExist(err) {
-			// Service doesn't exist at all - this is an error
+		// Check if the service exists in the systemd search path
+		servicePath, err := v.lookupSystemdServiceFile(serviceName, searchPaths)
+		if err != nil {
 			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s does not exist on RHEL family system", service))
-			continue
-		} else if err != nil {
-			// Some other error occurred
-			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] error checking service %s: %s", service, err))
 			continue
 		}
 
-		// Service exists, now check if it's masked (symlink to /dev/null)
+		// Check if the service is masked (symlink to /dev/null)
 		if target, err := os.Readlink(servicePath); err == nil && target == "/dev/null" {
 			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s is masked on RHEL family system", service))
 		} else {
@@ -263,12 +280,12 @@ func (v *Validator) ValidateRHELServicesWithPath(systemdSystemPath string) error
 
 // ValidateGettyServices checks that getty.target is not masked on systemd-based flavors
 func (v *Validator) ValidateGettyServices() error {
-	return v.ValidateGettyServicesWithPath("/etc/systemd/system")
+	return v.ValidateGettyServicesWithPaths(defaultSystemdSearchPaths)
 }
 
-// ValidateGettyServicesWithPath checks that getty.target is not masked on systemd-based flavors
-// This method is used for testing by allowing a custom systemd system directory path
-func (v *Validator) ValidateGettyServicesWithPath(systemdSystemPath string) error {
+// ValidateGettyServicesWithPaths checks that getty.target is not masked on systemd-based flavors
+// This method is used for testing by allowing custom systemd search paths
+func (v *Validator) ValidateGettyServicesWithPaths(searchPaths []string) error {
 	var multi *multierror.Error
 
 	// Only validate on systemd-based flavors (skip Alpine which uses OpenRC)
@@ -281,20 +298,14 @@ func (v *Validator) ValidateGettyServicesWithPath(systemdSystemPath string) erro
 	services := []string{"getty.target"}
 
 	for _, service := range services {
-		servicePath := filepath.Join(systemdSystemPath, service)
-
-		// Check if service file exists
-		if _, err := os.Lstat(servicePath); os.IsNotExist(err) {
-			// Service doesn't exist at all - this is an error
+		// Check if the service exists in the systemd search path
+		servicePath, err := v.lookupSystemdServiceFile(service, searchPaths)
+		if err != nil {
 			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s does not exist on systemd-based system", service))
-			continue
-		} else if err != nil {
-			// Some other error occurred
-			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] error checking service %s: %s", service, err))
 			continue
 		}
 
-		// Service exists, now check if it's masked (symlink to /dev/null)
+		// Check if the service is masked (symlink to /dev/null)
 		if target, err := os.Readlink(servicePath); err == nil && target == "/dev/null" {
 			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s is masked on systemd-based system", service))
 		} else {
