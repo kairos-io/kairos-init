@@ -153,10 +153,10 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_INIT_VERSION":   values.GetVersion(),                                 // The version of the kairos-init binary
 	}
 
-	versionInfo, err := getK8sInfo(log)
+	versionInfo, err := getProviderInfo(log)
 	if err == nil && versionInfo.Provider != "" && versionInfo.Version != "" {
-		env["KAIROS_SOFTWARE_VERSION"] = versionInfo.Provider
-		env["KAIROS_SOFTWARE_VERSION_PREFIX"] = versionInfo.Version
+		env["KAIROS_SOFTWARE_VERSION"] = versionInfo.Version
+		env["KAIROS_SOFTWARE_VERSION_PREFIX"] = versionInfo.Provider
 	}
 
 	log.Logger.Debug().Interface("env", env).Msg("Kairos release stage")
@@ -170,7 +170,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 	}
 }
 
-func getK8sInfo(logger types.KairosLogger) (bus.ProviderInstalledVersionPayload, error) {
+func getProviderInfo(logger types.KairosLogger) (bus.ProviderInstalledVersionPayload, error) {
 	versionInfo := bus.ProviderInstalledVersionPayload{}
 	manager := bus.NewBus()
 	manager.Initialize(bus.WithLogger(&logger))

@@ -2,26 +2,27 @@ package config
 
 import (
 	"fmt"
-	semver "github.com/hashicorp/go-version"
-	"gopkg.in/yaml.v3"
 	"os"
 	"strings"
+
+	semver "github.com/hashicorp/go-version"
+	"gopkg.in/yaml.v3"
 )
 
 // Config is the struct to track the config of the init image
 // So we can access it from anywhere
 type Config struct {
-	Model                string
-	Variant              Variant
-	TrustedBoot          bool
-	Fips                 bool
-	KubernetesProvider   string
-	KubernetesVersion    string
-	KubernetesConfigFile string // Config file to pass to the provider. We dont care about its contents, its the provider the one that will use it
-	KairosVersion        semver.Version
-	Extensions           bool
-	VersionOverrides     VersionOverrides
-	SkipSteps            []string
+	Model              string
+	Variant            Variant
+	TrustedBoot        bool
+	Fips               bool
+	ProviderName       string
+	ProviderVersion    string
+	ProviderConfigFile string // Config file to pass to the provider. We dont care about its contents, its the provider the one that will use it
+	KairosVersion      semver.Version
+	Extensions         bool
+	VersionOverrides   VersionOverrides
+	SkipSteps          []string
 }
 
 // VersionOverrides holds version overrides for binaries

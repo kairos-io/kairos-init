@@ -4,13 +4,14 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"fmt"
-	"github.com/kairos-io/kairos-sdk/bus"
-	"github.com/mudler/go-pluggable"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/kairos-io/kairos-sdk/bus"
+	"github.com/mudler/go-pluggable"
 
 	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/bundled"
@@ -590,10 +591,10 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 	logger.Logger.Debug().Msg("Publishing provider build-install event")
 	// TODO: Make this a struct and store it in the sdk types? So both the provider and the init can use it
 	dataSend := bus.ProviderPayload{
-		Provider: config.DefaultConfig.KubernetesProvider,
-		Version:  config.DefaultConfig.KubernetesVersion,
+		Provider: config.DefaultConfig.ProviderName,
+		Version:  config.DefaultConfig.ProviderVersion,
 		LogLevel: logger.Logger.GetLevel().String(),
-		Config:   config.DefaultConfig.KubernetesConfigFile,
+		Config:   config.DefaultConfig.ProviderConfigFile,
 		Family:   sis.Family.String(),
 	}
 	_, err := manager.Publish(bus.InitProviderInstall, dataSend)
