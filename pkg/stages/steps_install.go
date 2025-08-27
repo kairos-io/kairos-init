@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/kairos-io/kairos-sdk/bus"
 	"github.com/mudler/go-pluggable"
@@ -573,19 +574,34 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 	// Trigger provider build-install event
 	manager := bus.NewBus(bus.InitProviderInstall)
 	manager.Initialize(bus.WithLogger(&logger))
+
+	// Channel and WaitGroup for error handling
+	errChan := make(chan error, 1)
+	var wg sync.WaitGroup
+	wg.Add(1)
+
 	manager.Response(bus.InitProviderInstall, func(p *pluggable.Plugin, resp *pluggable.EventResponse) {
 		logger.Logger.Debug().Str("at", p.Executable).Interface("resp", resp).Msg("Received build-install event from provider")
 		if resp.Errored() {
-			logger.Logger.Error().Msgf("Provider build-install event failed: %s", resp.Error)
+			errChan <- fmt.Errorf("provider build-install event failed: %s", resp.Error)
+			wg.Done()
 			return
 		}
 		if resp.State == bus.EventResponseNotApplicable {
 			logger.Logger.Info().Msg("Provider build-install event is non-applicable, skipping")
+			errChan <- nil
+			wg.Done()
 			return
 		}
 		if resp.State == bus.EventResponseSuccess {
 			logger.Logger.Info().Msg("Provider install event succeeded")
+			errChan <- nil
+			wg.Done()
+			return
 		}
+		// If none of the above, still mark as done
+		errChan <- nil
+		wg.Done()
 	})
 
 	logger.Logger.Debug().Msg("Publishing provider build-install event")
@@ -602,5 +618,10 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 		return err
 	}
 
+	wg.Wait()
+	errFromCallback := <-errChan
+	if errFromCallback != nil {
+		return errFromCallback
+	}
 	return nil
 }
