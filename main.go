@@ -167,9 +167,9 @@ func init() {
 	rootCmd.Flags().VarP(loglevelFlag, "level", "l", fmt.Sprintf("set the log level (%s)", strings.Join(loglevelFlag.Allowed, ", ")))
 	// rest of the flags
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Model, "model", "m", "generic", "model to build for, like generic or rpi4")
-	rootCmd.Flags().StringVarP(&config.DefaultConfig.ProviderName, "kubernetes-provider", "k", "", fmt.Sprintf("Kubernetes provider"))
-	rootCmd.Flags().StringVar(&config.DefaultConfig.ProviderVersion, "k8sversion", "latest", "Kubernetes version for provider")
-	rootCmd.Flags().StringVar(&config.DefaultConfig.ProviderConfigFile, "k8config", "", "Kubernetes configuration for provider")
+	rootCmd.Flags().StringVarP(&config.DefaultConfig.ProviderName, "provider", "k", "", fmt.Sprintf("Provider plugin"))
+	rootCmd.Flags().StringVar(&config.DefaultConfig.ProviderVersion, "providerVersion", "latest", "Version for provider")
+	rootCmd.Flags().StringVar(&config.DefaultConfig.ProviderConfigFile, "providerConfig", "", "Extra configuration for provider")
 	rootCmd.Flags().BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips kairos binary versions. For FIPS 140-2 compliance images")
 	rootCmd.Flags().StringVarP(&version, "version", "v", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
 	rootCmd.Flags().BoolVarP(&config.DefaultConfig.Extensions, "stage-extensions", "x", false, "enable stage extensions mode")
