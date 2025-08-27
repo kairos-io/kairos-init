@@ -153,6 +153,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_INIT_VERSION":   values.GetVersion(),                                 // The version of the kairos-init binary
 	}
 
+	// Todo: Change this to allow getting info from several providers? No idea how to store it, the current below is only for k3s/k0s I think
 	versionInfo, err := getProviderInfo(log)
 	if err == nil && versionInfo.Provider != "" && versionInfo.Version != "" {
 		env["KAIROS_SOFTWARE_VERSION"] = versionInfo.Version

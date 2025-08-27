@@ -12,17 +12,21 @@ import (
 // Config is the struct to track the config of the init image
 // So we can access it from anywhere
 type Config struct {
-	Model              string
-	Variant            Variant
-	TrustedBoot        bool
-	Fips               bool
-	ProviderName       string
-	ProviderVersion    string
-	ProviderConfigFile string // Config file to pass to the provider. We dont care about its contents, its the provider the one that will use it
-	KairosVersion      semver.Version
-	Extensions         bool
-	VersionOverrides   VersionOverrides
-	SkipSteps          []string
+	Model            string
+	Variant          Variant
+	TrustedBoot      bool
+	Fips             bool
+	Providers        []Provider
+	KairosVersion    semver.Version
+	Extensions       bool
+	VersionOverrides VersionOverrides
+	SkipSteps        []string
+}
+
+type Provider struct {
+	Name    string
+	Version string
+	Config  string
 }
 
 // VersionOverrides holds version overrides for binaries
@@ -34,7 +38,9 @@ type VersionOverrides struct {
 	EdgeVpn          string `yaml:"edgevpn,omitempty"`
 }
 
-var DefaultConfig = Config{}
+var DefaultConfig = Config{
+	Providers: make([]Provider, 0),
+}
 
 type Variant string
 

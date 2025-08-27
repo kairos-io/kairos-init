@@ -25,26 +25,34 @@ var (
 	stageFlag     = newEnumFlag([]string{"init", "install", "all"}, "all")
 	loglevelFlag  = newEnumFlag([]string{"debug", "info", "warn", "error", "trace"}, "info")
 	skipStepsFlag = newEnumSliceFlag(values.GetStepNames(), []string{})
+	providers     []string
 )
 
 // Fill the flags and set default configs for commands
-func preRun(_ *cobra.Command, _ []string) {
+func preRun(cmd *cobra.Command, _ []string) {
 	// Set the trusted boot flag to true
 	if strings.ToLower(trusted) == "true" || strings.ToLower(trusted) == "1" {
 		config.DefaultConfig.TrustedBoot = true
 	}
 
-	if config.DefaultConfig.ProviderName != "" {
-		if config.DefaultConfig.ProviderVersion == "latest" {
-			// Set the kubernetes version to empty if latest is set so the latest is used
-			config.DefaultConfig.ProviderVersion = ""
+	if len(providers) > 0 {
+		for _, provider := range providers {
+			p := config.Provider{Name: provider}
+			flagName := fmt.Sprintf("provider-%s-version", provider)
+			if f := cmd.Flags().Lookup(flagName); f != nil {
+				p.Version = f.Value.String()
+			}
+			flagConfig := fmt.Sprintf("provider-%s-config", provider)
+			if f := cmd.Flags().Lookup(flagConfig); f != nil {
+				p.Config = f.Value.String()
+			}
+			config.DefaultConfig.Providers = append(config.DefaultConfig.Providers, p)
+
 		}
 		config.DefaultConfig.Variant = config.StandardVariant
 	} else {
-		// If no provider is set, set the variant to core
 		config.DefaultConfig.Variant = config.CoreVariant
 	}
-
 	config.DefaultConfig.SkipSteps = skipStepsFlag.Value
 }
 
@@ -161,15 +169,44 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+func getProvidersFromArgs() []string {
+	var providers []string
+	for i, arg := range os.Args {
+		if arg == "--provider" || arg == "-p" {
+			if i+1 < len(os.Args) {
+				providers = append(providers, os.Args[i+1])
+			}
+		}
+		if strings.HasPrefix(arg, "--provider=") {
+			providers = append(providers, strings.SplitN(arg, "=", 2)[1])
+		}
+		if strings.HasPrefix(arg, "-p=") {
+			providers = append(providers, strings.SplitN(arg, "=", 2)[1])
+		}
+	}
+	return providers
+}
+
 func init() {
+	// Dynamic provider flag setup
+	provs := getProvidersFromArgs()
+	if len(provs) > 0 {
+		for _, provider := range provs {
+			flagName := fmt.Sprintf("provider-%s-version", provider)
+			rootCmd.Flags().String(flagName, "", fmt.Sprintf("Version for provider %s", provider))
+			flagConfig := fmt.Sprintf("provider-%s-config", provider)
+			rootCmd.Flags().String(flagConfig, "", fmt.Sprintf("Config file for provider %s", provider))
+		}
+	} else {
+		rootCmd.Flags().String("provider-$NAME-version", "", "Version for provider $NAME set by --provider/-p flag")
+		rootCmd.Flags().String("provider-$NAME-config", "", "Config for provider $NAME set by --provider/-p flag")
+	}
 	// enum flags
 	rootCmd.Flags().VarP(stageFlag, "stage", "s", fmt.Sprintf("set the stage to run (%s)", strings.Join(stageFlag.Allowed, ", ")))
 	rootCmd.Flags().VarP(loglevelFlag, "level", "l", fmt.Sprintf("set the log level (%s)", strings.Join(loglevelFlag.Allowed, ", ")))
 	// rest of the flags
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Model, "model", "m", "generic", "model to build for, like generic or rpi4")
-	rootCmd.Flags().StringVarP(&config.DefaultConfig.ProviderName, "provider", "k", "", fmt.Sprintf("Provider plugin"))
-	rootCmd.Flags().StringVar(&config.DefaultConfig.ProviderVersion, "providerVersion", "latest", "Version for provider")
-	rootCmd.Flags().StringVar(&config.DefaultConfig.ProviderConfigFile, "providerConfig", "", "Extra configuration for provider")
+	rootCmd.Flags().StringSliceVarP(&providers, "provider", "p", []string{}, fmt.Sprintf("Provider plugin (repeatable)"))
 	rootCmd.Flags().BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips kairos binary versions. For FIPS 140-2 compliance images")
 	rootCmd.Flags().StringVarP(&version, "version", "v", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
 	rootCmd.Flags().BoolVarP(&config.DefaultConfig.Extensions, "stage-extensions", "x", false, "enable stage extensions mode")

@@ -609,17 +609,19 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 	})
 
 	logger.Logger.Debug().Msg("Publishing provider build-install event")
-	dataSend := bus.ProviderPayload{
-		Provider: config.DefaultConfig.ProviderName,
-		Version:  config.DefaultConfig.ProviderVersion,
-		LogLevel: logger.Logger.GetLevel().String(),
-		Config:   config.DefaultConfig.ProviderConfigFile,
-		Family:   sis.Family.String(),
-	}
-	_, err := manager.Publish(bus.InitProviderInstall, dataSend)
-	if err != nil {
-		logger.Logger.Error().Msgf("Failed to publish provider build-install event: %s", err)
-		return err
+	for _, provider := range config.DefaultConfig.Providers {
+		dataSend := bus.ProviderPayload{
+			Provider: provider.Name,
+			Version:  provider.Version,
+			Config:   provider.Config,
+			LogLevel: logger.Logger.GetLevel().String(),
+			Family:   sis.Family.String(),
+		}
+		_, err := manager.Publish(bus.InitProviderInstall, dataSend)
+		if err != nil {
+			logger.Logger.Error().Msgf("Failed to publish provider build-install event: %s", err)
+			return err
+		}
 	}
 
 	wg.Wait()
