@@ -175,6 +175,12 @@ func getProviderInfo(logger types.KairosLogger) (bus.ProviderInstalledVersionPay
 	versionInfo := bus.ProviderInstalledVersionPayload{}
 	manager := bus.NewBus(bus.InitProviderInfo)
 	manager.Initialize(bus.WithLogger(&logger))
+
+	if len(manager.Plugins) == 0 {
+		logger.Logger.Info().Msg("No plugins found, skipping provider install event")
+		return versionInfo, nil
+	}
+
 	manager.Response(bus.InitProviderInfo, func(p *pluggable.Plugin, resp *pluggable.EventResponse) {
 		logger.Logger.Debug().Str("at", p.Executable).Interface("resp", resp).Msg("Received info event from provider")
 		if resp.Errored() {

@@ -574,6 +574,10 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 	// Trigger provider build-install event
 	manager := bus.NewBus(bus.InitProviderInstall)
 	manager.Initialize(bus.WithLogger(&logger))
+	if len(manager.Plugins) == 0 {
+		logger.Logger.Info().Msg("No plugins found, skipping provider install event")
+		return nil
+	}
 
 	// Channel and WaitGroup for error handling
 	errChan := make(chan error, 1)
