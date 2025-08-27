@@ -32,9 +32,9 @@ FROM ${BASE_IMAGE} AS default
 ARG MODEL=generic
 ARG TRUSTED_BOOT=false
 ARG PROVIDER_NAME
-ARG PROVIDER_VERSION=latest
+ARG PROVIDER_VERSION
 ARG VERSION=v0.0.1
 ARG FIPS=false
 
 COPY --from=kairos-init /kairos-init /kairos-init
-RUN /kairos-init -l debug -m "${MODEL}" -t "${TRUSTED_BOOT}" -k "${PROVIDER_NAME}" --k8sversion "${PROVIDER_VERSION}" --version "${VERSION}" "$(if [ "${FIPS}" = "true" ]; then echo "--fips"; fi)" && /kairos-init validate -t "${TRUSTED_BOOT}" && rm /kairos-init
+RUN /kairos-init -l debug -m "${MODEL}" -t "${TRUSTED_BOOT}" --provider "${PROVIDER_NAME}" --provider-"${PROVIDER_NAME}"-version "${PROVIDER_VERSION}" --version "${VERSION}" "$(if [ "${FIPS}" = "true" ]; then echo "--fips"; fi)" && /kairos-init validate -t "${TRUSTED_BOOT}" && rm /kairos-init
