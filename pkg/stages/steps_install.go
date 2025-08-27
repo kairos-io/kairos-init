@@ -589,7 +589,6 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 	})
 
 	logger.Logger.Debug().Msg("Publishing provider build-install event")
-	// TODO: Make this a struct and store it in the sdk types? So both the provider and the init can use it
 	dataSend := bus.ProviderPayload{
 		Provider: config.DefaultConfig.ProviderName,
 		Version:  config.DefaultConfig.ProviderVersion,

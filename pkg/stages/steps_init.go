@@ -171,8 +171,9 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 }
 
 func getProviderInfo(logger types.KairosLogger) (bus.ProviderInstalledVersionPayload, error) {
+	logger.Logger.Info().Msg("Triggering provider info event")
 	versionInfo := bus.ProviderInstalledVersionPayload{}
-	manager := bus.NewBus()
+	manager := bus.NewBus(bus.InitProviderInfo)
 	manager.Initialize(bus.WithLogger(&logger))
 	manager.Response(bus.InitProviderInfo, func(p *pluggable.Plugin, resp *pluggable.EventResponse) {
 		logger.Logger.Debug().Str("at", p.Executable).Interface("resp", resp).Msg("Received info event from provider")
@@ -187,6 +188,9 @@ func getProviderInfo(logger types.KairosLogger) (bus.ProviderInstalledVersionPay
 		if err := json.Unmarshal([]byte(resp.Data), &versionInfo); err != nil {
 			logger.Logger.Error().Msgf("Failed to unmarshal provider info event: %s", err)
 			return
+		}
+		if resp.State == bus.EventResponseSuccess {
+			logger.Logger.Info().Msg("Provider info event succeeded")
 		}
 	})
 	_, err := manager.Publish(bus.InitProviderInfo, nil)

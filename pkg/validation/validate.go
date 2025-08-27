@@ -51,6 +51,17 @@ func (v *Validator) Validate() error {
 		binaries = append(binaries, "agent-provider-kairos", "kairos", "edgevpn")
 	}
 
+	vals, err := godotenv.Read("/etc/kairos-release")
+	if err == nil {
+		provider := vals["KAIROS_SOFTWARE_VERSION"]
+		switch provider {
+		case "k3s":
+			binaries = append(binaries, "k3s")
+		case "k0s":
+			binaries = append(binaries, "k0s")
+		}
+	}
+
 	// Alter path to include our providers path
 	originalPath := os.Getenv("PATH")
 	_ = os.Setenv("PATH", fmt.Sprintf("%s:%s:%s", "/system/providers/", "/system/discovery/", originalPath))
@@ -127,7 +138,7 @@ func (v *Validator) Validate() error {
 		"KAIROS_RELEASE",
 	}
 
-	vals, err := godotenv.Read("/etc/kairos-release")
+	vals, err = godotenv.Read("/etc/kairos-release")
 	if err != nil {
 		multi = multierror.Append(multi, fmt.Errorf("[RELEASE] could not open kairos-release file"))
 	} else {
