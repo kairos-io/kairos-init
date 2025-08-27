@@ -570,6 +570,12 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 		return nil
 	}
 
+	providerCount := len(config.DefaultConfig.Providers)
+	if providerCount == 0 {
+		logger.Logger.Info().Msg("No providers configured, skipping provider install event")
+		return nil
+	}
+
 	logger.Logger.Info().Msg("Triggering provider install event")
 	// Trigger provider build-install event
 	manager := bus.NewBus(bus.InitProviderInstall)
@@ -579,10 +585,9 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 		return nil
 	}
 
-	// Channel and WaitGroup for error handling
-	errChan := make(chan error, 1)
+	errChan := make(chan error, providerCount)
 	var wg sync.WaitGroup
-	wg.Add(1)
+	wg.Add(providerCount)
 
 	manager.Response(bus.InitProviderInstall, func(p *pluggable.Plugin, resp *pluggable.EventResponse) {
 		logger.Logger.Debug().Str("at", p.Executable).Interface("resp", resp).Msg("Received build-install event from provider")
@@ -625,9 +630,18 @@ func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) err
 	}
 
 	wg.Wait()
-	errFromCallback := <-errChan
-	if errFromCallback != nil {
-		return errFromCallback
+	var combinedErr error
+	for i := 0; i < providerCount; i++ {
+		err := <-errChan
+		if err != nil {
+			if combinedErr == nil {
+				combinedErr = fmt.Errorf("provider build-install errors")
+			}
+			combinedErr = fmt.Errorf("%w; %v", combinedErr, err)
+		}
+	}
+	if combinedErr != nil {
+		return combinedErr
 	}
 	return nil
 }
