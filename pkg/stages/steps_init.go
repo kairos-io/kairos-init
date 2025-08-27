@@ -242,17 +242,17 @@ func GetWorkaroundsStage(sis values.System, l types.KairosLogger) []schema.Stage
 	if config.DefaultConfig.TrustedBoot {
 		// This looks like its out of its place as we would expect this modules to be in the initrd but this is for Trusted Boot
 		// so the initrd is creating during artifact build and contains the rootfs, so this is ok to be in here
-		// 25.10 is the first version where this workaround is not needed
 		kernel, err := getLatestKernel(l)
 		if err != nil {
 			l.Logger.Error().Msgf("Failed to get the latest kernel: %s", err)
 			return stages
 		}
+		// 25.10 is the first version where this workaround is not needed
 		stages = append(stages, []schema.Stage{
 			{
 				Name:            "Download linux-modules-extra for nvdimm modules",
 				OnlyIfOs:        "Ubuntu.*",
-				OnlyIfOsVersion: "<=25.10",
+				OnlyIfOsVersion: `2[0-4]\..*`,
 				Commands: []string{
 					fmt.Sprintf("apt-get download linux-modules-extra-%s", kernel),
 					fmt.Sprintf("dpkg-deb -x linux-modules-extra-%s_*.deb /tmp/modules", kernel),
