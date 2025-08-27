@@ -2,10 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/kairos-io/kairos-init/pkg/bundled"
-	"gopkg.in/yaml.v3"
 	"os"
 	"strings"
+
+	"github.com/kairos-io/kairos-init/pkg/bundled"
+	"gopkg.in/yaml.v3"
 
 	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/config"
@@ -33,10 +34,10 @@ func preRun(_ *cobra.Command, _ []string) {
 		config.DefaultConfig.TrustedBoot = true
 	}
 
-	if config.DefaultConfig.KubernetesProvider != "" {
-		if config.DefaultConfig.KubernetesVersion == "latest" {
+	if config.DefaultConfig.ProviderName != "" {
+		if config.DefaultConfig.ProviderVersion == "latest" {
 			// Set the kubernetes version to empty if latest is set so the latest is used
-			config.DefaultConfig.KubernetesVersion = ""
+			config.DefaultConfig.ProviderVersion = ""
 		}
 		config.DefaultConfig.Variant = config.StandardVariant
 	} else {
@@ -165,10 +166,10 @@ func init() {
 	rootCmd.Flags().VarP(stageFlag, "stage", "s", fmt.Sprintf("set the stage to run (%s)", strings.Join(stageFlag.Allowed, ", ")))
 	rootCmd.Flags().VarP(loglevelFlag, "level", "l", fmt.Sprintf("set the log level (%s)", strings.Join(loglevelFlag.Allowed, ", ")))
 	// rest of the flags
-	rootCmd.Flags().StringVarP(&config.DefaultConfig.KubernetesProvider, "kubernetes-provider", "k", "", fmt.Sprintf("Kubernetes provider"))
 	rootCmd.Flags().StringVarP(&config.DefaultConfig.Model, "model", "m", "generic", "model to build for, like generic or rpi4")
-	rootCmd.Flags().StringVar(&config.DefaultConfig.KubernetesVersion, "k8sversion", "latest", "Kubernetes version for provider")
-	rootCmd.Flags().StringVar(&config.DefaultConfig.KubernetesConfigFile, "k8config", "", "Kubernetes configuration for provider")
+	rootCmd.Flags().StringVarP(&config.DefaultConfig.ProviderName, "kubernetes-provider", "k", "", fmt.Sprintf("Kubernetes provider"))
+	rootCmd.Flags().StringVar(&config.DefaultConfig.ProviderVersion, "k8sversion", "latest", "Kubernetes version for provider")
+	rootCmd.Flags().StringVar(&config.DefaultConfig.ProviderConfigFile, "k8config", "", "Kubernetes configuration for provider")
 	rootCmd.Flags().BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips kairos binary versions. For FIPS 140-2 compliance images")
 	rootCmd.Flags().StringVarP(&version, "version", "v", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
 	rootCmd.Flags().BoolVarP(&config.DefaultConfig.Extensions, "stage-extensions", "x", false, "enable stage extensions mode")
