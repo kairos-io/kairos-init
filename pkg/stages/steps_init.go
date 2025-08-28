@@ -559,8 +559,20 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 
 	return []schema.Stage{
 		{
+			Name: "Create dir if not exists",
+			If:   "test ! -d /boot",
+			Directories: []schema.Directory{
+				{
+					Path:        "/boot",
+					Permissions: 0644,
+					Owner:       0,
+					Group:       0,
+				},
+			},
+		},
+		{
 			Name: "Clean current kernel link",
-			If:   "test -f /boot/vmlinuz",
+			If:   "test -L /boot/vmlinuz",
 			Commands: []string{
 				"rm /boot/vmlinuz",
 			},
@@ -593,10 +605,9 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 				"ln -s /boot/Image /boot/vmlinuz",
 			},
 		},
-		{ // On Fedora, if we don't have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
-			// TODO: Check if this is needed on AlmaLinux/RockyLinux/Red\sHatLinux
-			Name:     "Copy kernel for Fedora Trusted Boot",
-			OnlyIfOs: "Fedora.*|Red\\sHat.*",
+		{ // On RHEL family, if we don't have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
+			Name:     "Copy kernel for Trusted Boot",
+			OnlyIfOs: "Fedora.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
 			If:       fmt.Sprintf("test ! -f /boot/vmlinuz-%s && test -f /usr/lib/modules/%s/vmlinuz", kernel, kernel),
 			Commands: []string{
 				fmt.Sprintf("cp /usr/lib/modules/%s/vmlinuz /boot/vmlinuz-%s", kernel, kernel),
