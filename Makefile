@@ -96,22 +96,14 @@ version-info:
 	@echo "version-info.yaml created in $(OUTPUT_DIR)"
 
 # Run tests
-test: all
+test:
 	@echo "Running tests..."
-	@if ! command -v ginkgo >/dev/null 2>&1; then \
-		echo "Installing ginkgo test runner..."; \
-		go install github.com/onsi/ginkgo/v2/ginkgo; \
-	fi
-	@export PATH=$$PATH:$$(go env GOPATH)/bin && ginkgo -v ./pkg/validation
+	@ginkgo -v ./pkg/validation
 
 # Run tests with coverage
-test-coverage: all
+test-coverage:
 	@echo "Running tests with coverage..."
-	@if ! command -v ginkgo >/dev/null 2>&1; then \
-		echo "Installing ginkgo test runner..."; \
-		go install github.com/onsi/ginkgo/v2/ginkgo; \
-	fi
-	@export PATH=$$PATH:$$(go env GOPATH)/bin && ginkgo -v -cover ./pkg/validation
+	@ginkgo -v -cover ./pkg/validation
 
 # Run linter
 lint:
