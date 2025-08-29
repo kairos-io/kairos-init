@@ -363,6 +363,17 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 	}
 
 	filteredPkgs := values.FilterPackagesOnConstraint(sis, l, pkgs)
+
+	// Filter out packages that shouldn't be removed to preserve multipath-tools functionality
+	// Only do this if the distro actually supports multipath to avoid unnecessary preservation
+	var packagesToRemove []string
+	if isMultipathSupported(sis, l) {
+		// multipath-tools depends on some dracut packages, so removing them would break multipath support
+		packagesToRemove = filterMultipathDependencies(filteredPkgs, sis, l)
+	} else {
+		packagesToRemove = filteredPkgs
+	}
+
 	// Don't remove dracut packages on Debian as linux-base (KERNEL!) depends on them somehow and it means that
 	// removing dracut will remove the kernel package as well
 	stages = append(stages, []schema.Stage{
@@ -370,7 +381,7 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 			Name:     "Remove unneeded packages",
 			OnlyIfOs: "Ubuntu.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*|Alpine.*",
 			Packages: schema.Packages{
-				Remove: filteredPkgs,
+				Remove: packagesToRemove,
 			},
 		},
 	}...)
@@ -993,4 +1004,80 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 	}
 
 	return data, nil
+}
+
+// filterMultipathDependencies filters out packages that are dependencies for multipath-tools
+// to prevent multipath functionality from being broken during cleanup.
+//
+// The cleanup stage removes packages from ImmucorePackages after initrd creation to keep
+// the final image size small. However, multipath-tools depends on some of these packages
+// (specifically dracut and related packages), so removing them would break multipath support.
+//
+// This function ensures that critical dracut packages required by multipath-tools are
+// preserved during cleanup, addressing issue #3625 where multipath-tools service was
+// missing after cleanup due to dependency removal.
+func filterMultipathDependencies(packages []string, sis values.System, l types.KairosLogger) []string {
+	// Define packages that should not be removed to preserve multipath-tools functionality
+	// These are dracut and related packages that multipath-tools depends on
+	multipathDependencies := []string{
+		"dracut",         // Core dracut package
+		"dracut-network", // Network support for dracut
+		"dracut-live",    // Live net support for dracut
+	}
+
+	l.Logger.Debug().Strs("preserved_packages", multipathDependencies).Str("distro", sis.Distro.String()).Msg("Preserving multipath dependencies during cleanup")
+
+	// Filter out the packages that should be preserved
+	var filtered []string
+	for _, pkg := range packages {
+		shouldPreserve := false
+		for _, preserve := range multipathDependencies {
+			if pkg == preserve {
+				shouldPreserve = true
+				l.Logger.Debug().Str("package", pkg).Msg("Preserving package to maintain multipath-tools functionality")
+				break
+			}
+		}
+		if !shouldPreserve {
+			filtered = append(filtered, pkg)
+		}
+	}
+
+	return filtered
+}
+
+// isMultipathSupported checks if the given distro/version combination supports multipath
+// by checking if multipath packages are defined in BasePackages for that system.
+// This prevents unnecessary dracut package preservation on distros that don't support multipath.
+func isMultipathSupported(sis values.System, l types.KairosLogger) bool {
+	// Get the base packages for the current system to check if multipath packages are defined
+	filteredPackages := []values.VersionMap{
+		values.BasePackages[sis.Distro][values.ArchCommon], // Common packages to both arches
+		values.BasePackages[sis.Family][values.ArchCommon], // Common packages to both arches by family
+		values.BasePackages[sis.Distro][sis.Arch],          // Specific packages for the arch
+		values.BasePackages[sis.Family][sis.Arch],          // Specific packages for the arch by family
+	}
+
+	// Get all packages that would be installed for this system
+	allPackages := values.FilterPackagesOnConstraint(sis, l, filteredPackages)
+
+	// Define multipath packages that indicate multipath support
+	multipathPackages := []string{
+		"multipath-tools",         // Ubuntu, Debian, SUSE, Alpine
+		"multipath-tools-boot",    // Debian specific
+		"device-mapper-multipath", // RHEL family
+	}
+
+	// Check if any multipath packages are present
+	for _, pkg := range allPackages {
+		for _, multipathPkg := range multipathPackages {
+			if pkg == multipathPkg {
+				l.Logger.Debug().Str("package", pkg).Str("distro", sis.Distro.String()).Str("version", sis.Version).Msg("Multipath support detected")
+				return true
+			}
+		}
+	}
+
+	l.Logger.Debug().Str("distro", sis.Distro.String()).Str("version", sis.Version).Msg("No multipath support detected")
+	return false
 }
