@@ -22,7 +22,11 @@ func DetectSystem(l sdkTypes.KairosLogger) values.System {
 		Family: values.UnknownFamily,
 	}
 
-	file, err := os.Open("/etc/os-release")
+	osReleasePath := os.Getenv("KAIROS_OS_RELEASE_PATH")
+	if osReleasePath == "" {
+		osReleasePath = "/etc/os-release"
+	}
+	file, err := os.Open(osReleasePath)
 	if err != nil {
 		return s
 	}

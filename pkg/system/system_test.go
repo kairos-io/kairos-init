@@ -1,6 +1,8 @@
 package system_test
 
 import (
+	"os"
+	"path/filepath"
 	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types"
@@ -131,6 +133,184 @@ var _ = Describe("System Package", func() {
 					values.ArchFamily, values.AlpineFamily, values.SUSEFamily,
 				}
 				Expect(validFamilies).To(ContainElement(result.Family))
+			})
+		})
+
+		Context("with mock os-release files", func() {
+			var tempDir string
+			var originalPath string
+
+			BeforeEach(func() {
+				var err error
+				tempDir, err = os.MkdirTemp("", "system-test")
+				Expect(err).NotTo(HaveOccurred())
+				
+				// Store original environment variable value
+				originalPath = os.Getenv("KAIROS_OS_RELEASE_PATH")
+			})
+
+			AfterEach(func() {
+				// Restore original environment variable
+				if originalPath != "" {
+					os.Setenv("KAIROS_OS_RELEASE_PATH", originalPath)
+				} else {
+					os.Unsetenv("KAIROS_OS_RELEASE_PATH")
+				}
+				os.RemoveAll(tempDir)
+			})
+
+			It("should detect Ubuntu correctly", func() {
+				osReleaseContent := `NAME="Ubuntu"
+VERSION="22.04.3 LTS (Jammy Jellyfish)"
+ID=ubuntu
+ID_LIKE=debian
+PRETTY_NAME="Ubuntu 22.04.3 LTS"
+VERSION_ID="22.04"
+HOME_URL="https://www.ubuntu.com/"
+SUPPORT_URL="https://help.ubuntu.com/"
+BUG_REPORT_URL="https://bugs.launchpad.net/ubuntu/"
+PRIVACY_POLICY_URL="https://www.ubuntu.com/legal/terms-and-policies/privacy-policy"
+VERSION_CODENAME=jammy
+UBUNTU_CODENAME=jammy`
+
+				mockPath := filepath.Join(tempDir, "os-release")
+				err := os.WriteFile(mockPath, []byte(osReleaseContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+				
+				os.Setenv("KAIROS_OS_RELEASE_PATH", mockPath)
+				
+				result := system.DetectSystem(logger)
+				
+				Expect(result.Distro).To(Equal(values.Ubuntu))
+				Expect(result.Family).To(Equal(values.DebianFamily))
+				Expect(result.Version).To(Equal("22.04"))
+				Expect(result.Name).To(Equal("Ubuntu 22.04.3 LTS"))
+			})
+
+			It("should detect Fedora correctly", func() {
+				osReleaseContent := `NAME="Fedora Linux"
+VERSION="38 (Workstation Edition)"
+ID=fedora
+VERSION_ID=38
+VERSION_CODENAME=""
+PLATFORM_ID="platform:f38"
+PRETTY_NAME="Fedora Linux 38 (Workstation Edition)"
+ANSI_COLOR="0;38;2;60;110;180"
+LOGO=fedora-logo-icon
+CPE_NAME="cpe:/o:fedoraproject:fedora:38"
+DEFAULT_HOSTNAME="fedora"
+HOME_URL="https://fedoraproject.org/"
+DOCUMENTATION_URL="https://docs.fedoraproject.org/en-US/fedora/f38/system-administrators-guide/"
+SUPPORT_URL="https://ask.fedoraproject.org/"
+BUG_REPORT_URL="https://bugzilla.redhat.com/"
+REDHAT_BUGZILLA_PRODUCT="Fedora"
+REDHAT_BUGZILLA_PRODUCT_VERSION=38
+REDHAT_SUPPORT_PRODUCT="Fedora"
+REDHAT_SUPPORT_PRODUCT_VERSION=38
+SUPPORT_END=2024-05-14`
+
+				mockPath := filepath.Join(tempDir, "os-release")
+				err := os.WriteFile(mockPath, []byte(osReleaseContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+				
+				os.Setenv("KAIROS_OS_RELEASE_PATH", mockPath)
+				
+				result := system.DetectSystem(logger)
+				
+				Expect(result.Distro).To(Equal(values.Fedora))
+				Expect(result.Family).To(Equal(values.RedHatFamily))
+				Expect(result.Version).To(Equal("38"))
+				Expect(result.Name).To(Equal("Fedora Linux 38 (Workstation Edition)"))
+			})
+
+			It("should detect Alpine correctly and format version", func() {
+				osReleaseContent := `NAME="Alpine Linux"
+ID=alpine
+VERSION_ID=3.18.4
+PRETTY_NAME="Alpine Linux v3.18"
+HOME_URL="https://alpinelinux.org/"
+BUG_REPORT_URL="https://gitlab.alpinelinux.org/alpine/aports/-/issues"`
+
+				mockPath := filepath.Join(tempDir, "os-release")
+				err := os.WriteFile(mockPath, []byte(osReleaseContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+				
+				os.Setenv("KAIROS_OS_RELEASE_PATH", mockPath)
+				
+				result := system.DetectSystem(logger)
+				
+				Expect(result.Distro).To(Equal(values.Alpine))
+				Expect(result.Family).To(Equal(values.AlpineFamily))
+				Expect(result.Version).To(Equal("3.18")) // Should strip patch version
+				Expect(result.Name).To(Equal("Alpine Linux v3.18"))
+			})
+
+			It("should fallback to ID_LIKE when ID is unknown", func() {
+				osReleaseContent := `NAME="CustomDistro"
+ID=customdistro
+ID_LIKE=debian
+VERSION_ID=1.0
+PRETTY_NAME="CustomDistro 1.0"`
+
+				mockPath := filepath.Join(tempDir, "os-release")
+				err := os.WriteFile(mockPath, []byte(osReleaseContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+				
+				os.Setenv("KAIROS_OS_RELEASE_PATH", mockPath)
+				
+				result := system.DetectSystem(logger)
+				
+				Expect(result.Distro).To(Equal(values.Debian)) // Should fallback to parent
+				Expect(result.Family).To(Equal(values.DebianFamily))
+				Expect(result.Version).To(Equal("1.0"))
+				Expect(result.Name).To(Equal("CustomDistro 1.0"))
+			})
+
+			It("should handle missing NAME and use PRETTY_NAME fallback", func() {
+				osReleaseContent := `ID=ubuntu
+ID_LIKE=debian
+VERSION_ID="22.04"
+PRETTY_NAME="Ubuntu 22.04.3 LTS"`
+
+				mockPath := filepath.Join(tempDir, "os-release")
+				err := os.WriteFile(mockPath, []byte(osReleaseContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+				
+				os.Setenv("KAIROS_OS_RELEASE_PATH", mockPath)
+				
+				result := system.DetectSystem(logger)
+				
+				Expect(result.Name).To(Equal("Ubuntu 22.04.3 LTS"))
+			})
+
+			It("should handle missing os-release file gracefully", func() {
+				nonExistentPath := filepath.Join(tempDir, "nonexistent")
+				os.Setenv("KAIROS_OS_RELEASE_PATH", nonExistentPath)
+				
+				result := system.DetectSystem(logger)
+				
+				// Should return unknown values when file is missing
+				Expect(result.Distro).To(Equal(values.Unknown))
+				Expect(result.Family).To(Equal(values.UnknownFamily))
+				Expect(result.Version).To(BeEmpty())
+				Expect(result.Name).To(BeEmpty())
+			})
+
+			It("should handle malformed os-release file gracefully", func() {
+				osReleaseContent := `This is not a valid os-release file
+Invalid format without key=value pairs`
+
+				mockPath := filepath.Join(tempDir, "os-release")
+				err := os.WriteFile(mockPath, []byte(osReleaseContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+				
+				os.Setenv("KAIROS_OS_RELEASE_PATH", mockPath)
+				
+				result := system.DetectSystem(logger)
+				
+				// Should return unknown values when parsing fails
+				Expect(result.Distro).To(Equal(values.Unknown))
+				Expect(result.Family).To(Equal(values.UnknownFamily))
 			})
 		})
 
