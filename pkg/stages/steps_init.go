@@ -356,12 +356,12 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 
 	// Filter out packages that shouldn't be removed to preserve multipath-tools functionality
 	// Only do this if the distro actually supports multipath to avoid unnecessary preservation
-	var preservedPkgs []string
+	var packagesToRemove []string
 	if isMultipathSupported(sis, l) {
 		// multipath-tools depends on some dracut packages, so removing them would break multipath support
-		preservedPkgs = filterMultipathDependencies(filteredPkgs, sis, l)
+		packagesToRemove = filterMultipathDependencies(filteredPkgs, sis, l)
 	} else {
-		preservedPkgs = filteredPkgs
+		packagesToRemove = filteredPkgs
 	}
 
 	// Don't remove dracut packages on Debian as linux-base (KERNEL!) depends on them somehow and it means that
@@ -371,7 +371,7 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 			Name:     "Remove unneeded packages",
 			OnlyIfOs: "Ubuntu.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*|Alpine.*",
 			Packages: schema.Packages{
-				Remove: preservedPkgs,
+				Remove: packagesToRemove,
 			},
 		},
 	}...)
