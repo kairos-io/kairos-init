@@ -353,6 +353,11 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 	}
 
 	filteredPkgs := values.FilterPackagesOnConstraint(sis, l, pkgs)
+	
+	// Filter out packages that shouldn't be removed to preserve multipath-tools functionality
+	// multipath-tools depends on some dracut packages, so removing them would break multipath support
+	preservedPkgs := filterMultipathDependencies(filteredPkgs, sis, l)
+	
 	// Don't remove dracut packages on Debian as linux-base (KERNEL!) depends on them somehow and it means that
 	// removing dracut will remove the kernel package as well
 	stages = append(stages, []schema.Stage{
@@ -360,7 +365,7 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 			Name:     "Remove unneeded packages",
 			OnlyIfOs: "Ubuntu.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*|Alpine.*",
 			Packages: schema.Packages{
-				Remove: filteredPkgs,
+				Remove: preservedPkgs,
 			},
 		},
 	}...)
@@ -983,4 +988,36 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 	}
 
 	return data, nil
+}
+
+// filterMultipathDependencies filters out packages that are dependencies for multipath-tools
+// to prevent multipath functionality from being broken during cleanup
+func filterMultipathDependencies(packages []string, sis values.System, l types.KairosLogger) []string {
+	// Define packages that should not be removed to preserve multipath-tools functionality
+	// These are dracut and related packages that multipath-tools depends on
+	multipathDependencies := []string{
+		"dracut",         // Core dracut package
+		"dracut-network", // Network support for dracut  
+		"dracut-live",    // Live net support for dracut
+	}
+	
+	l.Logger.Debug().Strs("preserved_packages", multipathDependencies).Str("distro", sis.Distro.String()).Msg("Preserving multipath dependencies during cleanup")
+	
+	// Filter out the packages that should be preserved
+	var filtered []string
+	for _, pkg := range packages {
+		shouldPreserve := false
+		for _, preserve := range multipathDependencies {
+			if pkg == preserve {
+				shouldPreserve = true
+				l.Logger.Debug().Str("package", pkg).Msg("Preserving package to maintain multipath-tools functionality")
+				break
+			}
+		}
+		if !shouldPreserve {
+			filtered = append(filtered, pkg)
+		}
+	}
+	
+	return filtered
 }
