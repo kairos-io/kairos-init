@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/validation"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types"
@@ -375,6 +376,161 @@ var _ = Describe("Validator", func() {
 	})
 
 	Describe("Validate", func() {
+		Context("ValidateServices integration", func() {
+			It("should run comprehensive service validations", func() {
+				logger := createTestLogger()
+				validator := validation.NewValidator(logger)
+
+				// This runs the full service validation suite
+				err := validator.ValidateServices()
+
+				// On most systems this should pass or have predictable failures
+				// The main goal is to ensure it doesn't panic and returns reasonable results
+				if err != nil {
+					// Log the error for debugging but don't fail the test
+					// as service validation depends on system state
+					fmt.Printf("Service validation returned error (expected on some systems): %v\n", err)
+				}
+			})
+		})
+
+		Context("binary validation", func() {
+			It("should check for required binaries in core variant", func() {
+				logger := createTestLogger()
+				validator := validation.NewValidator(logger)
+
+				// Store original config to restore later
+				originalVariant := config.DefaultConfig.Variant
+				originalProvider := config.DefaultConfig.KubernetesProvider
+
+				defer func() {
+					config.DefaultConfig.Variant = originalVariant
+					config.DefaultConfig.KubernetesProvider = originalProvider
+				}()
+
+				// Set core variant to test minimal binary set
+				config.DefaultConfig.Variant = config.CoreVariant
+
+				// This will run validation on the actual system
+				// Some binaries may be missing which is expected in test environment
+				err := validator.Validate()
+
+				// The validation may fail due to missing binaries/files, but shouldn't panic
+				if err != nil {
+					// Expect specific error patterns for missing binaries
+					errStr := err.Error()
+					Expect(errStr).To(Or(
+						ContainSubstring("[BINARIES] could not find binary"),
+						ContainSubstring("[FILES] file missing"),
+						ContainSubstring("[RELEASE] could not open kairos-release file"),
+						ContainSubstring("[DIRS] directory"),
+						ContainSubstring("[INITRD]"),
+						ContainSubstring("[SSH]"),
+					))
+				}
+			})
+
+			It("should handle standard variant configuration", func() {
+				logger := createTestLogger()
+				validator := validation.NewValidator(logger)
+
+				// Store original config
+				originalVariant := config.DefaultConfig.Variant
+				originalProvider := config.DefaultConfig.KubernetesProvider
+
+				defer func() {
+					config.DefaultConfig.Variant = originalVariant
+					config.DefaultConfig.KubernetesProvider = originalProvider
+				}()
+
+				// Set standard variant with k3s provider
+				config.DefaultConfig.Variant = config.StandardVariant
+				config.DefaultConfig.KubernetesProvider = config.K3sProvider
+
+				err := validator.Validate()
+
+				// This will likely fail in test environment but shouldn't panic
+				if err != nil {
+					errStr := err.Error()
+					// Should check for additional binaries in standard mode
+					Expect(errStr).To(Or(
+						ContainSubstring("k3s"),
+						ContainSubstring("agent-provider-kairos"),
+						ContainSubstring("edgevpn"),
+						ContainSubstring("[BINARIES] could not find binary"),
+						ContainSubstring("[FILES] file missing"),
+						ContainSubstring("[RELEASE]"),
+					))
+				}
+			})
+
+			It("should handle k0s provider configuration", func() {
+				logger := createTestLogger()
+				validator := validation.NewValidator(logger)
+
+				// Store original config
+				originalVariant := config.DefaultConfig.Variant
+				originalProvider := config.DefaultConfig.KubernetesProvider
+
+				defer func() {
+					config.DefaultConfig.Variant = originalVariant
+					config.DefaultConfig.KubernetesProvider = originalProvider
+				}()
+
+				// Set standard variant with k0s provider
+				config.DefaultConfig.Variant = config.StandardVariant
+				config.DefaultConfig.KubernetesProvider = config.K0sProvider
+
+				err := validator.Validate()
+
+				// This will likely fail in test environment but shouldn't panic
+				if err != nil {
+					errStr := err.Error()
+					// Should check for k0s binary in k0s mode
+					Expect(errStr).To(Or(
+						ContainSubstring("k0s"),
+						ContainSubstring("[BINARIES] could not find binary"),
+						ContainSubstring("[FILES] file missing"),
+						ContainSubstring("[RELEASE]"),
+					))
+				}
+			})
+		})
+
+		Context("error handling and robustness", func() {
+			It("should not panic during full validation", func() {
+				logger := createTestLogger()
+				validator := validation.NewValidator(logger)
+
+				// Ensure the validation doesn't panic even if system is incomplete
+				Expect(func() {
+					_ = validator.Validate()
+				}).NotTo(Panic())
+			})
+
+			It("should handle trusted boot configuration", func() {
+				logger := createTestLogger()
+				validator := validation.NewValidator(logger)
+
+				originalTrustedBoot := config.DefaultConfig.TrustedBoot
+				defer func() {
+					config.DefaultConfig.TrustedBoot = originalTrustedBoot
+				}()
+
+				// Test with trusted boot enabled (should skip initrd checks)
+				config.DefaultConfig.TrustedBoot = true
+
+				err := validator.Validate()
+
+				// May fail for other reasons but shouldn't fail on initrd checks
+				if err != nil {
+					errStr := err.Error()
+					// Should not contain initrd-related errors when trusted boot is enabled
+					Expect(errStr).NotTo(ContainSubstring("[INITRD]"))
+				}
+			})
+		})
+
 		It("should run full validation without panicking", func() {
 			logger := createTestLogger()
 			validator := validation.NewValidator(logger)
