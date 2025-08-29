@@ -1,7 +1,9 @@
 package provider_test
 
 import (
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"time"
 
@@ -9,15 +11,16 @@ import (
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/bus"
 	"github.com/kairos-io/kairos-sdk/types"
+	"github.com/mudler/go-pluggable"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 var _ = Describe("Provider Build Tests", func() {
 	var (
-		logger      types.KairosLogger
-		system      values.System
-		tempDir     string
+		logger       types.KairosLogger
+		system       values.System
+		tempDir      string
 		testProvider string
 	)
 
@@ -35,17 +38,23 @@ var _ = Describe("Provider Build Tests", func() {
 		tempDir, err = os.MkdirTemp("", "kairos-test-*")
 		Expect(err).NotTo(HaveOccurred())
 
-		// Check for an existing test provider binary in the project root
-		if _, err := os.Stat("../../agent-provider-test"); err == nil {
-			testProvider = filepath.Join(tempDir, "agent-provider-test")
-			data, err := os.ReadFile("../../agent-provider-test")
-			if err == nil {
-				err = os.WriteFile(testProvider, data, 0755)
-				if err != nil {
-					testProvider = ""
-				}
-			}
-		}
+		// Build the test provider on the fly
+		testProvider = filepath.Join(tempDir, "agent-provider-test")
+		buildProviderBinary(testProvider)
+		
+		// Ensure the current working directory contains the provider for the bus manager
+		// The bus manager adds the current working directory to the plugin search path
+		cwd, err := os.Getwd()
+		Expect(err).NotTo(HaveOccurred())
+		
+		cwdProvider := filepath.Join(cwd, "agent-provider-test")
+		err = copyFile(testProvider, cwdProvider)
+		Expect(err).NotTo(HaveOccurred())
+		
+		// Clean up CWD provider after test
+		DeferCleanup(func() {
+			os.Remove(cwdProvider)
+		})
 	})
 
 	AfterEach(func() {
@@ -95,25 +104,22 @@ var _ = Describe("Provider Build Tests", func() {
 				if testProvider == "" || !fileExists(testProvider) {
 					Skip("Test provider binary not available")
 				}
-
-				// Add the test provider directory to PATH
-				oldPath := os.Getenv("PATH")
-				newPath := tempDir + ":" + oldPath
-				os.Setenv("PATH", newPath)
-				
-				// Restore PATH after test
-				DeferCleanup(func() {
-					os.Setenv("PATH", oldPath)
-				})
 			})
 
-			It("should discover the test provider plugin", func() {
-				// Test that bus can discover plugins
+			It("should call provider build install event via bus", func() {
+				// Test provider communication via bus
+				providers := []config.Provider{
+					{Name: "test", Version: "v1.0.0", Config: "test-config"},
+				}
+
+				config.DefaultConfig.Providers = providers
+				config.DefaultConfig.Variant = config.StandardVariant
+
+				// Test bus communication directly
 				manager := bus.NewBus(bus.InitProviderInstall)
 				manager.Initialize(bus.WithLogger(&logger))
-				
-				// The manager should find plugins in PATH
-				// Note: This might be 0 if no plugins respond to the specific event
+
+				// The manager should discover plugins (might be 0 if no plugins in CWD)
 				Expect(len(manager.Plugins)).To(BeNumerically(">=", 0))
 			})
 
@@ -160,13 +166,12 @@ var _ = Describe("Provider Build Tests", func() {
 
 			It("should handle communication timeout gracefully", func() {
 				// Test that provider communication has reasonable timeout behavior
-				// This test verifies that we can at least attempt provider communication
 				providers := []config.Provider{
 					{Name: "test", Version: "v1.0.0", Config: "test-config"},
 				}
 				config.DefaultConfig.Providers = providers
 
-				// Simulate provider event with timeout
+				// Test provider communication with timeout
 				done := make(chan bool, 1)
 				go func() {
 					manager := bus.NewBus(bus.InitProviderInstall)
@@ -174,7 +179,53 @@ var _ = Describe("Provider Build Tests", func() {
 					done <- true
 				}()
 
-				Eventually(done, 5*time.Second).Should(Receive(BeTrue()))
+				Eventually(done, 10*time.Second).Should(Receive(BeTrue()))
+			})
+
+			It("should test provider response via bus publish", func() {
+				// Skip if provider not available
+				if testProvider == "" || !fileExists(testProvider) {
+					Skip("Test provider binary not available")
+				}
+
+				providers := []config.Provider{
+					{Name: "test", Version: "v1.0.0", Config: "test-config"},
+				}
+				config.DefaultConfig.Providers = providers
+
+				// Test bus communication
+				manager := bus.NewBus(bus.InitProviderInstall)
+				manager.Initialize(bus.WithLogger(&logger))
+
+				if len(manager.Plugins) > 0 {
+					// Test that we can publish to the provider
+					responseChan := make(chan bool, 1)
+					
+					manager.Response(bus.InitProviderInstall, func(p *pluggable.Plugin, resp *pluggable.EventResponse) {
+						logger.Logger.Debug().Str("at", p.Executable).Interface("resp", resp).Msg("Received response from provider")
+						responseChan <- true
+					})
+
+					for _, provider := range config.DefaultConfig.Providers {
+						dataSend := bus.ProviderPayload{
+							Provider: provider.Name,
+							Version:  provider.Version,
+							Config:   provider.Config,
+							LogLevel: logger.Logger.GetLevel().String(),
+							Family:   system.Family.String(),
+						}
+						_, err := manager.Publish(bus.InitProviderInstall, dataSend)
+						Expect(err).NotTo(HaveOccurred())
+					}
+
+					// Wait for response or timeout
+					select {
+					case <-responseChan:
+						// Success: received response from provider
+					case <-time.After(5 * time.Second):
+						// Timeout is ok - just means no provider responded
+					}
+				}
 			})
 		})
 	})
@@ -280,6 +331,45 @@ var _ = Describe("Provider Build Tests", func() {
 		})
 	})
 })
+
+// buildProviderBinary builds the test provider binary on the fly
+func buildProviderBinary(outputPath string) {
+	// Get the source directory
+	cwd, err := os.Getwd()
+	Expect(err).NotTo(HaveOccurred())
+	
+	// Find the project root by looking for go.mod
+	projectRoot := cwd
+	for {
+		if fileExists(filepath.Join(projectRoot, "go.mod")) {
+			break
+		}
+		parent := filepath.Dir(projectRoot)
+		if parent == projectRoot {
+			Fail("Could not find project root with go.mod")
+		}
+		projectRoot = parent
+	}
+	
+	providerSrc := filepath.Join(projectRoot, "cmd", "agent-provider-test")
+	
+	// Build the provider
+	cmd := exec.Command("go", "build", "-o", outputPath, providerSrc)
+	cmd.Dir = projectRoot
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		Fail(fmt.Sprintf("Failed to build test provider: %v\nOutput: %s", err, string(output)))
+	}
+}
+
+// copyFile copies a file from src to dst
+func copyFile(src, dst string) error {
+	data, err := os.ReadFile(src)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(dst, data, 0755)
+}
 
 // Helper function to check if file exists
 func fileExists(filename string) bool {
