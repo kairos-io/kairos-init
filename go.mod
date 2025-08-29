@@ -6,7 +6,8 @@ require (
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/hashicorp/go-version v1.7.0
 	github.com/joho/godotenv v1.5.1
-	github.com/kairos-io/kairos-sdk v0.9.8
+	github.com/mudler/go-pluggable v0.0.0-20230126220627-7710299a0ae5
+	github.com/kairos-io/kairos-sdk v0.10.0
 	github.com/mudler/yip v1.16.5
 	github.com/onsi/ginkgo/v2 v2.25.1
 	github.com/onsi/gomega v1.38.2
@@ -25,6 +26,7 @@ require (
 	github.com/Microsoft/hcsshim v0.12.9 // indirect
 	github.com/ProtonMail/go-crypto v1.1.5 // indirect
 	github.com/cavaliergopher/grab v2.0.0+incompatible // indirect
+	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9 // indirect
 	github.com/cloudflare/circl v1.6.0 // indirect
 	github.com/containerd/cgroups/v3 v3.0.5 // indirect
 	github.com/containerd/containerd v1.7.27 // indirect
@@ -40,10 +42,10 @@ require (
 	github.com/diskfs/go-diskfs v1.5.2 // indirect
 	github.com/distribution/reference v0.6.0 // indirect
 	github.com/djherbis/times v1.6.0 // indirect
-	github.com/docker/cli v27.5.0+incompatible // indirect
+	github.com/docker/cli v28.2.2+incompatible // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
-	github.com/docker/docker v27.5.1+incompatible // indirect
-	github.com/docker/docker-credential-helpers v0.8.2 // indirect
+	github.com/docker/docker v28.3.3+incompatible // indirect
+	github.com/docker/docker-credential-helpers v0.9.3 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/elliotwutingfeng/asciiset v0.0.0-20240214025120-24af97c84155 // indirect
@@ -59,7 +61,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20241129210726-2c02b8208cf8 // indirect
 	github.com/google/go-cmp v0.7.0 // indirect
-	github.com/google/go-containerregistry v0.20.3 // indirect
+	github.com/google/go-containerregistry v0.20.6 // indirect
 	github.com/google/pprof v0.0.0-20250820193118-f64d9cf942d6 // indirect
 	github.com/google/shlex v0.0.0-20191202100458-e7afc7fbc510 // indirect
 	github.com/google/uuid v1.6.0 // indirect
@@ -71,7 +73,7 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kendru/darwin/go/depgraph v0.0.0-20230809052043-4d1c7e9d1767 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.17.11 // indirect
+	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mauromorales/xpasswd v0.4.1 // indirect
@@ -85,7 +87,7 @@ require (
 	github.com/mudler/entities v0.8.2 // indirect
 	github.com/nxadm/tail v1.4.11 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0 // indirect
+	github.com/opencontainers/image-spec v1.1.1 // indirect
 	github.com/phayes/permbits v0.0.0-20190612203442-39d7c581d2ee // indirect
 	github.com/pierrec/lz4 v2.6.1+incompatible // indirect
 	github.com/pierrec/lz4/v4 v4.1.22 // indirect
@@ -105,18 +107,18 @@ require (
 	github.com/stretchr/testify v1.11.0 // indirect
 	github.com/tredoe/osutil v1.5.0 // indirect
 	github.com/twpayne/go-vfs/v4 v4.3.0 // indirect
-	github.com/ulikunitz/xz v0.5.12 // indirect
-	github.com/vbatts/tar-split v0.11.6 // indirect
+	github.com/ulikunitz/xz v0.5.14 // indirect
+	github.com/vbatts/tar-split v0.12.1 // indirect
 	github.com/vmware/vmw-guestinfo v0.0.0-20220317130741-510905f0efa3 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xi2/xz v0.0.0-20171230120015-48954b6210f8 // indirect
 	github.com/zcalusic/sysinfo v1.1.3 // indirect
 	go.opencensus.io v0.24.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect
-	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.59.0 // indirect
-	go.opentelemetry.io/otel v1.34.0 // indirect
-	go.opentelemetry.io/otel/metric v1.34.0 // indirect
-	go.opentelemetry.io/otel/trace v1.34.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.61.0 // indirect
+	go.opentelemetry.io/otel v1.36.0 // indirect
+	go.opentelemetry.io/otel/metric v1.36.0 // indirect
+	go.opentelemetry.io/otel/trace v1.36.0 // indirect
 	go.uber.org/automaxprocs v1.6.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.41.0 // indirect

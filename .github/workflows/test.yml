@@ -63,8 +63,8 @@ jobs:
           tags: kairos-${{ matrix.base_image }}
           build-args: |
             BASE_IMAGE=${{ matrix.base_image }}
-            KUBERNETES_PROVIDER=${{ matrix.kubernetes_provider || '' }}
-            KUBERNETES_VERSION=${{ matrix.kubernetes_version || '' }}
+            PROVIDER_NAME=${{ matrix.kubernetes_provider || '' }}
+            PROVIDER_VERSION=${{ matrix.kubernetes_version || '' }}
             VERSION=${{ env.VERSION }}
             FIPS=${{ matrix.fips || false }}
             TRUSTED_BOOT=${{ matrix.trusted_boot || 'false' }}

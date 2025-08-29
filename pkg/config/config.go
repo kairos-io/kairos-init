@@ -2,25 +2,31 @@ package config
 
 import (
 	"fmt"
-	semver "github.com/hashicorp/go-version"
-	"gopkg.in/yaml.v3"
 	"os"
 	"strings"
+
+	semver "github.com/hashicorp/go-version"
+	"gopkg.in/yaml.v3"
 )
 
 // Config is the struct to track the config of the init image
 // So we can access it from anywhere
 type Config struct {
-	Model              string
-	Variant            Variant
-	TrustedBoot        bool
-	Fips               bool
-	KubernetesProvider KubernetesProvider
-	KubernetesVersion  string
-	KairosVersion      semver.Version
-	Extensions         bool
-	VersionOverrides   VersionOverrides
-	SkipSteps          []string
+	Model            string
+	Variant          Variant
+	TrustedBoot      bool
+	Fips             bool
+	Providers        []Provider
+	KairosVersion    semver.Version
+	Extensions       bool
+	VersionOverrides VersionOverrides
+	SkipSteps        []string
+}
+
+type Provider struct {
+	Name    string
+	Version string
+	Config  string
 }
 
 // VersionOverrides holds version overrides for binaries
@@ -32,7 +38,9 @@ type VersionOverrides struct {
 	EdgeVpn          string `yaml:"edgevpn,omitempty"`
 }
 
-var DefaultConfig = Config{}
+var DefaultConfig = Config{
+	Providers: make([]Provider, 0),
+}
 
 type Variant string
 
@@ -58,23 +66,6 @@ const CoreVariant Variant = "core"
 const StandardVariant Variant = "standard"
 
 var ValidVariants = []Variant{CoreVariant, StandardVariant}
-
-type KubernetesProvider string
-
-func (v *KubernetesProvider) FromString(provider string) error {
-	*v = KubernetesProvider(provider)
-	switch *v {
-	case K3sProvider, K0sProvider:
-		return nil
-	default:
-		return fmt.Errorf("invalid Kubernetes provider: %s, possible values are %s", provider, ValidProviders)
-	}
-}
-
-const K3sProvider KubernetesProvider = "k3s"
-const K0sProvider KubernetesProvider = "k0s"
-
-var ValidProviders = []KubernetesProvider{K3sProvider, K0sProvider}
 
 // LoadVersionOverrides initializes the VersionOverrides from a file
 func (c *Config) LoadVersionOverrides() {
