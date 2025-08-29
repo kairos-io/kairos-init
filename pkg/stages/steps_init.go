@@ -1,10 +1,9 @@
 package stages
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
-	"os/exec"
-	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,7 +13,9 @@ import (
 	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/values"
+	"github.com/kairos-io/kairos-sdk/bus"
 	"github.com/kairos-io/kairos-sdk/types"
+	"github.com/mudler/go-pluggable"
 	"github.com/mudler/yip/pkg/schema"
 )
 
@@ -152,39 +153,11 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 		"KAIROS_INIT_VERSION":   values.GetVersion(),                                 // The version of the kairos-init binary
 	}
 
-	// Get SOFTWARE_VERSION from the k3s/k0s version
-	if config.DefaultConfig.Variant == config.StandardVariant {
-		log.Logger.Debug().Msg("Getting the k8s version for the kairos-release stage")
-		var k8sVersion string
-
-		switch config.DefaultConfig.KubernetesProvider {
-		case config.K3sProvider:
-			out, err := exec.Command("k3s", "--version").CombinedOutput()
-			if err != nil {
-				log.Logger.Error().Msgf("Failed to get the k3s version: %s", err)
-			}
-			// 2 lines in this format:
-			// k3s version v1.21.4+k3s1 (3781f4b7)
-			// go version go1.16.5
-			// We need the first line
-			re := regexp.MustCompile(`k3s version (v\d+\.\d+\.\d+\+k3s\d+)`)
-			if re.MatchString(string(out)) {
-				match := re.FindStringSubmatch(string(out))
-				k8sVersion = match[1]
-			} else {
-				log.Logger.Error().Msgf("Failed to parse the k3s version: %s", string(out))
-			}
-		case config.K0sProvider:
-			out, err := exec.Command("k0s", "version").CombinedOutput()
-			if err != nil {
-				log.Logger.Error().Msgf("Failed to get the k0s version: %s", err)
-			}
-			k8sVersion = strings.TrimSpace(string(out))
-		}
-
-		log.Logger.Debug().Str("k8sVersion", k8sVersion).Msg("Got the k8s version")
-		env["KAIROS_SOFTWARE_VERSION"] = k8sVersion
-		env["KAIROS_SOFTWARE_VERSION_PREFIX"] = string(config.DefaultConfig.KubernetesProvider)
+	// Todo: Change this to allow getting info from several providers? No idea how to store it, the current below is only for k3s/k0s I think
+	versionInfo, err := getProviderInfo(log)
+	if err == nil && versionInfo.Provider != "" && versionInfo.Version != "" {
+		env["KAIROS_SOFTWARE_VERSION"] = versionInfo.Version
+		env["KAIROS_SOFTWARE_VERSION_PREFIX"] = versionInfo.Provider
 	}
 
 	log.Logger.Debug().Interface("env", env).Msg("Kairos release stage")
@@ -196,6 +169,43 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 			EnvironmentFile: "/etc/kairos-release",
 		},
 	}
+}
+
+func getProviderInfo(logger types.KairosLogger) (bus.ProviderInstalledVersionPayload, error) {
+	logger.Logger.Info().Msg("Triggering provider info event")
+	versionInfo := bus.ProviderInstalledVersionPayload{}
+	manager := bus.NewBus(bus.InitProviderInfo)
+	manager.Initialize(bus.WithLogger(&logger))
+
+	if len(manager.Plugins) == 0 {
+		logger.Logger.Info().Msg("No plugins found, skipping provider install event")
+		return versionInfo, nil
+	}
+
+	manager.Response(bus.InitProviderInfo, func(p *pluggable.Plugin, resp *pluggable.EventResponse) {
+		logger.Logger.Debug().Str("at", p.Executable).Interface("resp", resp).Msg("Received info event from provider")
+		if resp.Errored() {
+			logger.Logger.Error().Msgf("Provider info event failed: %s", resp.Error)
+			return
+		}
+		if resp.State == bus.EventResponseNotApplicable {
+			logger.Logger.Info().Msg("Provider info event is non-applicable, skipping")
+			return
+		}
+		if err := json.Unmarshal([]byte(resp.Data), &versionInfo); err != nil {
+			logger.Logger.Error().Msgf("Failed to unmarshal provider info event: %s", err)
+			return
+		}
+		if resp.State == bus.EventResponseSuccess {
+			logger.Logger.Info().Msg("Provider info event succeeded")
+		}
+	})
+	_, err := manager.Publish(bus.InitProviderInfo, nil)
+	if err != nil {
+		logger.Logger.Error().Msgf("Failed to publish provider info event: %s", err)
+		return versionInfo, err
+	}
+	return versionInfo, nil
 }
 
 // GetWorkaroundsStage Returns the workarounds stage
