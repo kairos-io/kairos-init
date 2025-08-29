@@ -2,3 +2,6 @@
 dist/
 # binaries dir, not tracked, only on build
 pkg/bundled/binaries/
+# Coverage files
+*.cover
+coverage.out
