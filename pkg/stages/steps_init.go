@@ -991,7 +991,15 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 }
 
 // filterMultipathDependencies filters out packages that are dependencies for multipath-tools
-// to prevent multipath functionality from being broken during cleanup
+// to prevent multipath functionality from being broken during cleanup.
+//
+// The cleanup stage removes packages from ImmucorePackages after initrd creation to keep
+// the final image size small. However, multipath-tools depends on some of these packages
+// (specifically dracut and related packages), so removing them would break multipath support.
+//
+// This function ensures that critical dracut packages required by multipath-tools are
+// preserved during cleanup, addressing issue #3625 where multipath-tools service was
+// missing after cleanup due to dependency removal.
 func filterMultipathDependencies(packages []string, sis values.System, l types.KairosLogger) []string {
 	// Define packages that should not be removed to preserve multipath-tools functionality
 	// These are dracut and related packages that multipath-tools depends on
