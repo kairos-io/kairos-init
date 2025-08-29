@@ -83,6 +83,42 @@ There is also two switches to help you build the image:
  - `-l`: set the log level (default: info). You can choose between info, warn, error, debug for a more verbose output. Remember to use the docker switch `--progress=plain` to see the output correctly.
  - `-s`: set the stage to run (default: all). You can choose between all, install and init to run only a specific stage of the process. Useful if you need to customize the image after the packages are installed but before the system is initialized, like adding modules to initramfs or adding extra packages or scripts.
 
+## Development
+
+### Building from Source
+
+To build kairos-init from source:
+
+```bash
+# Clone the repository
+git clone https://github.com/kairos-io/kairos-init.git
+cd kairos-init
+
+# Build the binary (uses placeholder embedded binaries)
+go build .
+
+# Or download actual binaries and build (production build)
+make all
+go build .
+```
+
+### Testing
+
+Run the test suite with:
+
+```bash
+# Run unit tests
+make test
+
+# Run tests with coverage
+make test-coverage
+
+# Run linter
+make lint
+```
+
+**Note**: The repository includes placeholder binary files for development builds. These allow `go build` and `go vet` to work without requiring the `make all` step to download actual binaries. The production Docker builds use `make all` to download the real binaries.
+
 ## Validation
 
 You can validate the image you built using the `kairos-init validate` command inside the image. This will check if the image is valid and if it has all the necessary components to run Kairos.

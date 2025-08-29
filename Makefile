@@ -29,6 +29,8 @@ provider-kairos-fips_URL := $(call URL_TEMPLATE,provider-kairos,$(PROVIDER_KAIRO
 all: prepare download compress cleanup version-info
 
 # Clean the output directory
+# Note: This removes placeholder files too. Run 'git restore pkg/bundled/binaries/' 
+# after this command to restore placeholders for development builds.
 prepare:
 	@echo "Cleaning up the output directory..."
 	@rm -rf $(OUTPUT_DIR)
