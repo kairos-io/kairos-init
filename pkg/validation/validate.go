@@ -49,10 +49,15 @@ func (v *Validator) Validate() error {
 
 	if config.DefaultConfig.Variant == "standard" {
 		binaries = append(binaries, "agent-provider-kairos", "kairos", "edgevpn")
-		if config.DefaultConfig.KubernetesProvider == config.K3sProvider {
+	}
+
+	vals, err := godotenv.Read("/etc/kairos-release")
+	if err == nil {
+		provider := vals["KAIROS_SOFTWARE_VERSION"]
+		switch provider {
+		case "k3s":
 			binaries = append(binaries, "k3s")
-		}
-		if config.DefaultConfig.KubernetesProvider == config.K0sProvider {
+		case "k0s":
 			binaries = append(binaries, "k0s")
 		}
 	}
@@ -133,7 +138,7 @@ func (v *Validator) Validate() error {
 		"KAIROS_RELEASE",
 	}
 
-	vals, err := godotenv.Read("/etc/kairos-release")
+	vals, err = godotenv.Read("/etc/kairos-release")
 	if err != nil {
 		multi = multierror.Append(multi, fmt.Errorf("[RELEASE] could not open kairos-release file"))
 	} else {

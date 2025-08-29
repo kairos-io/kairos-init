@@ -9,6 +9,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
+
+	"github.com/kairos-io/kairos-sdk/bus"
+	"github.com/mudler/go-pluggable"
 
 	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/bundled"
@@ -137,107 +141,6 @@ func GetInstallKernelStage(sis values.System, logger types.KairosLogger) ([]sche
 	}
 
 	return stage, nil
-}
-
-// GetInstallKubernetesStage returns the the kubernetes install stage
-func GetInstallKubernetesStage(sis values.System, logger types.KairosLogger) []schema.Stage {
-	if config.ContainsSkipStep(values.KubernetesStep) {
-		logger.Logger.Warn().Msg("Skipping installing kubernetes stage")
-		return []schema.Stage{}
-	}
-	var stages []schema.Stage
-
-	// If its core we dont do anything here
-	if config.DefaultConfig.Variant.String() == "core" {
-		return stages
-	}
-
-	switch config.DefaultConfig.KubernetesProvider {
-	case config.K3sProvider:
-		cmd := "INSTALL_K3S_BIN_DIR=/usr/bin INSTALL_K3S_SKIP_ENABLE=true INSTALL_K3S_SKIP_SELINUX_RPM=true"
-		// Append version if any, otherwise default to latest
-		if config.DefaultConfig.KubernetesVersion != "" {
-			cmd = fmt.Sprintf("INSTALL_K3S_VERSION=%s %s", config.DefaultConfig.KubernetesVersion, cmd)
-		}
-		stages = append(stages, []schema.Stage{
-			{
-				Name: "Install Kubernetes packages",
-				Commands: []string{
-					"curl -sfL https://get.k3s.io > installer.sh",
-					"chmod +x installer.sh",
-					fmt.Sprintf("%s sh installer.sh", cmd),
-					fmt.Sprintf("%s sh installer.sh agent", cmd),
-				},
-			},
-		}...)
-	case config.K0sProvider:
-		cmd := "sh installer.sh"
-		// Append version if any, otherwise default to latest
-		if config.DefaultConfig.KubernetesVersion != "" {
-			cmd = fmt.Sprintf("K0S_VERSION=%s %s", config.DefaultConfig.KubernetesVersion, cmd)
-		}
-		stages = append(stages, []schema.Stage{
-			{
-				Name: "Install Kubernetes packages",
-				Commands: []string{
-					"curl -sfL https://get.k0s.sh > installer.sh",
-					"chmod +x installer.sh",
-					cmd,
-					"rm installer.sh",
-					"mv /usr/local/bin/k0s /usr/bin/k0s",
-				},
-			},
-		}...)
-
-		if sis.Family.String() == "alpine" {
-			// Add openrc services
-			stages = append(stages, []schema.Stage{
-				{
-					Name: "Create k0s services for openrc",
-					Files: []schema.File{
-						{
-							Path:        "/etc/init.d/k0scontroller",
-							Permissions: 0755,
-							Owner:       0,
-							Group:       0,
-							Content:     bundled.K0sControllerOpenrc,
-						},
-						{
-							Path:        "/etc/init.d/k0sworker",
-							Permissions: 0755,
-							Owner:       0,
-							Group:       0,
-							Content:     bundled.K0sWorkerOpenrc,
-						},
-					},
-				},
-			}...)
-		} else {
-			// Add systemd services
-			stages = append(stages, []schema.Stage{
-				{
-					Name: "Create k0s services for systemd",
-					Files: []schema.File{
-						{
-							Path:        "/etc/systemd/system/k0scontroller.service",
-							Permissions: 0644,
-							Owner:       0,
-							Group:       0,
-							Content:     bundled.K0sControllerSystemd,
-						},
-						{
-							Path:        "/etc/systemd/system/k0sworker.service",
-							Permissions: 0644,
-							Owner:       0,
-							Group:       0,
-							Content:     bundled.K0sWorkerSystemd,
-						},
-					},
-				},
-			}...)
-		}
-	}
-	return stages
 }
 
 // GetInstallOemCloudConfigs dumps the OEM files to the system from the embedded oem files
@@ -659,4 +562,86 @@ func DownloadAndExtract(url, dest string, binaryName ...string) error {
 		}
 	}
 	return fmt.Errorf("binary not found in archive")
+}
+
+func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) error {
+	if config.ContainsSkipStep(values.BuildProviderStep) {
+		logger.Logger.Warn().Msg("Skipping calling build for providers stage")
+		return nil
+	}
+
+	providerCount := len(config.DefaultConfig.Providers)
+	if providerCount == 0 {
+		logger.Logger.Info().Msg("No providers configured, skipping provider install event")
+		return nil
+	}
+
+	logger.Logger.Info().Msg("Triggering provider install event")
+	// Trigger provider build-install event
+	manager := bus.NewBus(bus.InitProviderInstall)
+	manager.Initialize(bus.WithLogger(&logger))
+	if len(manager.Plugins) == 0 {
+		logger.Logger.Info().Msg("No plugins found, skipping provider install event")
+		return nil
+	}
+
+	errChan := make(chan error, providerCount)
+	var wg sync.WaitGroup
+	wg.Add(providerCount)
+
+	manager.Response(bus.InitProviderInstall, func(p *pluggable.Plugin, resp *pluggable.EventResponse) {
+		logger.Logger.Debug().Str("at", p.Executable).Interface("resp", resp).Msg("Received build-install event from provider")
+		if resp.Errored() {
+			errChan <- fmt.Errorf("provider build-install event failed: %s", resp.Error)
+			wg.Done()
+			return
+		}
+		if resp.State == bus.EventResponseNotApplicable {
+			logger.Logger.Info().Msg("Provider build-install event is non-applicable, skipping")
+			errChan <- nil
+			wg.Done()
+			return
+		}
+		if resp.State == bus.EventResponseSuccess {
+			logger.Logger.Info().Msg("Provider install event succeeded")
+			errChan <- nil
+			wg.Done()
+			return
+		}
+		// If none of the above, still mark as done
+		errChan <- nil
+		wg.Done()
+	})
+
+	logger.Logger.Debug().Msg("Publishing provider build-install event")
+	for _, provider := range config.DefaultConfig.Providers {
+		dataSend := bus.ProviderPayload{
+			Provider: provider.Name,
+			Version:  provider.Version,
+			Config:   provider.Config,
+			LogLevel: logger.Logger.GetLevel().String(),
+			Family:   sis.Family.String(),
+		}
+		_, err := manager.Publish(bus.InitProviderInstall, dataSend)
+		if err != nil {
+			logger.Logger.Error().Msgf("Failed to publish provider build-install event: %s", err)
+			return err
+		}
+	}
+
+	wg.Wait()
+	var combinedErr error
+	for i := 0; i < providerCount; i++ {
+		err := <-errChan
+		if err != nil {
+			if combinedErr == nil {
+				combinedErr = fmt.Errorf("provider build-install errors")
+			}
+			combinedErr = fmt.Errorf("%w; %v", combinedErr, err)
+		}
+	}
+	if combinedErr != nil {
+		return combinedErr
+	}
+	return nil
 }
