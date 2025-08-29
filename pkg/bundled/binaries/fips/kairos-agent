@@ -1,0 +1,5 @@
+#!/bin/bash
+# Placeholder FIPS binary for development/testing
+# This file will be replaced by the actual kairos-agent FIPS binary during build
+echo "kairos-agent FIPS placeholder - use 'make all' to download actual binaries"
+exit 1

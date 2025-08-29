@@ -1,0 +1,5 @@
+#!/bin/bash
+# Placeholder binary for development/testing
+# This file will be replaced by the actual kairos-agent binary during build
+echo "kairos-agent placeholder - use 'make all' to download actual binaries"
+exit 1

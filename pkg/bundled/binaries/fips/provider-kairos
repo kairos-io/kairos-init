@@ -1,0 +1,5 @@
+#!/bin/bash
+# Placeholder FIPS binary for development/testing
+# This file will be replaced by the actual provider-kairos FIPS binary during build
+echo "provider-kairos FIPS placeholder - use 'make all' to download actual binaries"
+exit 1

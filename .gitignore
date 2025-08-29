@@ -1,4 +1,12 @@
 # Added by goreleaser init:
 dist/
-# binaries dir, not tracked, only on build
-pkg/bundled/binaries/
+# binaries dir: track placeholder files for development, ignore actual binaries
+pkg/bundled/binaries/*
+!pkg/bundled/binaries/*/
+!pkg/bundled/binaries/*.yaml
+# Allow placeholder files (small text files)
+!pkg/bundled/binaries/edgevpn
+!pkg/bundled/binaries/kairos-agent
+!pkg/bundled/binaries/immucore
+!pkg/bundled/binaries/kcrypt-discovery-challenger
+!pkg/bundled/binaries/provider-kairos

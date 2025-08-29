@@ -1,0 +1,5 @@
+#!/bin/bash
+# Placeholder FIPS binary for development/testing
+# This file will be replaced by the actual kcrypt-discovery-challenger FIPS binary during build
+echo "kcrypt-discovery-challenger FIPS placeholder - use 'make all' to download actual binaries"
+exit 1
