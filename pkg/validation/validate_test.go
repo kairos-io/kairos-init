@@ -401,11 +401,9 @@ var _ = Describe("Validator", func() {
 
 				// Store original config to restore later
 				originalVariant := config.DefaultConfig.Variant
-				originalProvider := config.DefaultConfig.KubernetesProvider
 
 				defer func() {
 					config.DefaultConfig.Variant = originalVariant
-					config.DefaultConfig.KubernetesProvider = originalProvider
 				}()
 
 				// Set core variant to test minimal binary set
@@ -436,16 +434,13 @@ var _ = Describe("Validator", func() {
 
 				// Store original config
 				originalVariant := config.DefaultConfig.Variant
-				originalProvider := config.DefaultConfig.KubernetesProvider
 
 				defer func() {
 					config.DefaultConfig.Variant = originalVariant
-					config.DefaultConfig.KubernetesProvider = originalProvider
 				}()
 
-				// Set standard variant with k3s provider
+				// Set standard variant
 				config.DefaultConfig.Variant = config.StandardVariant
-				config.DefaultConfig.KubernetesProvider = config.K3sProvider
 
 				err := validator.Validate()
 
@@ -454,7 +449,6 @@ var _ = Describe("Validator", func() {
 					errStr := err.Error()
 					// Should check for additional binaries in standard mode
 					Expect(errStr).To(Or(
-						ContainSubstring("k3s"),
 						ContainSubstring("agent-provider-kairos"),
 						ContainSubstring("edgevpn"),
 						ContainSubstring("[BINARIES] could not find binary"),
@@ -464,31 +458,27 @@ var _ = Describe("Validator", func() {
 				}
 			})
 
-			It("should handle k0s provider configuration", func() {
+			It("should handle provider detection from kairos-release file", func() {
 				logger := createTestLogger()
 				validator := validation.NewValidator(logger)
 
 				// Store original config
 				originalVariant := config.DefaultConfig.Variant
-				originalProvider := config.DefaultConfig.KubernetesProvider
 
 				defer func() {
 					config.DefaultConfig.Variant = originalVariant
-					config.DefaultConfig.KubernetesProvider = originalProvider
 				}()
 
-				// Set standard variant with k0s provider
+				// Set standard variant so it tries to read provider info
 				config.DefaultConfig.Variant = config.StandardVariant
-				config.DefaultConfig.KubernetesProvider = config.K0sProvider
 
 				err := validator.Validate()
 
 				// This will likely fail in test environment but shouldn't panic
+				// The validation will try to read /etc/kairos-release and may fail
 				if err != nil {
 					errStr := err.Error()
-					// Should check for k0s binary in k0s mode
 					Expect(errStr).To(Or(
-						ContainSubstring("k0s"),
 						ContainSubstring("[BINARIES] could not find binary"),
 						ContainSubstring("[FILES] file missing"),
 						ContainSubstring("[RELEASE]"),

@@ -52,26 +52,28 @@ var _ = Describe("Config Package", func() {
 		})
 	})
 
-	Describe("KubernetesProvider", func() {
-		Context("FromString method", func() {
-			It("should parse valid providers", func() {
-				var provider config.KubernetesProvider
+	Describe("Provider", func() {
+		Context("Provider struct", func() {
+			It("should create Provider with all fields", func() {
+				provider := config.Provider{
+					Name:    "k3s",
+					Version: "v1.28.1",
+					Config:  "some-config",
+				}
 
-				err := provider.FromString("k3s")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(provider).To(Equal(config.K3sProvider))
-
-				err = provider.FromString("k0s")
-				Expect(err).NotTo(HaveOccurred())
-				Expect(provider).To(Equal(config.K0sProvider))
+				Expect(provider.Name).To(Equal("k3s"))
+				Expect(provider.Version).To(Equal("v1.28.1"))
+				Expect(provider.Config).To(Equal("some-config"))
 			})
 
-			It("should return error for invalid providers", func() {
-				var provider config.KubernetesProvider
+			It("should work with empty fields", func() {
+				provider := config.Provider{
+					Name: "k0s",
+				}
 
-				err := provider.FromString("invalid")
-				Expect(err).To(HaveOccurred())
-				Expect(err.Error()).To(ContainSubstring("invalid Kubernetes provider"))
+				Expect(provider.Name).To(Equal("k0s"))
+				Expect(provider.Version).To(BeEmpty())
+				Expect(provider.Config).To(BeEmpty())
 			})
 		})
 	})
@@ -171,21 +173,15 @@ var _ = Describe("Config Package", func() {
 			Expect(string(config.StandardVariant)).To(Equal("standard"))
 		})
 
-		It("should have correct provider constants", func() {
-			Expect(string(config.K3sProvider)).To(Equal("k3s"))
-			Expect(string(config.K0sProvider)).To(Equal("k0s"))
-		})
-
 		It("should have valid variants list", func() {
 			Expect(config.ValidVariants).To(ContainElement(config.CoreVariant))
 			Expect(config.ValidVariants).To(ContainElement(config.StandardVariant))
 			Expect(len(config.ValidVariants)).To(Equal(2))
 		})
 
-		It("should have valid providers list", func() {
-			Expect(config.ValidProviders).To(ContainElement(config.K3sProvider))
-			Expect(config.ValidProviders).To(ContainElement(config.K0sProvider))
-			Expect(len(config.ValidProviders)).To(Equal(2))
+		It("should initialize DefaultConfig with empty providers", func() {
+			Expect(config.DefaultConfig.Providers).NotTo(BeNil())
+			Expect(len(config.DefaultConfig.Providers)).To(Equal(0))
 		})
 	})
 })
