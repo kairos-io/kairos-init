@@ -353,27 +353,6 @@ func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
 		},
 	}
 
-	var pkgs []values.VersionMap
-	if !config.DefaultConfig.TrustedBoot {
-		// This packages are used to build the initramfs and are not needed anymore
-		pkgs = append(pkgs, values.ImmucorePackages[sis.Distro][values.ArchCommon])
-		pkgs = append(pkgs, values.ImmucorePackages[sis.Family][values.ArchCommon])
-		pkgs = append(pkgs, values.ImmucorePackages[sis.Distro][sis.Arch])
-		pkgs = append(pkgs, values.ImmucorePackages[sis.Family][sis.Arch])
-	}
-
-	filteredPkgs := values.FilterPackagesOnConstraint(sis, l, pkgs)
-	// Don't remove dracut packages on Debian as linux-base (KERNEL!) depends on them somehow and it means that
-	// removing dracut will remove the kernel package as well
-	stages = append(stages, []schema.Stage{
-		{
-			Name:     "Remove unneeded packages",
-			OnlyIfOs: "Ubuntu.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*|Alpine.*",
-			Packages: schema.Packages{
-				Remove: filteredPkgs,
-			},
-		},
-	}...)
 	return stages
 }
 
