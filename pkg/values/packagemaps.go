@@ -413,16 +413,16 @@ var BasePackages = PackageMap{
 	RedHatFamily: {
 		ArchCommon: {
 			Common: {
-				"gdisk",                	// Yip requires it for partitioning, maybe BasePackages
-				"audit",                	// For audit support, check if needed?
-				"cracklib-dicts",       	// Password dictionary support
-				"cloud-utils-growpart", 	// grow partition use. Check if yip still needs it?
-				"device-mapper",        	// Device mapper support, needed for lvm and cryptsetup
-				"device-mapper-multipath", 	// For multipath support, needed for dracut
-				"iproute",              	// Basic tool for networking
-				"nfs-utils",            	// NFS support, basic
-				"NetworkManager",       	// Default Network manager for Red Hat
-				"nmstate",              	// Network manager state management, makes our life easier
+				"gdisk",                   // Yip requires it for partitioning, maybe BasePackages
+				"audit",                   // For audit support, check if needed?
+				"cracklib-dicts",          // Password dictionary support
+				"cloud-utils-growpart",    // grow partition use. Check if yip still needs it?
+				"device-mapper",           // Device mapper support, needed for lvm and cryptsetup
+				"device-mapper-multipath", // For multipath support, needed for dracut
+				"iproute",                 // Basic tool for networking
+				"nfs-utils",               // NFS support, basic
+				"NetworkManager",          // Default Network manager for Red Hat
+				"nmstate",                 // Network manager state management, makes our life easier
 				"openssh-server",
 				"openssh-clients",
 				"polkit",
@@ -443,7 +443,7 @@ var BasePackages = PackageMap{
 			Common: {
 				"systemd-resolved",
 				"polkitd",
-				"multipath-tools", // For multipath support, needed for dracut
+				"multipath-tools",      // For multipath support, needed for dracut
 				"multipath-tools-boot", // For multipath support, needed for dracut
 			},
 			">=13": {
@@ -478,6 +478,9 @@ var BasePackages = PackageMap{
 			},
 			">=24.04": {
 				"systemd-resolved", // For systemd-resolved support, added as a separate package on 24.04
+			},
+			">=25.10": {
+				"systemd-cryptsetup", // For trusted boot support, added as a separate package on 25.10
 			},
 		},
 	},
