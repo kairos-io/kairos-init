@@ -28,7 +28,7 @@ require (
 	github.com/anchore/go-lzo v0.1.0 // indirect
 	github.com/cavaliergopher/grab v2.0.0+incompatible // indirect
 	github.com/chuckpreslar/emission v0.0.0-20170206194824-a7ddd980baf9 // indirect
-	github.com/cloudflare/circl v1.6.0 // indirect
+	github.com/cloudflare/circl v1.6.1 // indirect
 	github.com/containerd/cgroups/v3 v3.0.5 // indirect
 	github.com/containerd/containerd v1.7.28 // indirect
 	github.com/containerd/continuity v0.4.5 // indirect
