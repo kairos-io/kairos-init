@@ -222,7 +222,8 @@ func GetWorkaroundsStage(sis values.System, l types.KairosLogger) []schema.Stage
 		{
 			Name: "Link grub-editenv to grub2-editenv",
 			//OnlyIfOs: "Ubuntu.*|Alpine.*", // Maybe not needed and just checking if the file exists is enough
-			If: "test -f /usr/bin/grub-editenv",
+			// test if the file exists and if the link does not exist
+			If: "test -f /usr/bin/grub-editenv && ! test -e /usr/bin/grub2-editenv",
 			Commands: []string{
 				"ln -s /usr/bin/grub-editenv /usr/bin/grub2-editenv",
 			},
