@@ -65,6 +65,7 @@ const (
 	Rpi3    Model = "rpi3"
 	Rpi4    Model = "rpi4"
 	AgxOrin Model = "agx-orin"
+	OrinNX  Model = "orin-nx"
 )
 
 type System struct {

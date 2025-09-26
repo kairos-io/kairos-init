@@ -1,0 +1,14 @@
+name: "L4T RootFS Prep"
+stages:
+  init:
+    - name: "Apply NVIDIA binaries"
+      commands:
+        - |
+          #!/bin/bash
+          set -e
+
+          TEGRA_DIR="Linux_for_Tegra"
+          cd "$TEGRA_DIR"
+          if [ ! -e bootloader/esp.img ]; then
+            ./apply_binaries.sh
+          fi

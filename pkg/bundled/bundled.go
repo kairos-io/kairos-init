@@ -432,6 +432,7 @@ const BootArgsCfg = `function setSelinux {
     #fi
 }
 
+
 function setExtraConsole {
     source (loop0)/etc/os-release
     if [ -f (loop0)/etc/kairos-release ]; then
@@ -442,9 +443,13 @@ function setExtraConsole {
     if test $KAIROS_MODEL == "rpi3" -o test $KAIROS_MODEL == "rpi4"; then
         set baseExtraConsole="console=ttyS0,115200"
     fi
-    # nvidia orin
+    # nvidia agx orin
     if test $KAIROS_MODEL == "nvidia-jetson-agx-orin"; then
         set baseExtraConsole="console=ttyTCU0,115200"
+    fi
+    # nvidia orin nx - we set the terga TCU serial console and the ARM PL011 UART
+    if test $KAIROS_MODEL == "nvidia-jetson-orin-nx"; then
+        set baseExtraConsole="console=ttyTCU0,115200 console=ttyAMA0,115200"
     fi
 }
 
@@ -458,6 +463,15 @@ function setExtraArgs {
     if test $KAIROS_MODEL == "rpi3" -o test $KAIROS_MODEL == "rpi4"; then
         # on rpi we need to enable memory cgroup for docker/k3s to work
         set baseExtraArgs="modprobe.blacklist=vc4 8250.nr_uarts=1 cgroup_enable=memory"
+    fi
+    # orin-nx nvidia release
+    if test "$KAIROS_MODEL" = "nvidia-jetson-orin-nx"; then
+        if [ -z "$NVIDIA_RELEASE" ]; then
+            set NVIDIA_RELEASE="35"
+        fi
+        if [ -z "$NVIDIA_VERSION" ]; then
+            set NVIDIA_VERSION="3.1"
+        fi
     fi
 }
 
