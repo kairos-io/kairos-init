@@ -6,19 +6,23 @@ stages:
         - |
           #!/bin/bash
           set -e
+          
+          if test "$KAIROS_MODEL" = "nvidia-jetson-orin-nx"; then
+            # NVIDIA release and version correspond to the L4T version (JetPack 5.1.1):
+            # https://developer.nvidia.com/embedded/jetpack-archive
+            # Currently set to 35.3.1
+            NVIDIA_RELEASE=${NVIDIA_RELEASE:-"35"}
+            NVIDIA_VERSION=${NVIDIA_VERSION:-"3.1"}
+            NVIDIA_ARCHIVE_URI="https://developer.nvidia.com/downloads/embedded/l4t/r${NVIDIA_RELEASE}_release_v${NVIDIA_VERSION}/release"
+            TEGRA_ARCHIVE="jetson_linux_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
+            ROOTFS_ARCHIVE="tegra_linux_sample-root-filesystem_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
+            TEGRA_DIR="Linux_for_Tegra"
 
-          NVIDIA_RELEASE=${NVIDIA_RELEASE:-"35"}
-          NVIDIA_VERSION=${NVIDIA_VERSION:-"3.1"}
-          NVIDIA_ARCHIVE_URI="https://developer.nvidia.com/downloads/embedded/l4t/r${NVIDIA_RELEASE}_release_v${NVIDIA_VERSION}/release"
-          TEGRA_ARCHIVE="jetson_linux_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
-          ROOTFS_ARCHIVE="tegra_linux_sample-root-filesystem_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
-          TEGRA_DIR="Linux_for_Tegra"
+            echo "Downloading NVIDIA L4T archives..."
+            wget "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" -O "$TEGRA_ARCHIVE"
+            wget "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" -O "$ROOTFS_ARCHIVE"
 
-          echo "Downloading NVIDIA L4T archives..."
-          wget "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" -O "$TEGRA_ARCHIVE"
-          wget "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" -O "$ROOTFS_ARCHIVE"
-
-          echo "Extracting Jetson Linux..."
-          tar -xjf "$TEGRA_ARCHIVE"
-          tar -xjf "$ROOTFS_ARCHIVE" -C "$TEGRA_DIR/rootfs"
+            echo "Extracting Jetson Linux..."
+            tar -xjf "$TEGRA_ARCHIVE"
+            tar -xjf "$ROOTFS_ARCHIVE" -C "$TEGRA_DIR/rootfs"
 

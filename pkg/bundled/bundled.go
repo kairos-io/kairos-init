@@ -464,15 +464,6 @@ function setExtraArgs {
         # on rpi we need to enable memory cgroup for docker/k3s to work
         set baseExtraArgs="modprobe.blacklist=vc4 8250.nr_uarts=1 cgroup_enable=memory"
     fi
-    # orin-nx nvidia release
-    if test "$KAIROS_MODEL" = "nvidia-jetson-orin-nx"; then
-        if [ -z "$NVIDIA_RELEASE" ]; then
-            set NVIDIA_RELEASE="35"
-        fi
-        if [ -z "$NVIDIA_VERSION" ]; then
-            set NVIDIA_VERSION="3.1"
-        fi
-    fi
 }
 
 function setKernelCmd {
