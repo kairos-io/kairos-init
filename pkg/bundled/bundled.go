@@ -432,7 +432,6 @@ const BootArgsCfg = `function setSelinux {
     #fi
 }
 
-
 function setExtraConsole {
     source (loop0)/etc/os-release
     if [ -f (loop0)/etc/kairos-release ]; then
