@@ -29,6 +29,11 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		logger.Logger.Warn().Msg("Skipping install packages stage")
 		return []schema.Stage{}, nil
 	}
+
+	if sis.Distro == values.Hadron {
+		logger.Logger.Info().Msg("Hadron Linux does not require package installation")
+		return []schema.Stage{}, nil
+	}
 	// Fips + ubuntu fails early and redirect to our Example
 	if sis.Distro == values.Ubuntu && config.DefaultConfig.Fips {
 		return nil, fmt.Errorf("FIPS is not supported on Ubuntu without a PRO account and extra packages.\n" +
@@ -113,6 +118,11 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 func GetInstallKernelStage(sis values.System, logger types.KairosLogger) ([]schema.Stage, error) {
 	if config.ContainsSkipStep(values.InstallKernelStep) {
 		logger.Logger.Warn().Msg("Skipping install kernel stage")
+		return []schema.Stage{}, nil
+	}
+
+	if sis.Distro == values.Hadron {
+		logger.Logger.Info().Msg("Hadron Linux does not require kernel installation")
 		return []schema.Stage{}, nil
 	}
 
