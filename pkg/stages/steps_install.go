@@ -55,6 +55,37 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		return []schema.Stage{}, err
 	}
 
+	// Read the NVIDIA env vartiables, use defaults if not set
+	nvidiaRelease := os.Getenv("NVIDIA_RELEASE")
+    if nvidiaRelease == "" {
+        nvidiaRelease = "35"
+    }
+
+    nvidiaVersion := os.Getenv("NVIDIA_VERSION")
+    if nvidiaVersion == "" {
+        nvidiaVersion = "3.1"
+    }
+
+	// Prepare NVIDIA L4T extraction script
+    l4tScript := fmt.Sprintf(`#!/bin/bash
+		set -e
+
+		NVIDIA_RELEASE="%s"
+		NVIDIA_VERSION="%s"
+		NVIDIA_ARCHIVE_URI="https://developer.nvidia.com/downloads/embedded/l4t/r${NVIDIA_RELEASE}_release_v${NVIDIA_VERSION}/release"
+		TEGRA_ARCHIVE="jetson_linux_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
+		ROOTFS_ARCHIVE="tegra_linux_sample-root-filesystem_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
+		TEGRA_DIR="Linux_for_Tegra"
+
+		echo "Downloading NVIDIA L4T archives..."
+		wget "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" -O "$TEGRA_ARCHIVE"
+		wget "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" -O "$ROOTFS_ARCHIVE"
+
+		echo "Extracting Jetson Linux..."
+		tar -xjf "$TEGRA_ARCHIVE"
+		tar -xjf "$ROOTFS_ARCHIVE" -C "$TEGRA_DIR/rootfs"
+		`, nvidiaRelease, nvidiaVersion)
+
 	stage := []schema.Stage{
 		{
 			Name:     "Install epel repository",
@@ -110,23 +141,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 			Name: "Fetch Linux for Tegra (L4T)",
 			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model),
 			Commands: []string{
-				`#!/bin/bash
-				set -e
-				NVIDIA_RELEASE=${NVIDIA_RELEASE:-"35"}
-				NVIDIA_VERSION=${NVIDIA_VERSION:-"3.1"}
-				NVIDIA_ARCHIVE_URI="https://developer.nvidia.com/downloads/embedded/l4t/r${NVIDIA_RELEASE}_release_v${NVIDIA_VERSION}/release"
-				TEGRA_ARCHIVE="jetson_linux_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
-				ROOTFS_ARCHIVE="tegra_linux_sample-root-filesystem_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
-				TEGRA_DIR="Linux_for_Tegra"
-
-				echo "Downloading NVIDIA L4T archives..."
-				wget "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" -O "$TEGRA_ARCHIVE"
-				wget "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" -O "$ROOTFS_ARCHIVE"
-
-				echo "Extracting Jetson Linux..."
-				tar -xjf "$TEGRA_ARCHIVE"
-				tar -xjf "$ROOTFS_ARCHIVE" -C "$TEGRA_DIR/rootfs"
-				`,
+				l4tScript,
 			}
 		}
 	}
