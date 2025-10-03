@@ -108,7 +108,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		},
 		{
 			Name: "Fetch Linux for Tegra (L4T)",
-			If:   `[ "$KAIROS_MODEL" = "nvidia-jetson-orin-nx" ]`,
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model),
 			Commands: []string{
 				`#!/bin/bash
 				set -e
