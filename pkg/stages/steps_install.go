@@ -55,7 +55,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		return []schema.Stage{}, err
 	}
 
-	// Read the NVIDIA env vartiables, use defaults if not set
+	// Read the NVIDIA env variables, use defaults if not set
 	nvidiaRelease := os.Getenv("NVIDIA_RELEASE")
     if nvidiaRelease == "" {
         nvidiaRelease = "35"
