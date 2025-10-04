@@ -39,6 +39,7 @@ const (
 	OpenSUSELeap       Distro = "opensuse-leap"
 	OpenSUSETumbleweed Distro = "opensuse-tumbleweed"
 	SLES               Distro = "sles"
+	Hadron            Distro = "hadron"
 )
 
 type Family string
@@ -55,6 +56,7 @@ const (
 	ArchFamily    Family = "arch"
 	AlpineFamily  Family = "alpine"
 	SUSEFamily    Family = "suse"
+	HadronFamily Family = "hadron"
 )
 
 type Model string              // Model is the type of the system
