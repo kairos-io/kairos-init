@@ -3,7 +3,7 @@ stages:
   rootfs.before:
     - name: "Enable systemd-network config files for DHCP"  # Needed if systemd-networkd runs in the initramfs!
       only_service_manager: "systemd"
-      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|openSUSE.*"
+      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|openSUSE.*|Hadron.*"
       directories:
         - path: "/etc/systemd/network"  # doesnt exist on initramfs
           permissions: 0775
@@ -37,7 +37,7 @@ stages:
   initramfs:
     - name: "Enable systemd-network config files for DHCP"
       only_service_manager: "systemd"
-      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|openSUSE.*"
+      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|openSUSE.*|Hadron.*"
       files:
         - path: /etc/systemd/network/20-dhcp.network
           permissions: 0644
