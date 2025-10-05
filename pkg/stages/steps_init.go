@@ -404,7 +404,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 		{
 			Name:                 "Enable timesyncd service",
 			OnlyIfServiceManager: "systemd",
-			OnlyIfOs:             "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|SLES.*|[O-o]penSUSE.*", // RHEL family has it optinally installed
+			OnlyIfOs:             "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|SLES.*|[O-o]penSUSE.*|Hadron.*", // RHEL family has it optinally installed
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"systemd-timesyncd",
@@ -525,6 +525,18 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 				"rc-update add cgroups sysinit",
 				"rc-update add ntpd boot",
 				"rc-update add crond",
+			},
+		},
+		{
+			Name: "Enable services for Hadron",
+			OnlyIfOs:             "Hadron.*",
+			OnlyIfServiceManager: "systemd",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"sshd",
+					"systemd-networkd",
+					"systemd-resolved",
+				},
 			},
 		},
 	}
