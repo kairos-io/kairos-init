@@ -142,8 +142,8 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model),
 			Commands: []string{
 				l4tScript,
-			}
-		}
+			},
+		},
 	}
 	return stage, nil
 }
