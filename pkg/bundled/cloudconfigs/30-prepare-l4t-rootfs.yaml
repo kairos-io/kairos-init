@@ -1,7 +1,8 @@
-name: "L4T RootFS Prep"
+name: "L4T RootFS Prep for Orin NX"
 stages:
-  init:
+  initramfs.before:
     - name: "Apply NVIDIA binaries"
+      if: '[ -f "/proc/device-tree/model" ] && grep -i "Orin NX" "/proc/device-tree/model"'
       commands:
         - |
           #!/bin/bash
