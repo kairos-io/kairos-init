@@ -1,7 +1,6 @@
 package system
 
 import (
-	"github.com/sanity-io/litter"
 	"os"
 	"runtime"
 	"strings"
@@ -9,6 +8,7 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	sdkTypes "github.com/kairos-io/kairos-sdk/types"
+	"github.com/sanity-io/litter"
 )
 
 // DetectSystem detects the system based on the os-release file
@@ -69,6 +69,9 @@ func DetectSystem(l sdkTypes.KairosLogger) values.System {
 	case values.SLES:
 		s.Distro = values.SLES
 		s.Family = values.SUSEFamily
+	case values.Hadron:
+		s.Distro = values.Hadron
+		s.Family = values.HadronFamily
 	}
 
 	// Match architecture
