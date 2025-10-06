@@ -442,9 +442,13 @@ function setExtraConsole {
     if test $KAIROS_MODEL == "rpi3" -o test $KAIROS_MODEL == "rpi4"; then
         set baseExtraConsole="console=ttyS0,115200"
     fi
-    # nvidia orin
+    # nvidia agx orin
     if test $KAIROS_MODEL == "nvidia-jetson-agx-orin"; then
         set baseExtraConsole="console=ttyTCU0,115200"
+    fi
+    # nvidia orin nx - we set the terga TCU serial console and the ARM PL011 UART
+    if test $KAIROS_MODEL == "nvidia-jetson-orin-nx"; then
+        set baseExtraConsole="console=ttyTCU0,115200 console=ttyAMA0,115200"
     fi
 }
 
