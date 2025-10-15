@@ -262,7 +262,6 @@ var BasePackages = PackageMap{
 				"openssh-server",
 				"open-vm-tools",
 				"os-prober",
-				"patch",
 				"pigz",
 				"pkg-config",
 				"psmisc",
@@ -569,7 +568,6 @@ var GrubPackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				"nethogs",
-				"patch",
 				"shim",
 				"iw",
 			},
