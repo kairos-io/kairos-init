@@ -26,7 +26,7 @@ import (
 // In the case of Trusted boot systems, we dont do anything but remove the initrd files as the initrd is created and
 // signed during the build process
 // If we have fips, we need to add the fips support to the initrd as well
-func GetInitrdStage(sys values.System, logger types.KairosLogger) ([]schema.Stage, error) {
+func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage, error) {
 	if config.ContainsSkipStep(values.InitrdStep) {
 		logger.Logger.Warn().Msg("Skipping initrd generation stage")
 		return []schema.Stage{}, nil
@@ -213,7 +213,7 @@ func getProviderInfo(logger types.KairosLogger) (bus.ProviderInstalledVersionPay
 // For ubuntu + trusted boot we need to download the linux-modules-extra package, save the nvdimm modules
 // and then clean it up so http uki boot works out of the box. By default the nvdimm modules needed are in that package
 // We could just install the package but its a 100+MB  package and we need just 4 or 5 modules.
-func GetWorkaroundsStage(sis values.System, l types.KairosLogger) []schema.Stage {
+func GetWorkaroundsStage(_ values.System, l types.KairosLogger) []schema.Stage {
 	if config.ContainsSkipStep(values.WorkaroundsStep) {
 		l.Logger.Warn().Msg("Skipping workarounds stage")
 		return []schema.Stage{}
@@ -286,7 +286,7 @@ func GetWorkaroundsStage(sis values.System, l types.KairosLogger) []schema.Stage
 // I also removes some packages that are no longer needed, like dracut and dependant packages as once
 // we have build the initramfs we dont need them anymore
 // TODO: Remove package cache for all distros
-func GetCleanupStage(sis values.System, l types.KairosLogger) []schema.Stage {
+func GetCleanupStage(_ values.System, l types.KairosLogger) []schema.Stage {
 	if config.ContainsSkipStep(values.CleanupStep) {
 		l.Logger.Warn().Msg("Skipping cleanup stage")
 		return []schema.Stage{}
@@ -528,7 +528,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name: "Enable services for Hadron",
+			Name:                 "Enable services for Hadron",
 			OnlyIfOs:             "Hadron.*",
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
@@ -681,7 +681,7 @@ func getLatestKernel(l types.KairosLogger) (string, error) {
 		}
 	} else {
 		sort.Sort(semver.Collection(versions))
-		kernelVersion = versions[0].String()
+		kernelVersion = versions[len(versions)-1].String()
 		if kernelVersion == "" {
 			l.Logger.Error().Msgf("Failed to find the latest kernel version")
 			return kernelVersion, fmt.Errorf("failed to find the latest kernel")
