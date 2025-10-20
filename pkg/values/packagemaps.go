@@ -296,7 +296,6 @@ var BasePackages = PackageMap{
 				"htop",
 				"iproute2",
 				"iputils",
-				"issue-generator",
 				"lsscsi",
 				"mdadm",
 				"multipath-tools",
@@ -321,6 +320,20 @@ var BasePackages = PackageMap{
 		ArchAMD64: {
 			Common: {
 				"tpm2*",
+			},
+		},
+	},
+	OpenSUSELeap: {
+		ArchCommon: {
+			Common: {
+				"issue-generator", // Broken on tumbleweed
+			},
+		},
+	},
+	SLES: {
+		ArchCommon: {
+			Common: {
+				"issue-generator", // Broken on tumbleweed
 			},
 		},
 	},
