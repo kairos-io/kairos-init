@@ -121,6 +121,28 @@ stages:
       commands:
         - dbus-uuidgen --ensure  # This makes sure that the machine-id exists and its valid
         - cat /var/lib/dbus/machine-id > /etc/machine-id
+    - if: '[ ! -f "/run/cos/recovery_mode" ]'
+      name: "Ensure persistent hostname"
+      commands:
+        - |
+          if [ ! -e /usr/local/etc/hostname ]; then
+            mkdir -p /usr/local/etc
+            echo kairos-${RANDOM} > /usr/local/etc/hostname
+          fi
+          ln -sf /usr/local/etc/hostname /etc/hostname
+    - if: '[ ! -f "/run/cos/recovery_mode" ]'
+      name: "Ensure persistent hosts file"
+      commands:
+        - |
+          if [ ! -e /usr/local/etc/hosts ]; then
+            mkdir -p /usr/local/etc
+            hostname=$(cat /usr/local/etc/hostname 2>/dev/null || echo localhost)
+            cat > /usr/local/etc/hosts << EOF
+          127.0.0.1 localhost ${hostname}
+          ::1       localhost ${hostname}
+          EOF
+          fi
+          ln -sf /usr/local/etc/hosts /etc/hosts
   fs:
     - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -s /usr/local/etc/machine-id ]'
       only_service_manager: "systemd"
