@@ -207,6 +207,11 @@ func (v *Validator) Validate() error {
 		multi = multierror.Append(multi, err)
 	}
 
+	// Check hostname and hosts configuration
+	if err := v.ValidateHostnameAndHosts(); err != nil {
+		multi = multierror.Append(multi, err)
+	}
+
 	if multi.ErrorOrNil() == nil {
 		v.Log.Logger.Info().Msg("System validation passed")
 	}
@@ -315,6 +320,93 @@ func (v *Validator) ValidateGettyServicesWithPaths(searchPaths []string) error {
 			multi = multierror.Append(multi, fmt.Errorf("[SERVICES] service %s is masked on systemd-based system", service))
 		} else {
 			v.Log.Logger.Info().Str("service", service).Msg("Service exists and is not masked")
+		}
+	}
+
+	return multi.ErrorOrNil()
+}
+
+// ValidateHostnameAndHosts checks hostname and hosts file configuration
+func (v *Validator) ValidateHostnameAndHosts() error {
+	return v.ValidateHostnameAndHostsWithPaths("/usr/local/etc", "/etc")
+}
+
+// ValidateHostnameAndHostsWithPaths checks hostname and hosts file configuration with custom paths
+// This method is used for testing by allowing custom paths
+func (v *Validator) ValidateHostnameAndHostsWithPaths(persistentPath, systemPath string) error {
+	var multi *multierror.Error
+
+	v.Log.Logger.Info().Msg("Checking hostname and hosts configuration")
+
+	// Check if persistent hostname exists
+	persistentHostnamePath := filepath.Join(persistentPath, "hostname")
+	systemHostnamePath := filepath.Join(systemPath, "hostname")
+
+	if _, err := os.Stat(persistentHostnamePath); err != nil {
+		v.Log.Logger.Warn().Str("path", persistentHostnamePath).Msg("[HOSTNAME] Persistent hostname file does not exist")
+		// This is not necessarily an error as it might not have been created yet
+	} else {
+		v.Log.Logger.Info().Str("path", persistentHostnamePath).Msg("[HOSTNAME] Persistent hostname file exists")
+
+		// Check if system hostname is properly linked
+		if target, err := os.Readlink(systemHostnamePath); err == nil {
+			expectedTarget := persistentHostnamePath
+			// Handle relative path case
+			if !filepath.IsAbs(target) {
+				expectedTarget = filepath.Base(persistentHostnamePath)
+				if !strings.HasPrefix(expectedTarget, "/") {
+					expectedTarget = filepath.Join(persistentPath, filepath.Base(persistentHostnamePath))
+				}
+			}
+			
+			if target != expectedTarget && target != filepath.Base(persistentHostnamePath) {
+				multi = multierror.Append(multi, fmt.Errorf("[HOSTNAME] system hostname symlink points to wrong target: %s (expected %s)", target, expectedTarget))
+			} else {
+				v.Log.Logger.Info().Str("target", target).Msg("[HOSTNAME] System hostname properly linked to persistent file")
+			}
+		} else {
+			// Check if it's a regular file instead of symlink
+			if _, err := os.Stat(systemHostnamePath); err == nil {
+				v.Log.Logger.Warn().Str("path", systemHostnamePath).Msg("[HOSTNAME] System hostname exists but is not a symlink to persistent file")
+			} else {
+				v.Log.Logger.Warn().Str("path", systemHostnamePath).Msg("[HOSTNAME] System hostname file does not exist")
+			}
+		}
+	}
+
+	// Check if persistent hosts exists
+	persistentHostsPath := filepath.Join(persistentPath, "hosts")
+	systemHostsPath := filepath.Join(systemPath, "hosts")
+
+	if _, err := os.Stat(persistentHostsPath); err != nil {
+		v.Log.Logger.Warn().Str("path", persistentHostsPath).Msg("[HOSTS] Persistent hosts file does not exist")
+		// This is not necessarily an error as it might not have been created yet
+	} else {
+		v.Log.Logger.Info().Str("path", persistentHostsPath).Msg("[HOSTS] Persistent hosts file exists")
+
+		// Check if system hosts is properly linked
+		if target, err := os.Readlink(systemHostsPath); err == nil {
+			expectedTarget := persistentHostsPath
+			// Handle relative path case
+			if !filepath.IsAbs(target) {
+				expectedTarget = filepath.Base(persistentHostsPath)
+				if !strings.HasPrefix(expectedTarget, "/") {
+					expectedTarget = filepath.Join(persistentPath, filepath.Base(persistentHostsPath))
+				}
+			}
+			
+			if target != expectedTarget && target != filepath.Base(persistentHostsPath) {
+				multi = multierror.Append(multi, fmt.Errorf("[HOSTS] system hosts symlink points to wrong target: %s (expected %s)", target, expectedTarget))
+			} else {
+				v.Log.Logger.Info().Str("target", target).Msg("[HOSTS] System hosts properly linked to persistent file")
+			}
+		} else {
+			// Check if it's a regular file instead of symlink
+			if _, err := os.Stat(systemHostsPath); err == nil {
+				v.Log.Logger.Warn().Str("path", systemHostsPath).Msg("[HOSTS] System hosts exists but is not a symlink to persistent file")
+			} else {
+				v.Log.Logger.Warn().Str("path", systemHostsPath).Msg("[HOSTS] System hosts file does not exist")
+			}
 		}
 	}
 

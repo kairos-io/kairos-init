@@ -388,4 +388,147 @@ var _ = Describe("Validator", func() {
 			GinkgoWriter.Printf("Validation result: %v\n", err)
 		})
 	})
+
+	Describe("ValidateHostnameAndHosts", func() {
+		var (
+			logger      types.KairosLogger
+			validator   *validation.Validator
+			tempDir     string
+			persistentDir string
+			systemDir   string
+		)
+
+		BeforeEach(func() {
+			logger = createTestLogger()
+			validator = &validation.Validator{
+				Log: logger,
+				System: values.System{
+					Family: values.DebianFamily,
+				},
+			}
+
+			var err error
+			tempDir, err = os.MkdirTemp("", "hostname-hosts-test")
+			Expect(err).NotTo(HaveOccurred())
+
+			persistentDir = filepath.Join(tempDir, "usr", "local", "etc")
+			systemDir = filepath.Join(tempDir, "etc")
+
+			err = os.MkdirAll(persistentDir, 0755)
+			Expect(err).NotTo(HaveOccurred())
+			err = os.MkdirAll(systemDir, 0755)
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			if tempDir != "" {
+				os.RemoveAll(tempDir)
+			}
+		})
+
+		Context("when no hostname or hosts files exist", func() {
+			It("should not error and log warnings", func() {
+				err := validator.ValidateHostnameAndHostsWithPaths(persistentDir, systemDir)
+				Expect(err).NotTo(HaveOccurred(), "Should not error when files don't exist")
+			})
+		})
+
+		Context("when persistent hostname exists and is properly linked", func() {
+			BeforeEach(func() {
+				// Create persistent hostname file
+				hostnameContent := "test-kairos-hostname"
+				err := os.WriteFile(filepath.Join(persistentDir, "hostname"), []byte(hostnameContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Create proper symlink
+				err = os.Symlink(filepath.Join(persistentDir, "hostname"), filepath.Join(systemDir, "hostname"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should not error and log success", func() {
+				err := validator.ValidateHostnameAndHostsWithPaths(persistentDir, systemDir)
+				Expect(err).NotTo(HaveOccurred(), "Should not error when hostname is properly configured")
+			})
+		})
+
+		Context("when persistent hosts exists and is properly linked", func() {
+			BeforeEach(func() {
+				// Create persistent hosts file
+				hostsContent := "127.0.0.1 localhost\n::1 localhost\n127.0.0.1 test-hostname\n::1 test-hostname\n"
+				err := os.WriteFile(filepath.Join(persistentDir, "hosts"), []byte(hostsContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Create proper symlink
+				err = os.Symlink(filepath.Join(persistentDir, "hosts"), filepath.Join(systemDir, "hosts"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should not error and log success", func() {
+				err := validator.ValidateHostnameAndHostsWithPaths(persistentDir, systemDir)
+				Expect(err).NotTo(HaveOccurred(), "Should not error when hosts is properly configured")
+			})
+		})
+
+		Context("when hostname symlink points to wrong target", func() {
+			BeforeEach(func() {
+				// Create persistent hostname file
+				hostnameContent := "test-kairos-hostname"
+				err := os.WriteFile(filepath.Join(persistentDir, "hostname"), []byte(hostnameContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Create symlink pointing to wrong target
+				err = os.Symlink("/wrong/path/hostname", filepath.Join(systemDir, "hostname"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should error with wrong symlink target", func() {
+				err := validator.ValidateHostnameAndHostsWithPaths(persistentDir, systemDir)
+				Expect(err).To(HaveOccurred(), "Should error when hostname symlink points to wrong target")
+				Expect(err.Error()).To(ContainSubstring("system hostname symlink points to wrong target"))
+			})
+		})
+
+		Context("when hosts symlink points to wrong target", func() {
+			BeforeEach(func() {
+				// Create persistent hosts file
+				hostsContent := "127.0.0.1 localhost\n"
+				err := os.WriteFile(filepath.Join(persistentDir, "hosts"), []byte(hostsContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Create symlink pointing to wrong target
+				err = os.Symlink("/wrong/path/hosts", filepath.Join(systemDir, "hosts"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should error with wrong symlink target", func() {
+				err := validator.ValidateHostnameAndHostsWithPaths(persistentDir, systemDir)
+				Expect(err).To(HaveOccurred(), "Should error when hosts symlink points to wrong target")
+				Expect(err.Error()).To(ContainSubstring("system hosts symlink points to wrong target"))
+			})
+		})
+
+		Context("when both hostname and hosts are properly configured", func() {
+			BeforeEach(func() {
+				// Create persistent files
+				hostnameContent := "test-kairos-hostname"
+				err := os.WriteFile(filepath.Join(persistentDir, "hostname"), []byte(hostnameContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+
+				hostsContent := "127.0.0.1 localhost\n::1 localhost\n127.0.0.1 test-kairos-hostname\n::1 test-kairos-hostname\n"
+				err = os.WriteFile(filepath.Join(persistentDir, "hosts"), []byte(hostsContent), 0644)
+				Expect(err).NotTo(HaveOccurred())
+
+				// Create proper symlinks
+				err = os.Symlink(filepath.Join(persistentDir, "hostname"), filepath.Join(systemDir, "hostname"))
+				Expect(err).NotTo(HaveOccurred())
+				err = os.Symlink(filepath.Join(persistentDir, "hosts"), filepath.Join(systemDir, "hosts"))
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should not error", func() {
+				err := validator.ValidateHostnameAndHostsWithPaths(persistentDir, systemDir)
+				Expect(err).NotTo(HaveOccurred(), "Should not error when both hostname and hosts are properly configured")
+			})
+		})
+	})
 })
