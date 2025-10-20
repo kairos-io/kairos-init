@@ -136,10 +136,13 @@ stages:
         - |
           if [ ! -e /usr/local/etc/hosts ]; then
             mkdir -p /usr/local/etc
+            # Wait for hostname file to be available and get the hostname
             hostname=$(cat /usr/local/etc/hostname 2>/dev/null || echo localhost)
             cat > /usr/local/etc/hosts << EOF
-          127.0.0.1 localhost ${hostname}
-          ::1       localhost ${hostname}
+          127.0.0.1 localhost
+          ::1       localhost
+          127.0.0.1 ${hostname}
+          ::1       ${hostname}
           EOF
           fi
           ln -sf /usr/local/etc/hosts /etc/hosts
