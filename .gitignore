@@ -2,3 +2,5 @@
 dist/
 # binaries dir, not tracked, only on build
 pkg/bundled/binaries/
+# Don't track compiled binary
+kairos-init
