@@ -211,7 +211,7 @@ check() {
 
 # The function depends() should echo all other dracut module names the module depends on
 depends() {
-    echo rootfs-block dm fs-lib lvm
+    echo rootfs-block dm fs-lib lvm network
     return 0
 }
 
@@ -498,14 +498,14 @@ Refer to https://kairos.io for documentation.
 `
 
 // Issue /etc/issue.d/01-KAIROS is the issue that is displayed when the user logs in
-const Issue = `                                                          
-    _/    _/            _/                                
-   _/  _/      _/_/_/      _/  _/_/    _/_/      _/_/_/   
-  _/_/      _/    _/  _/  _/_/      _/    _/  _/_/        
- _/  _/    _/    _/  _/  _/        _/    _/      _/_/     
-_/    _/    _/_/_/  _/  _/          _/_/    _/_/_/        
-                                                          
-                         
+const Issue = `
+    _/    _/            _/
+   _/  _/      _/_/_/      _/  _/_/    _/_/      _/_/_/
+  _/_/      _/    _/  _/  _/_/      _/    _/  _/_/
+ _/  _/    _/    _/  _/  _/        _/    _/      _/_/
+_/    _/    _/_/_/  _/  _/          _/_/    _/_/_/
+
+
 `
 
 // Branding starts here
@@ -553,8 +553,8 @@ Starting in 60 seconds...
 
 const RecoveryText = `Welcome to kairos recovery mode!
 P2P device recovery mode is starting.
-A QR code with a generated network token will be displayed below that can be used to connect 
-over with "kairos bridge --qr-code-image /path/to/image.jpg" from another machine, 
+A QR code with a generated network token will be displayed below that can be used to connect
+over with "kairos bridge --qr-code-image /path/to/image.jpg" from another machine,
 further instruction will appear on the bridge CLI to connect over via SSH.
 IF the qrcode is not displaying correctly,
 try booting with another vga option from the boot cmdline (e.g. vga=791).
