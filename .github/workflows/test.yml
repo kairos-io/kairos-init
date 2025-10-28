@@ -76,3 +76,4 @@ jobs:
             VERSION=${{ env.VERSION }}
             FIPS=${{ matrix.fips || false }}
             TRUSTED_BOOT=${{ matrix.trusted_boot || 'false' }}
+            MODEL=${{ matrix.model || 'generic' }}
