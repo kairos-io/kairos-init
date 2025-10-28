@@ -41,6 +41,14 @@ jobs:
             base_image: "fedora:41"
             trusted_boot: "true"
             fips: false
+          - platform: "arm64"
+            base_image: "ubuntu:22.04"
+            model: "agx-orin"
+            fips: false
+          - platform: "arm64"
+            base_image: "ubuntu:22.04"
+            model: "orin-nx"
+            fips: false
     steps:
       - uses: actions/checkout@v5
         with:
