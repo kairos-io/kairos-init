@@ -746,6 +746,135 @@ var KernelPackagesModels = ModelPackageMap{
 	},
 }
 
+// NvidiaPackages is a map of packages to install for NVIDIA Jetson devices
+// These packages are specific to NVIDIA L4T and CUDA
+var NvidiaPackages = ModelPackageMap{
+	Ubuntu: {
+		ArchARM64: {
+			AgxOrin: {
+				Common: {
+					// NVIDIA L4T packages for AGX Orin
+					"nvidia-l4t-3d-core",
+					"nvidia-l4t-apt-source",
+					"nvidia-l4t-bootloader",
+					"nvidia-l4t-camera",
+					"nvidia-l4t-configs",
+					"nvidia-l4t-core",
+					"nvidia-l4t-cuda",
+					"nvidia-l4t-display-kernel",
+					"nvidia-l4t-firmware",
+					"nvidia-l4t-gbm",
+					"nvidia-l4t-graphics-demos",
+					"nvidia-l4t-gstreamer",
+					"nvidia-l4t-init",
+					"nvidia-l4t-initrd",
+					"nvidia-l4t-jetson-io",
+					"nvidia-l4t-jetsonpower-gui-tools",
+					"nvidia-l4t-kernel-dtbs",
+					"nvidia-l4t-kernel-headers",
+					"nvidia-l4t-kernel-oot-modules",
+					"nvidia-l4t-kernel",
+					"nvidia-l4t-multimedia-utils",
+					"nvidia-l4t-multimedia",
+					"nvidia-l4t-nvfancontrol",
+					"nvidia-l4t-nvpmodel-gui-tools",
+					"nvidia-l4t-nvpmodel",
+					"nvidia-l4t-nvsci",
+					"nvidia-l4t-oem-config",
+					"nvidia-l4t-openwfd",
+					"nvidia-l4t-optee",
+					"nvidia-l4t-pva",
+					"nvidia-l4t-tools",
+					"nvidia-l4t-vulkan-sc-dev",
+					"nvidia-l4t-vulkan-sc-samples",
+					"nvidia-l4t-vulkan-sc-sdk",
+					"nvidia-l4t-vulkan-sc",
+					"nvidia-l4t-wayland",
+					"nvidia-l4t-weston",
+					"nvidia-l4t-x11",
+					"nvidia-l4t-xusb-firmware",
+					// CUDA packages
+					"cuda-cudart-12-6",
+					"cuda-cudart-dev-12-6",
+					"cuda-nvcc-12-6",
+					"cuda-nvdisasm-12-6",
+					"cuda-nvml-dev-12-6",
+					"cuda-nvprune-12-6",
+					"cuda-nvrtc-12-6",
+					"cuda-nvrtc-dev-12-6",
+					"cuda-nvtx-12-6",
+					"libcublas-12-6",
+					"libcublas-dev-12-6",
+					// Jetson GPIO
+					"jetson-gpio-common",
+					"python3-jetson-gpio",
+					// OpenCV
+					"libopencv-dev",
+				},
+			},
+			OrinNX: {
+				Common: {
+					// NVIDIA L4T packages for Orin NX
+					"nvidia-l4t-3d-core",
+					"nvidia-l4t-bootloader",
+					"nvidia-l4t-apt-source",
+					"nvidia-l4t-camera",
+					"nvidia-l4t-configs",
+					"nvidia-l4t-core",
+					"nvidia-l4t-cuda-utils",
+					"nvidia-l4t-cuda",
+					"nvidia-l4t-display-kernel",
+					"nvidia-l4t-firmware",
+					"nvidia-l4t-gbm",
+					"nvidia-l4t-init",
+					"nvidia-l4t-initrd",
+					"nvidia-l4t-jetson-io",
+					"nvidia-l4t-kernel-dtbs",
+					"nvidia-l4t-kernel-headers",
+					"nvidia-l4t-kernel-oot-headers",
+					"nvidia-l4t-kernel-oot-modules",
+					"nvidia-l4t-kernel",
+					"nvidia-l4t-nvfancontrol",
+					"nvidia-l4t-nvml",
+					"nvidia-l4t-nvpmodel-gui-tools",
+					"nvidia-l4t-nvpmodel",
+					"nvidia-l4t-nvsci",
+					"nvidia-l4t-oem-config",
+					"nvidia-l4t-openwfd",
+					"nvidia-l4t-optee",
+					"nvidia-l4t-pva",
+					"nvidia-l4t-tools",
+					"nvidia-l4t-vulkan-sc-dev",
+					"nvidia-l4t-vulkan-sc-sdk",
+					"nvidia-l4t-vulkan-sc",
+					"nvidia-l4t-xusb-firmware",
+					// CUDA packages
+					"cuda-cudart-12-6",
+					"cuda-cudart-dev-12-6",
+					"cuda-nvcc-12-6",
+					"cuda-nvdisasm-12-6",
+					"cuda-nvml-dev-12-6",
+					"cuda-nvprune-12-6",
+					"cuda-nvrtc-12-6",
+					"cuda-nvrtc-dev-12-6",
+					"cuda-nvtx-12-6",
+					"libcublas-12-6",
+					"libcublas-dev-12-6",
+					// Jetson GPIO
+					"jetson-gpio-common",
+					"python-jetson-gpio",
+					"python3-jetson-gpio",
+					// NVIDIA Container Toolkit
+					"nvidia-container-toolkit-base",
+					"nvidia-container-toolkit",
+					// OpenCV
+					"libopencv-dev",
+				},
+			},
+		},
+	},
+}
+
 // PackageListToTemplate takes a list of packages and a map of parameters to replace in the package name
 // and returns a list of packages with the parameters replaced.
 func PackageListToTemplate(packages []string, params map[string]string, l sdkTypes.KairosLogger) ([]string, error) {
@@ -797,6 +926,17 @@ func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 	}
 
 	mergedPkgs = append(mergedPkgs, FilterPackagesOnConstraint(s, l, filteredPackages)...)
+
+	// Add NVIDIA-specific packages if the model is a NVIDIA Jetson device
+	if config.DefaultConfig.Model == AgxOrin.String() || config.DefaultConfig.Model == OrinNX.String() {
+		nvidiaPackages := []VersionMap{
+			NvidiaPackages[s.Distro][ArchCommon][Model(config.DefaultConfig.Model)],
+			NvidiaPackages[s.Family][ArchCommon][Model(config.DefaultConfig.Model)],
+			NvidiaPackages[s.Distro][s.Arch][Model(config.DefaultConfig.Model)],
+			NvidiaPackages[s.Family][s.Arch][Model(config.DefaultConfig.Model)],
+		}
+		mergedPkgs = append(mergedPkgs, FilterPackagesOnConstraint(s, l, nvidiaPackages)...)
+	}
 
 	return mergedPkgs, nil
 }
