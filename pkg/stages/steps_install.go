@@ -146,6 +146,8 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 			Name: "Setup NVIDIA L4T repositories",
 			If:   fmt.Sprintf(`[ "%s" = "agx-orin" ] || [ "%s" = "orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
 			Commands: []string{
+				// Clean up existing NVIDIA repository files
+				"rm -rf /etc/apt/sources.list.d/nvidia-l4t-apt-source.list",
 				// Create NVIDIA L4T packages directory
 				"mkdir -p /opt/nvidia/l4t-packages",
 				"touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall",
