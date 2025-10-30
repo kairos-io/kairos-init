@@ -93,23 +93,23 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 
 	// Prepare NVIDIA L4T extraction script
 	l4tScript := fmt.Sprintf(`#!/bin/bash
-	set -e
+		set -e
 
-	NVIDIA_RELEASE="%s"
-	NVIDIA_VERSION="%s"
-	NVIDIA_ARCHIVE_URI="https://developer.nvidia.com/downloads/embedded/l4t/r${NVIDIA_RELEASE}_release_v${NVIDIA_VERSION}/release"
-	TEGRA_ARCHIVE="jetson_linux_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
-	ROOTFS_ARCHIVE="tegra_linux_sample-root-filesystem_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
-	TEGRA_DIR="Linux_for_Tegra"
+		NVIDIA_RELEASE="%s"
+		NVIDIA_VERSION="%s"
+		NVIDIA_ARCHIVE_URI="https://developer.nvidia.com/downloads/embedded/l4t/r${NVIDIA_RELEASE}_release_v${NVIDIA_VERSION}/release"
+		TEGRA_ARCHIVE="jetson_linux_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
+		ROOTFS_ARCHIVE="tegra_linux_sample-root-filesystem_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
+		TEGRA_DIR="Linux_for_Tegra"
 
-	echo "Downloading NVIDIA L4T archives..."
-	wget "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" -O "$TEGRA_ARCHIVE"
-	wget "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" -O "$ROOTFS_ARCHIVE"
+		echo "Downloading NVIDIA L4T archives..."
+		wget "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" -O "$TEGRA_ARCHIVE"
+		wget "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" -O "$ROOTFS_ARCHIVE"
 
-	echo "Extracting Jetson Linux..."
-	tar -xjf "$TEGRA_ARCHIVE"
-	tar -xjf "$ROOTFS_ARCHIVE" -C "$TEGRA_DIR/rootfs"
-	`, nvidiaRelease, nvidiaVersion)
+		echo "Extracting Jetson Linux..."
+		tar -xjf "$TEGRA_ARCHIVE"
+		tar -xjf "$ROOTFS_ARCHIVE" -C "$TEGRA_DIR/rootfs"
+		`, nvidiaRelease, nvidiaVersion)
 
 	stage := []schema.Stage{
 		{
