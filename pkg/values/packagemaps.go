@@ -62,6 +62,18 @@ type VersionMap map[string][]string
 var BasePackagesModels = ModelPackageMap{
 	Ubuntu: {
 		ArchARM64: {
+			AgxOrin: {
+				Common: {
+					"bridge-utils",
+					"efibootmgr",
+					"fuse",
+					"git",
+					"grub2-common",
+					"libssl-dev",
+					"policykit-1",
+					"vim",
+				},
+			},
 			OrinNX: {
 				Common: {
 					"bc",
