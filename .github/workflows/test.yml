@@ -43,11 +43,11 @@ jobs:
             fips: false
           - platform: "arm64"
             base_image: "ubuntu:22.04"
-            model: "agx-orin"
+            model: "nvidia-jetson-agx-orin"
             fips: false
           - platform: "arm64"
             base_image: "ubuntu:22.04"
-            model: "orin-nx"
+            model: "nvidia-jetson-orin-nx"
             fips: false
     steps:
       - uses: actions/checkout@v5
