@@ -866,7 +866,6 @@ var KernelPackagesModels = ModelPackageMap{
 	},
 }
 
-
 // PackageListToTemplate takes a list of packages and a map of parameters to replace in the package name
 // and returns a list of packages with the parameters replaced.
 func PackageListToTemplate(packages []string, params map[string]string, l sdkTypes.KairosLogger) ([]string, error) {
@@ -926,13 +925,6 @@ func GetKernelPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 	// Get the kernel packages for the system
 	var filteredPackages []VersionMap
 
-	// For NVIDIA Jetson devices, always use ARM64 architecture regardless of detected system arch
-	// This handles cross-compilation scenarios where build host is AMD64 but target is ARM64
-	targetArch := s.Arch
-	if config.DefaultConfig.Model == AgxOrin.String() || config.DefaultConfig.Model == OrinNX.String() {
-		targetArch = ArchARM64
-	}
-
 	if config.DefaultConfig.TrustedBoot {
 		// Kernel packages by model
 		if config.DefaultConfig.Model == Generic.String() {
@@ -945,8 +937,8 @@ func GetKernelPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 			// TODO: No support for trusted boot on models yet, so this part is probably useless for now?
 			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][ArchCommon][Model(config.DefaultConfig.Model)])
 			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][ArchCommon][Model(config.DefaultConfig.Model)])
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][targetArch][Model(config.DefaultConfig.Model)])
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][targetArch][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][s.Arch][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][s.Arch][Model(config.DefaultConfig.Model)])
 		}
 	} else {
 		if config.DefaultConfig.Model == Generic.String() {
@@ -958,8 +950,8 @@ func GetKernelPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 			// Get specific packages for the model
 			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][ArchCommon][Model(config.DefaultConfig.Model)])
 			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][ArchCommon][Model(config.DefaultConfig.Model)])
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][targetArch][Model(config.DefaultConfig.Model)])
-			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][targetArch][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][s.Arch][Model(config.DefaultConfig.Model)])
+			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Family][s.Arch][Model(config.DefaultConfig.Model)])
 		}
 	}
 	// Return filtered packages
