@@ -191,14 +191,14 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		},
 		{
 			Name: "Setup OpenCV symlink for NVIDIA devices",
-			If:   fmt.Sprintf(`[ "%s" = "agx-orin" ] || [ "%s" = "orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
 			Commands: []string{
 				"ln -s /usr/include/opencv4/opencv2 /usr/include/opencv2",
 			},
 		},
 		{
 			Name: "Configure CUDA paths for NVIDIA devices",
-			If:   fmt.Sprintf(`[ "%s" = "agx-orin" ] || [ "%s" = "orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
 			Commands: []string{
 				// Move CUDA out of the way to /opt so kairos can occupy /usr/local without workarounds
 				"update-alternatives --remove-all cuda || true",
@@ -210,7 +210,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		},
 		{
 			Name: "Configure NVIDIA L4T USB device mode for NVIDIA devices",
-			If:   fmt.Sprintf(`[ "%s" = "agx-orin" ] || [ "%s" = "orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
 			Commands: []string{
 				// Change mountpoint for l4t usb device mode, as rootfs is mounted ro
 				// /srv/data is made through cloud-config
@@ -219,7 +219,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		},
 		{
 			Name: "Disable ISCSI for NVIDIA devices",
-			If:   fmt.Sprintf(`[ "%s" = "agx-orin" ] || [ "%s" = "orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
 			Files: []schema.File{
 				{
 					Path:    "/etc/dracut.conf.d/iscsi.conf",
@@ -229,7 +229,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		},
 		{
 			Name: "Disable ISCSI services for NVIDIA devices",
-			If:   fmt.Sprintf(`[ "%s" = "agx-orin" ] || [ "%s" = "orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
 			Commands: []string{
 				// iscsid causes delays on the login shell, and we don't need it, so we'll disable it
 				"systemctl disable iscsi open-iscsi iscsid.socket || true",
