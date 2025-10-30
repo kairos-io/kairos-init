@@ -91,7 +91,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		boardModel = "t234"
 	}
 
-		// Prepare NVIDIA L4T extraction script
+	// Prepare NVIDIA L4T extraction script
 	l4tScript := fmt.Sprintf(`#!/bin/bash
 	set -e
 
@@ -171,7 +171,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 		},
 		{
 			Name: "Setup NVIDIA L4T repositories",
-			If:   fmt.Sprintf(`[ "%s" = "agx-orin" ] || [ "%s" = "orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
 			Commands: []string{
 				// Clean up existing NVIDIA repository files
 				"rm -rf /etc/apt/sources.list.d/nvidia-l4t-apt-source.list",

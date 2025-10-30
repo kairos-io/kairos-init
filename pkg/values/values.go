@@ -39,7 +39,7 @@ const (
 	OpenSUSELeap       Distro = "opensuse-leap"
 	OpenSUSETumbleweed Distro = "opensuse-tumbleweed"
 	SLES               Distro = "sles"
-	Hadron            Distro = "hadron"
+	Hadron             Distro = "hadron"
 )
 
 type Family string
@@ -56,7 +56,7 @@ const (
 	ArchFamily    Family = "arch"
 	AlpineFamily  Family = "alpine"
 	SUSEFamily    Family = "suse"
-	HadronFamily Family = "hadron"
+	HadronFamily  Family = "hadron"
 )
 
 type Model string              // Model is the type of the system
@@ -66,8 +66,8 @@ const (
 	Generic Model = "generic"
 	Rpi3    Model = "rpi3"
 	Rpi4    Model = "rpi4"
-	AgxOrin Model = "agx-orin"
-	OrinNX  Model = "orin-nx"
+	AgxOrin Model = "nvidia-jetson-agx-orin"
+	OrinNX  Model = "nvidia-jetson-orin-nx"
 )
 
 type System struct {
