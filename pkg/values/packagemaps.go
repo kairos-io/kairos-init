@@ -41,7 +41,6 @@ var CommonPackages = []string{
 	"jq",         // No idea why we need it, check if we can drop it?
 	"dosfstools", // For the fat32 partition on EFI systems
 	"e2fsprogs",  // mkfs support for ext2/3/4
-	"parted",     // Partitioning support, check if we need it anymore
 	"logrotate",  // Log rotation support
 }
 
@@ -65,11 +64,10 @@ var ImmucorePackages = PackageMap{
 	DebianFamily: {
 		ArchCommon: {
 			Common: {
-				"dracut",            // To build the initrd
-				"dracut-network",    // Network-legacy support for dracut
-				"isc-dhcp-common",   // Network-legacy support for dracut, basic tools
-				"isc-dhcp-client",   // Network-legacy support for dracut, basic tools
-				"cloud-guest-utils", // This brings growpart, so we can resize the partitions
+				"dracut",          // To build the initrd
+				"dracut-network",  // Network-legacy support for dracut
+				"isc-dhcp-common", // Network-legacy support for dracut, basic tools
+				"isc-dhcp-client", // Network-legacy support for dracut, basic tools
 			},
 		},
 	},
@@ -290,7 +288,6 @@ var BasePackages = PackageMap{
 				"device-mapper",
 				"fail2ban", // Basic security tool
 				"findutils",
-				"growpart",
 				"gptfdisk",
 				"haveged",
 				"htop",
@@ -351,7 +348,6 @@ var BasePackages = PackageMap{
 				"bash",
 				"bash-completion",
 				"blkid",
-				"cloud-utils-growpart",
 				"bonding",
 				"bridge",
 				"busybox-openrc",
@@ -428,7 +424,6 @@ var BasePackages = PackageMap{
 				"gdisk",                   // Yip requires it for partitioning, maybe BasePackages
 				"audit",                   // For audit support, check if needed?
 				"cracklib-dicts",          // Password dictionary support
-				"cloud-utils-growpart",    // grow partition use. Check if yip still needs it?
 				"device-mapper",           // Device mapper support, needed for lvm and cryptsetup
 				"device-mapper-multipath", // For multipath support, needed for dracut
 				"iproute",                 // Basic tool for networking
@@ -467,10 +462,8 @@ var BasePackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				// TODO: Check if we need all of these packages, some of them are probably not needed or can go into the family?
-				"fdisk", // Yip requires it for partitioning
 				"conntrack",
-				"console-data",      // Console font support
-				"cloud-guest-utils", // Yip requires it, this brings growpart, so we can resize the partitions
+				"console-data", // Console font support
 				"gettext",
 				"systemd-container",      // Not sure if needed?
 				"ubuntu-advantage-tools", // For ubuntu advantage support, enablement of ubuntu services
