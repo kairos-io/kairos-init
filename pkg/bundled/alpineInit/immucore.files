@@ -18,10 +18,7 @@
 /usr/bin/kairos-agent
 /usr/bin/rsync
 /usr/bin/sgdisk
-/usr/bin/growpart
 /usr/bin/dbus-uuidgen
 /usr/sbin/multipath
-/usr/sbin/parted
-/usr/sbin/partprobe
 /usr/sbin/resize2fs
 /usr/sbin/xfs_growfs
