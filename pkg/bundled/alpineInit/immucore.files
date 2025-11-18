@@ -9,7 +9,6 @@
 /sbin/e2fsck
 /sbin/openrc
 /sbin/openrc-run
-/sbin/mkfs.*
 /etc/udev/*
 /lib/udev/*
 /usr/lib/udev/*
@@ -17,8 +16,5 @@
 /usr/bin/immucore
 /usr/bin/kairos-agent
 /usr/bin/rsync
-/usr/bin/sgdisk
 /usr/bin/dbus-uuidgen
 /usr/sbin/multipath
-/usr/sbin/resize2fs
-/usr/sbin/xfs_growfs

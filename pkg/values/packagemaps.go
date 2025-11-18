@@ -234,7 +234,6 @@ var BasePackages = PackageMap{
 				"ethtool",
 				"fuse3",
 				"fail2ban", // Basic security tool
-				"gdisk",
 				"gnupg",
 				"gnupg1-l10n",
 				"haveged",
@@ -288,7 +287,6 @@ var BasePackages = PackageMap{
 				"device-mapper",
 				"fail2ban", // Basic security tool
 				"findutils",
-				"gptfdisk",
 				"haveged",
 				"htop",
 				"iproute2",
@@ -402,7 +400,6 @@ var BasePackages = PackageMap{
 				"procps",
 				"qemu-guest-agent",
 				"rbd-nbd",
-				"sgdisk",
 				"smartmontools",
 				"squashfs-tools",
 				"strace",
@@ -421,7 +418,6 @@ var BasePackages = PackageMap{
 	RedHatFamily: {
 		ArchCommon: {
 			Common: {
-				"gdisk",                   // Yip requires it for partitioning, maybe BasePackages
 				"audit",                   // For audit support, check if needed?
 				"cracklib-dicts",          // Password dictionary support
 				"device-mapper",           // Device mapper support, needed for lvm and cryptsetup
