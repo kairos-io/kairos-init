@@ -240,7 +240,7 @@ install() {
 
     inst_check_multiple immucore kairos-agent
     # add utils used by yip stages
-    inst_check_multiple partprobe sync udevadm parted mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat mkfs.fat blkid lsblk e2fsck resize2fs mount umount sgdisk rsync cryptsetup growpart sfdisk gawk awk
+    inst_check_multiple sync udevadm blkid lsblk e2fsck mount umount rsync cryptsetup gawk awk
 
     # Install libraries needed by gawk
     inst_libdir_file "libsigsegv.so*"
