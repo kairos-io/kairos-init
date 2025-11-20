@@ -1,6 +1,6 @@
 # Variables
-AGENT_VERSION := v2.25.2
-IMMUCORE_VERSION := v0.11.4
+AGENT_VERSION := v2.26.0-beta3
+IMMUCORE_VERSION := v0.12.0-beta3
 KCRYPT_DISCOVERY_CHALLENGER_VERSION := v0.11.4
 PROVIDER_KAIROS_VERSION := v2.14.0
 EDGEVPN_VERSION := v0.31.1
@@ -73,8 +73,8 @@ $(OUTPUT_DIR_FIPS)/%-fips:
 compress:
 	@if [ -z "$(SKIP_UPX)" ]; then \
 		echo "Running upx compress..."; \
-		upx -q -5 $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn ); \
-		upx -q -5 $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); \
+		upx -q --best --lzma $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn ); \
+		upx -q --best --lzma $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); \
 	else \
 		echo "Skipping upx compression as SKIP_UPX is set"; \
 	fi
