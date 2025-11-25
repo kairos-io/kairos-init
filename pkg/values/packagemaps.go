@@ -306,6 +306,7 @@ var BasePackages = PackageMap{
 				"strace",
 				"systemd",
 				"systemd-networkd",
+				"systemd-resolved",
 				"timezone",
 				"tmux",
 				"vim",
