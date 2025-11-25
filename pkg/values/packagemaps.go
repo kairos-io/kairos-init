@@ -333,13 +333,6 @@ var BasePackages = PackageMap{
 			},
 		},
 	},
-	OpenSUSETumbleweed: {
-		ArchCommon: {
-			Common: {
-				"systemd-resolved",
-			},
-		},
-	},
 	AlpineFamily: {
 		ArchCommon: {
 			Common: {
