@@ -305,7 +305,7 @@ var BasePackages = PackageMap{
 				"qemu-guest-agent", // TODO: Move this to generic model?
 				"strace",
 				"systemd",
-				"systemd-network",
+				"systemd-networkd",
 				"timezone",
 				"tmux",
 				"vim",
