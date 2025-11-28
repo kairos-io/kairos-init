@@ -4,7 +4,7 @@ go 1.25.0
 
 require (
 	github.com/hashicorp/go-multierror v1.1.1
-	github.com/hashicorp/go-version v1.7.0
+	github.com/hashicorp/go-version v1.8.0
 	github.com/joho/godotenv v1.5.1
 	github.com/kairos-io/kairos-sdk v0.13.0
 	github.com/mudler/go-pluggable v0.0.0-20230126220627-7710299a0ae5
