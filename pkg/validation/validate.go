@@ -12,7 +12,7 @@ import (
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/kairos-io/kairos-init/pkg/values"
-	"github.com/kairos-io/kairos-sdk/types"
+	"github.com/kairos-io/kairos-sdk/types/logger"
 )
 
 // Default systemd search paths in order of precedence
@@ -24,11 +24,11 @@ var defaultSystemdSearchPaths = []string{
 }
 
 type Validator struct {
-	Log    types.KairosLogger
+	Log    logger.KairosLogger
 	System values.System
 }
 
-func NewValidator(logger types.KairosLogger) *Validator {
+func NewValidator(logger logger.KairosLogger) *Validator {
 	sis := system.DetectSystem(logger)
 	return &Validator{Log: logger, System: sis}
 }

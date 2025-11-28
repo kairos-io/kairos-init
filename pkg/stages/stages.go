@@ -4,7 +4,7 @@ import (
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/kairos-io/kairos-init/pkg/values"
-	"github.com/kairos-io/kairos-sdk/types"
+	"github.com/kairos-io/kairos-sdk/types/logger"
 	"github.com/mudler/yip/pkg/console"
 	"github.com/mudler/yip/pkg/executor"
 	"github.com/mudler/yip/pkg/schema"
@@ -12,7 +12,7 @@ import (
 )
 
 // RunAllStages Runs all the stages in the correct order
-func RunAllStages(logger types.KairosLogger) (schema.YipConfig, error) {
+func RunAllStages(logger logger.KairosLogger) (schema.YipConfig, error) {
 	fullYipConfig := schema.YipConfig{Stages: map[string][]schema.Stage{}}
 	installStage, err := RunInstallStage(logger)
 	if err != nil {
@@ -42,7 +42,7 @@ func RunAllStages(logger types.KairosLogger) (schema.YipConfig, error) {
 // RunInstallStage Runs the install stage
 // This is good if we are doing the init in layers as this will allow us to run the install stage and cache that then run
 // the init stage later so we can cache the install stage which is usually the longest
-func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
+func RunInstallStage(logger logger.KairosLogger) (schema.YipConfig, error) {
 	if config.ContainsSkipStep(values.InstallStage) {
 		logger.Logger.Warn().Msg("Skipping install stage as per configuration")
 		return schema.YipConfig{Stages: map[string][]schema.Stage{}}, nil
@@ -137,7 +137,7 @@ func RunInstallStage(logger types.KairosLogger) (schema.YipConfig, error) {
 // RunInitStage Runs the init stage
 // This is good if we are doing the init in layers as this will allow us to run the install stage and cache that then run
 // the init stage later so we can cache the install stage which is usually the longest
-func RunInitStage(logger types.KairosLogger) (schema.YipConfig, error) {
+func RunInitStage(logger logger.KairosLogger) (schema.YipConfig, error) {
 	if config.ContainsSkipStep(values.InitStage) {
 		logger.Logger.Warn().Msg("Skipping init stage as per configuration")
 		return schema.YipConfig{Stages: map[string][]schema.Stage{}}, nil
