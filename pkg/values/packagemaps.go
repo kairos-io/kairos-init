@@ -3,13 +3,11 @@ package values
 import (
 	"bytes"
 	"strings"
-
-	"github.com/kairos-io/kairos-init/pkg/config"
-
 	"text/template"
 
 	semver "github.com/hashicorp/go-version"
-	sdkTypes "github.com/kairos-io/kairos-sdk/types"
+	"github.com/kairos-io/kairos-init/pkg/config"
+	"github.com/kairos-io/kairos-sdk/types/logger"
 )
 
 // packagemaps is a map of packages to install for each distro.
@@ -731,7 +729,7 @@ var KernelPackagesModels = ModelPackageMap{
 
 // PackageListToTemplate takes a list of packages and a map of parameters to replace in the package name
 // and returns a list of packages with the parameters replaced.
-func PackageListToTemplate(packages []string, params map[string]string, l sdkTypes.KairosLogger) ([]string, error) {
+func PackageListToTemplate(packages []string, params map[string]string, l logger.KairosLogger) ([]string, error) {
 	var finalPackages []string
 	for _, pkg := range packages {
 		var result bytes.Buffer
@@ -750,7 +748,7 @@ func PackageListToTemplate(packages []string, params map[string]string, l sdkTyp
 	return finalPackages, nil
 }
 
-func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
+func GetPackages(s System, l logger.KairosLogger) ([]string, error) {
 	mergedPkgs := CommonPackages
 
 	// Go over all packages maps
@@ -784,7 +782,7 @@ func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 	return mergedPkgs, nil
 }
 
-func GetKernelPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
+func GetKernelPackages(s System, l logger.KairosLogger) ([]string, error) {
 	// Get the kernel packages for the system
 	var filteredPackages []VersionMap
 
@@ -822,7 +820,7 @@ func GetKernelPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 }
 
 // FilterPackagesOnConstraint filters the packages based on the system version and the constraints in the package map
-func FilterPackagesOnConstraint(s System, l sdkTypes.KairosLogger, pkgsToFilter []VersionMap) []string {
+func FilterPackagesOnConstraint(s System, l logger.KairosLogger, pkgsToFilter []VersionMap) []string {
 	// Go over each list of packages
 	var pkgs []string
 	systemVersion, err := semver.NewVersion(s.Version)

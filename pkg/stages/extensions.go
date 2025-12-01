@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/kairos-io/kairos-init/pkg/config"
-	"github.com/kairos-io/kairos-sdk/types"
+	"github.com/kairos-io/kairos-sdk/types/logger"
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/sanity-io/litter"
 	"github.com/twpayne/go-vfs/v5"
@@ -13,7 +13,7 @@ import (
 
 // GetStageExtensions returns the expansions for a given stage
 // It loads the extensions from a dir in the filesystem, loads all files and only selects the proper stage to be returned
-func GetStageExtensions(stage string, logger types.KairosLogger) []schema.Stage {
+func GetStageExtensions(stage string, logger logger.KairosLogger) []schema.Stage {
 	var data []schema.Stage
 	// If extensions are not enabled, return empty
 	if !config.DefaultConfig.Extensions {

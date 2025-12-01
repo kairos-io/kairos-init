@@ -14,7 +14,7 @@ import (
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/bus"
-	"github.com/kairos-io/kairos-sdk/types"
+	"github.com/kairos-io/kairos-sdk/types/logger"
 	"github.com/mudler/go-pluggable"
 	"github.com/mudler/yip/pkg/schema"
 )
@@ -26,7 +26,7 @@ import (
 // In the case of Trusted boot systems, we dont do anything but remove the initrd files as the initrd is created and
 // signed during the build process
 // If we have fips, we need to add the fips support to the initrd as well
-func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage, error) {
+func GetInitrdStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage, error) {
 	if config.ContainsSkipStep(values.InitrdStep) {
 		logger.Logger.Warn().Msg("Skipping initrd generation stage")
 		return []schema.Stage{}, nil
@@ -83,7 +83,7 @@ func GetInitrdStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 // This file is very important as severals other pieces of Kairos refer to it.
 // For example, for upgrading the version its taken from here
 // During boot, grub checks this file to know things about the system and enable or disable stuff, like console for rpi images
-func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.Stage {
+func GetKairosReleaseStage(sis values.System, log logger.KairosLogger) []schema.Stage {
 	if config.ContainsSkipStep(values.KairosReleaseStep) {
 		log.Logger.Warn().Msg("Skipping /etc/kairos-release generation stage")
 		return []schema.Stage{}
@@ -171,7 +171,7 @@ func GetKairosReleaseStage(sis values.System, log types.KairosLogger) []schema.S
 	}
 }
 
-func getProviderInfo(logger types.KairosLogger) (bus.ProviderInstalledVersionPayload, error) {
+func getProviderInfo(logger logger.KairosLogger) (bus.ProviderInstalledVersionPayload, error) {
 	logger.Logger.Info().Msg("Triggering provider info event")
 	versionInfo := bus.ProviderInstalledVersionPayload{}
 	manager := bus.NewBus(bus.InitProviderInfo)
@@ -213,7 +213,7 @@ func getProviderInfo(logger types.KairosLogger) (bus.ProviderInstalledVersionPay
 // For ubuntu + trusted boot we need to download the linux-modules-extra package, save the nvdimm modules
 // and then clean it up so http uki boot works out of the box. By default the nvdimm modules needed are in that package
 // We could just install the package but its a 100+MB  package and we need just 4 or 5 modules.
-func GetWorkaroundsStage(_ values.System, l types.KairosLogger) []schema.Stage {
+func GetWorkaroundsStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 	if config.ContainsSkipStep(values.WorkaroundsStep) {
 		l.Logger.Warn().Msg("Skipping workarounds stage")
 		return []schema.Stage{}
@@ -286,7 +286,7 @@ func GetWorkaroundsStage(_ values.System, l types.KairosLogger) []schema.Stage {
 // I also removes some packages that are no longer needed, like dracut and dependant packages as once
 // we have build the initramfs we dont need them anymore
 // TODO: Remove package cache for all distros
-func GetCleanupStage(_ values.System, l types.KairosLogger) []schema.Stage {
+func GetCleanupStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 	if config.ContainsSkipStep(values.CleanupStep) {
 		l.Logger.Warn().Msg("Skipping cleanup stage")
 		return []schema.Stage{}
@@ -359,7 +359,7 @@ func GetCleanupStage(_ values.System, l types.KairosLogger) []schema.Stage {
 
 // GetServicesStage Returns the services stage
 // This stage is about configuring the services to be run on the system. Either enabling or disabling them.
-func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
+func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 	if config.ContainsSkipStep(values.ServicesStep) {
 		l.Logger.Warn().Msg("Skipping services stage")
 		return []schema.Stage{}
@@ -548,7 +548,7 @@ func GetServicesStage(_ values.System, l types.KairosLogger) []schema.Stage {
 // So this creates a link to the actual kernel, no matter the version so we can boot the same everywhere
 // This stage also cleans up the old kernels and initrd files that are no longer needed.
 // This is a bit of a complex one, as every distro has its own way of doing things but we make it work here
-func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage, error) {
+func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage, error) {
 	if config.ContainsSkipStep(values.KernelStep) {
 		logger.Logger.Warn().Msg("Skipping kernel stage")
 		return []schema.Stage{}, nil
@@ -647,7 +647,7 @@ func GetKernelStage(_ values.System, logger types.KairosLogger) ([]schema.Stage,
 }
 
 // getLatestKernel returns the latest kernel version installed on the system
-func getLatestKernel(l types.KairosLogger) (string, error) {
+func getLatestKernel(l logger.KairosLogger) (string, error) {
 	var kernelVersion string
 	modulesPath := "/lib/modules"
 	// Read the directories under /lib/modules
@@ -693,7 +693,7 @@ func getLatestKernel(l types.KairosLogger) (string, error) {
 
 // GetKairosInitramfsFilesStage installs the kairos initramfs files
 // This stage is used to install the initramfs files that are needed for the system to boot
-func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]schema.Stage, error) {
+func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]schema.Stage, error) {
 	if config.ContainsSkipStep(values.InitramfsConfigsStep) {
 		l.Logger.Warn().Msg("Skipping installing initramfs configs stage")
 		return []schema.Stage{}, nil
