@@ -826,7 +826,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 			networkModule = ""
 
 			// Do we have networkmanmager?
-			if _, err := os.Stat("/usr/bin/NetworkManager"); err == nil {
+			if _, err := os.Stat("/usr/sbin/NetworkManager"); err == nil {
 				networkModule = "network-manager"
 			}
 
