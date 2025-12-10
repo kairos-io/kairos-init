@@ -846,7 +846,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l types.KairosLogger) ([]sc
 		}
 
 		if sis.Distro == values.Hadron {
-			networkModule = "systemd-networkd "
+			networkModule = "systemd-networkd systemd-resolved"
 		}
 
 		l.Logger.Debug().Str("networkModule", networkModule).Bool("sysextModule", sysextModule).Msg("Adding dracut modules to initramfs")
