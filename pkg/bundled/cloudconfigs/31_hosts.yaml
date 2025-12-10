@@ -10,7 +10,7 @@
 ## We should run the hosts part before the hostname, as yip will try to update the hosts file when changing the hostname
 ## so we get the proper name added to the hosts file
 stages:
-  initramfs.before:
+  initramfs:
     - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -L "/etc/hosts" ]'
       name: "Ensure persistent hosts file"
       directories:
@@ -29,13 +29,16 @@ stages:
       commands:
         - rm -f /etc/hosts
         - ln -sf /usr/local/etc/hosts /etc/hosts
-    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -L "/etc/hostname" ]'
-      name: "Ensure persistent hostname"
+    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -d /usr/local/etc ]' # check that /usr/local/etc doesnt not exist already
+      name: "Ensure persistent /etc/ directory"
       directories:
         - path: "/usr/local/etc/"
           permissions: 0600
           owner: 0
           group: 0
+    # Check that hostname is not already a symlink and the persistent file does not exist
+    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ ! -L "/etc/hostname" ]'
+      name: "Ensure persistent hostname"
       files:
         - path: "/usr/local/etc/hostname"
           permissions: 0644
