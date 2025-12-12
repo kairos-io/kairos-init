@@ -63,12 +63,32 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 	// Read the NVIDIA env variables, use defaults if not set
 	nvidiaRelease := os.Getenv("NVIDIA_RELEASE")
 	if nvidiaRelease == "" {
+		// This was just introduced in PR #211, however if you check the
+		// Dockerfile.nvidia-orin-nx it says 36 :shrug:, do we actually need a
+		// default or should the user always set it? if we have a default, should it
+		// ever change?
 		nvidiaRelease = "35"
 	}
 
 	nvidiaVersion := os.Getenv("NVIDIA_VERSION")
 	if nvidiaVersion == "" {
+		// This was just introduced in PR #211, however if you check the
+		// Dockerfile.nvidia-orin-nx it says 4.4 :shrug:, do we actually need a
+		// default or should the user always set it? if we have a default, should it
+		// ever change?
 		nvidiaVersion = "3.1"
+	}
+
+	l4tVersion := os.Getenv("L4T_VERSION")
+	if l4tVersion == "" {
+		l4tVersion = "36.4"
+	}
+
+	// Get board model from environment or config
+	boardModel := os.Getenv("BOARD_MODEL")
+	if boardModel == "" {
+		// Does it make sense that both AGX Orin and Orin NX use the same board model?
+		boardModel = "t234"
 	}
 
 	// Prepare NVIDIA L4T extraction script
@@ -147,6 +167,72 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model),
 			Commands: []string{
 				l4tScript,
+			},
+		},
+		{
+			Name: "Setup NVIDIA L4T repositories",
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			Commands: []string{
+				// Clean up existing NVIDIA repository files
+				"rm -rf /etc/apt/sources.list.d/nvidia-l4t-apt-source.list",
+				// Create NVIDIA L4T packages directory
+				"mkdir -p /opt/nvidia/l4t-packages",
+				"touch /opt/nvidia/l4t-packages/.nv-l4t-disable-boot-fw-update-in-preinstall",
+				// Add NVIDIA GPG keys
+				"curl -fSsL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub | gpg --dearmor | tee /usr/share/keyrings/nvidia-drivers-2004.gpg > /dev/null 2>&1",
+				"curl -fSsL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/3bf863cc.pub | gpg --dearmor | tee /usr/share/keyrings/nvidia-drivers-2204.gpg > /dev/null 2>&1",
+				"curl -fSsL https://repo.download.nvidia.com/jetson/jetson-ota-public.asc | gpg --dearmor | tee /usr/share/keyrings/jetson-ota.gpg > /dev/null 2>&1",
+				// Add NVIDIA repositories
+				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-drivers-2204.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/ /' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list",
+				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-drivers-2004.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list",
+				fmt.Sprintf("echo 'deb [signed-by=/usr/share/keyrings/jetson-ota.gpg] https://repo.download.nvidia.com/jetson/common/ r%s main' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list", l4tVersion),
+				fmt.Sprintf("echo 'deb [signed-by=/usr/share/keyrings/jetson-ota.gpg] https://repo.download.nvidia.com/jetson/%s/ r%s main' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list", boardModel, l4tVersion),
+			},
+		},
+		{
+			Name: "Setup OpenCV symlink for NVIDIA devices",
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			Commands: []string{
+				"ln -s /usr/include/opencv4/opencv2 /usr/include/opencv2",
+			},
+		},
+		{
+			Name: "Configure CUDA paths for NVIDIA devices",
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			Commands: []string{
+				// Move CUDA out of the way to /opt so kairos can occupy /usr/local without workarounds
+				"update-alternatives --remove-all cuda || true",
+				"update-alternatives --remove-all cuda-12 || true",
+				"mv /usr/local/cuda-12.6 /opt/cuda-12.6 || true",
+				"update-alternatives --install /opt/cuda cuda /opt/cuda-12.6 1 || true",
+				"update-alternatives --install /opt/cuda-12 cuda-12 /opt/cuda-12.6 1 || true",
+			},
+		},
+		{
+			Name: "Configure NVIDIA L4T USB device mode for NVIDIA devices",
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			Commands: []string{
+				// Change mountpoint for l4t usb device mode, as rootfs is mounted ro
+				// /srv/data is made through cloud-config
+				"sed -i -e 's|mntpoint=\"/mnt|mntpoint=\"/srv/data|' /opt/nvidia/l4t-usb-device-mode/nv-l4t-usb-device-mode-start.sh || true",
+			},
+		},
+		{
+			Name: "Disable ISCSI for NVIDIA devices",
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			Files: []schema.File{
+				{
+					Path:    "/etc/dracut.conf.d/iscsi.conf",
+					Content: "omit_dracutmodules+=\" iscsi \"",
+				},
+			},
+		},
+		{
+			Name: "Disable ISCSI services for NVIDIA devices",
+			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			Commands: []string{
+				// iscsid causes delays on the login shell, and we don't need it, so we'll disable it
+				"systemctl disable iscsi open-iscsi iscsid.socket || true",
 			},
 		},
 	}
