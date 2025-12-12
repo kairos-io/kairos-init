@@ -7,14 +7,14 @@ import (
 
 	"github.com/kairos-io/kairos-init/pkg/validation"
 	"github.com/kairos-io/kairos-init/pkg/values"
-	"github.com/kairos-io/kairos-sdk/types"
+	"github.com/kairos-io/kairos-sdk/types/logger"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
 )
 
 // Use a real logger for testing
-func createTestLogger() types.KairosLogger {
-	return types.NewKairosLogger("test", "info", false)
+func createTestLogger() logger.KairosLogger {
+	return logger.NewKairosLogger("test", "info", false)
 }
 
 var _ = Describe("Validator", func() {
@@ -47,7 +47,7 @@ var _ = Describe("Validator", func() {
 
 		Context("when system is RHEL family", func() {
 			var (
-				logger      types.KairosLogger
+				logger      logger.KairosLogger
 				validator   *validation.Validator
 				tempDir     string
 				searchPaths []string
@@ -290,7 +290,7 @@ var _ = Describe("Validator", func() {
 
 		Context("when system is systemd-based", func() {
 			var (
-				logger      types.KairosLogger
+				logger      logger.KairosLogger
 				validator   *validation.Validator
 				tempDir     string
 				searchPaths []string

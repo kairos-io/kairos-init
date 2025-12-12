@@ -1,7 +1,7 @@
 # Variables
-AGENT_VERSION := v2.25.1
-IMMUCORE_VERSION := v0.11.3
-KCRYPT_DISCOVERY_CHALLENGER_VERSION := v0.11.4
+AGENT_VERSION := v2.26.0-beta4
+IMMUCORE_VERSION := v0.12.0-beta3
+KCRYPT_DISCOVERY_CHALLENGER_VERSION := v0.12.0
 PROVIDER_KAIROS_VERSION := v2.14.0
 EDGEVPN_VERSION := v0.31.1
 ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
@@ -73,8 +73,8 @@ $(OUTPUT_DIR_FIPS)/%-fips:
 compress:
 	@if [ -z "$(SKIP_UPX)" ]; then \
 		echo "Running upx compress..."; \
-		upx -q -5 $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn ); \
-		upx -q -5 $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); \
+		upx -q --best --lzma $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn ); \
+		upx -q --best --lzma $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); \
 	else \
 		echo "Skipping upx compression as SKIP_UPX is set"; \
 	fi

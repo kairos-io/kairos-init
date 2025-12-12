@@ -7,7 +7,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/kairos-io/kairos-init/pkg/values"
-	sdkTypes "github.com/kairos-io/kairos-sdk/types"
+	"github.com/kairos-io/kairos-sdk/types/logger"
 	"github.com/sanity-io/litter"
 )
 
@@ -15,7 +15,7 @@ import (
 // and returns a values.System struct
 // This could probably be implemented in a different way, or use a lib but its helpful
 // in conjunction with the values packagemaps to determine the packages to install
-func DetectSystem(l sdkTypes.KairosLogger) values.System {
+func DetectSystem(l logger.KairosLogger) values.System {
 	// Detects the system
 	s := values.System{
 		Distro: values.Unknown,

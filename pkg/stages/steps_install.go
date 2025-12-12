@@ -18,13 +18,13 @@ import (
 	"github.com/kairos-io/kairos-init/pkg/bundled"
 	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/values"
-	"github.com/kairos-io/kairos-sdk/types"
+	"github.com/kairos-io/kairos-sdk/types/logger"
 	"github.com/mudler/yip/pkg/schema"
 )
 
 // This file contains the stages for the install process
 
-func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Stage, error) {
+func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.Stage, error) {
 	if config.ContainsSkipStep(values.InstallPackagesStep) {
 		logger.Logger.Warn().Msg("Skipping install packages stage")
 		return []schema.Stage{}, nil
@@ -239,7 +239,7 @@ func GetInstallStage(sis values.System, logger types.KairosLogger) ([]schema.Sta
 	return stage, nil
 }
 
-func GetInstallKernelStage(sis values.System, logger types.KairosLogger) ([]schema.Stage, error) {
+func GetInstallKernelStage(sis values.System, logger logger.KairosLogger) ([]schema.Stage, error) {
 	if config.ContainsSkipStep(values.InstallKernelStep) {
 		logger.Logger.Warn().Msg("Skipping install kernel stage")
 		return []schema.Stage{}, nil
@@ -280,7 +280,7 @@ func GetInstallKernelStage(sis values.System, logger types.KairosLogger) ([]sche
 // GetInstallOemCloudConfigs dumps the OEM files to the system from the embedded oem files
 // TODO: Make them first class yip files in code and just dump them into the system?
 // That way they can be set as a normal yip stage maybe? a yip stage that dumps the yip stage lol
-func GetInstallOemCloudConfigs(l types.KairosLogger) error {
+func GetInstallOemCloudConfigs(l logger.KairosLogger) error {
 	if config.ContainsSkipStep(values.CloudconfigsStep) {
 		l.Logger.Warn().Msg("Skipping installing cloudconfigs stage")
 		return nil
@@ -324,7 +324,7 @@ func GetInstallOemCloudConfigs(l types.KairosLogger) error {
 // GetInstallBrandingStage returns the branding stage
 // This stage takes care of creating the default branding files that are used by the system
 // Thinks like interactive install or recoivery welcome text or grubmenu configs
-func GetInstallBrandingStage(_ values.System, l types.KairosLogger) []schema.Stage {
+func GetInstallBrandingStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 	if config.ContainsSkipStep(values.BrandingStep) {
 		l.Logger.Warn().Msg("Skipping installing branding stage")
 		return []schema.Stage{}
@@ -378,7 +378,7 @@ func GetInstallBrandingStage(_ values.System, l types.KairosLogger) []schema.Sta
 
 // GetInstallGrubBootArgsStage returns the stage to write the grub configs
 // This stage takes create of creating the /etc/cos/bootargs.cfg and /etc/cos/grub.cfg
-func GetInstallGrubBootArgsStage(_ values.System, l types.KairosLogger) []schema.Stage {
+func GetInstallGrubBootArgsStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 	if config.ContainsSkipStep(values.GrubStep) {
 		l.Logger.Warn().Msg("Skipping installing grub stage")
 		return []schema.Stage{}
@@ -415,7 +415,7 @@ func GetInstallGrubBootArgsStage(_ values.System, l types.KairosLogger) []schema
 }
 
 // GetInstallKairosBinaries directly installs the kairos binaries from bundled binaries
-func GetInstallKairosBinaries(sis values.System, l types.KairosLogger) error {
+func GetInstallKairosBinaries(sis values.System, l logger.KairosLogger) error {
 	if config.ContainsSkipStep(values.KairosBinariesStep) {
 		l.Logger.Warn().Msg("Skipping installing Kairos binaries stage")
 		return nil
@@ -484,7 +484,7 @@ func GetInstallKairosBinaries(sis values.System, l types.KairosLogger) error {
 }
 
 // GetInstallProviderBinaries installs the provider and edgevpn binaries
-func GetInstallProviderBinaries(sis values.System, l types.KairosLogger) error {
+func GetInstallProviderBinaries(sis values.System, l logger.KairosLogger) error {
 	if config.ContainsSkipStep(values.ProviderBinariesStep) {
 		l.Logger.Warn().Msg("Skipping installing Kairos k8s provider binaries stage")
 		return nil
@@ -584,7 +584,7 @@ func GetInstallProviderBinaries(sis values.System, l types.KairosLogger) error {
 
 // GetKairosMiscellaneousFilesStage installs the kairos miscellaneous files
 // Like small scripts or other files that are not part of the main install process
-func GetKairosMiscellaneousFilesStage(sis values.System, l types.KairosLogger) []schema.Stage {
+func GetKairosMiscellaneousFilesStage(sis values.System, l logger.KairosLogger) []schema.Stage {
 	if config.ContainsSkipStep(values.MiscellaneousStep) {
 		l.Logger.Warn().Msg("Skipping installing miscellaneous configs stage")
 		return []schema.Stage{}
@@ -698,7 +698,7 @@ func DownloadAndExtract(url, dest string, binaryName ...string) error {
 	return fmt.Errorf("binary not found in archive")
 }
 
-func ProviderBuildInstallEvent(sis values.System, logger types.KairosLogger) error {
+func ProviderBuildInstallEvent(sis values.System, logger logger.KairosLogger) error {
 	if config.ContainsSkipStep(values.BuildProviderStep) {
 		logger.Logger.Warn().Msg("Skipping calling build for providers stage")
 		return nil

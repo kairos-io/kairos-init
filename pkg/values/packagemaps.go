@@ -3,13 +3,11 @@ package values
 import (
 	"bytes"
 	"strings"
-
-	"github.com/kairos-io/kairos-init/pkg/config"
-
 	"text/template"
 
 	semver "github.com/hashicorp/go-version"
-	sdkTypes "github.com/kairos-io/kairos-sdk/types"
+	"github.com/kairos-io/kairos-init/pkg/config"
+	"github.com/kairos-io/kairos-sdk/types/logger"
 )
 
 // packagemaps is a map of packages to install for each distro.
@@ -41,7 +39,6 @@ var CommonPackages = []string{
 	"jq",         // No idea why we need it, check if we can drop it?
 	"dosfstools", // For the fat32 partition on EFI systems
 	"e2fsprogs",  // mkfs support for ext2/3/4
-	"parted",     // Partitioning support, check if we need it anymore
 	"logrotate",  // Log rotation support
 }
 
@@ -207,11 +204,10 @@ var ImmucorePackages = PackageMap{
 	DebianFamily: {
 		ArchCommon: {
 			Common: {
-				"dracut",            // To build the initrd
-				"dracut-network",    // Network-legacy support for dracut
-				"isc-dhcp-common",   // Network-legacy support for dracut, basic tools
-				"isc-dhcp-client",   // Network-legacy support for dracut, basic tools
-				"cloud-guest-utils", // This brings growpart, so we can resize the partitions
+				"dracut",          // To build the initrd
+				"dracut-network",  // Network-legacy support for dracut
+				"isc-dhcp-common", // Network-legacy support for dracut, basic tools
+				"isc-dhcp-client", // Network-legacy support for dracut, basic tools
 			},
 		},
 	},
@@ -378,7 +374,6 @@ var BasePackages = PackageMap{
 				"ethtool",
 				"fuse3",
 				"fail2ban", // Basic security tool
-				"gdisk",
 				"gnupg",
 				"gnupg1-l10n",
 				"haveged",
@@ -432,8 +427,6 @@ var BasePackages = PackageMap{
 				"device-mapper",
 				"fail2ban", // Basic security tool
 				"findutils",
-				"growpart",
-				"gptfdisk",
 				"haveged",
 				"htop",
 				"iproute2",
@@ -452,7 +445,8 @@ var BasePackages = PackageMap{
 				"qemu-guest-agent", // TODO: Move this to generic model?
 				"strace",
 				"systemd",
-				"systemd-network",
+				"systemd-networkd",
+				"systemd-resolved",
 				"timezone",
 				"tmux",
 				"vim",
@@ -479,13 +473,6 @@ var BasePackages = PackageMap{
 			},
 		},
 	},
-	OpenSUSETumbleweed: {
-		ArchCommon: {
-			Common: {
-				"systemd-resolved",
-			},
-		},
-	},
 	AlpineFamily: {
 		ArchCommon: {
 			Common: {
@@ -493,7 +480,6 @@ var BasePackages = PackageMap{
 				"bash",
 				"bash-completion",
 				"blkid",
-				"cloud-utils-growpart",
 				"bonding",
 				"bridge",
 				"busybox-openrc",
@@ -548,7 +534,6 @@ var BasePackages = PackageMap{
 				"procps",
 				"qemu-guest-agent",
 				"rbd-nbd",
-				"sgdisk",
 				"smartmontools",
 				"squashfs-tools",
 				"strace",
@@ -567,10 +552,8 @@ var BasePackages = PackageMap{
 	RedHatFamily: {
 		ArchCommon: {
 			Common: {
-				"gdisk",                   // Yip requires it for partitioning, maybe BasePackages
 				"audit",                   // For audit support, check if needed?
 				"cracklib-dicts",          // Password dictionary support
-				"cloud-utils-growpart",    // grow partition use. Check if yip still needs it?
 				"device-mapper",           // Device mapper support, needed for lvm and cryptsetup
 				"device-mapper-multipath", // For multipath support, needed for dracut
 				"iproute",                 // Basic tool for networking
@@ -609,10 +592,8 @@ var BasePackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				// TODO: Check if we need all of these packages, some of them are probably not needed or can go into the family?
-				"fdisk", // Yip requires it for partitioning
 				"conntrack",
-				"console-data",      // Console font support
-				"cloud-guest-utils", // Yip requires it, this brings growpart, so we can resize the partitions
+				"console-data", // Console font support
 				"gettext",
 				"systemd-container",      // Not sure if needed?
 				"ubuntu-advantage-tools", // For ubuntu advantage support, enablement of ubuntu services
@@ -1010,7 +991,7 @@ var KernelPackagesModels = ModelPackageMap{
 
 // PackageListToTemplate takes a list of packages and a map of parameters to replace in the package name
 // and returns a list of packages with the parameters replaced.
-func PackageListToTemplate(packages []string, params map[string]string, l sdkTypes.KairosLogger) ([]string, error) {
+func PackageListToTemplate(packages []string, params map[string]string, l logger.KairosLogger) ([]string, error) {
 	var finalPackages []string
 	for _, pkg := range packages {
 		var result bytes.Buffer
@@ -1029,7 +1010,7 @@ func PackageListToTemplate(packages []string, params map[string]string, l sdkTyp
 	return finalPackages, nil
 }
 
-func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
+func GetPackages(s System, l logger.KairosLogger) ([]string, error) {
 	mergedPkgs := CommonPackages
 
 	// Go over all packages maps
@@ -1070,7 +1051,7 @@ func GetPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 	return mergedPkgs, nil
 }
 
-func GetKernelPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
+func GetKernelPackages(s System, l logger.KairosLogger) ([]string, error) {
 	// Get the kernel packages for the system
 	var filteredPackages []VersionMap
 
@@ -1108,7 +1089,7 @@ func GetKernelPackages(s System, l sdkTypes.KairosLogger) ([]string, error) {
 }
 
 // FilterPackagesOnConstraint filters the packages based on the system version and the constraints in the package map
-func FilterPackagesOnConstraint(s System, l sdkTypes.KairosLogger, pkgsToFilter []VersionMap) []string {
+func FilterPackagesOnConstraint(s System, l logger.KairosLogger, pkgsToFilter []VersionMap) []string {
 	// Go over each list of packages
 	var pkgs []string
 	systemVersion, err := semver.NewVersion(s.Version)

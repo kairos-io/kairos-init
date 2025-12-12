@@ -13,7 +13,7 @@ import (
 	"github.com/kairos-io/kairos-init/pkg/stages"
 	"github.com/kairos-io/kairos-init/pkg/validation"
 	"github.com/kairos-io/kairos-init/pkg/values"
-	"github.com/kairos-io/kairos-sdk/types"
+	"github.com/kairos-io/kairos-sdk/types/logger"
 	"github.com/mudler/yip/pkg/schema"
 	"github.com/sanity-io/litter"
 	"github.com/spf13/cobra"
@@ -61,7 +61,7 @@ var stepsInfo = &cobra.Command{
 	Short: "Get information about the steps",
 	Long:  `Get information about the steps are run`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := types.NewKairosLogger("kairos-init", "info", false)
+		logger := logger.NewKairosLogger("kairos-init", "info", false)
 		logger.Infof("Starting kairos-init version %s", values.GetVersion())
 		// Print the steps info in a human readable format
 		stepsInfo := values.StepsInfo()
@@ -79,7 +79,7 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version of kairos-init and bundled binaries",
 	Long:  `Print the version of kairos-init and bundled binaries. If other binary versions are selected, those are not shown, only the embedded ones`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logger := types.NewKairosLogger("kairos-init", "info", false)
+		logger := logger.NewKairosLogger("kairos-init", "info", false)
 		logger.Infof("kairos-init version %s", values.GetVersion())
 		logger.Debug(litter.Sdump(values.GetFullVersion()))
 
@@ -106,7 +106,7 @@ var validateCmd = &cobra.Command{
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Validate always logs ant info level
-		logger := types.NewKairosLogger("kairos-init", "info", false)
+		logger := logger.NewKairosLogger("kairos-init", "info", false)
 		logger.Infof("Starting kairos-init version %s", values.GetVersion())
 
 		validator := validation.NewValidator(logger)
@@ -122,7 +122,7 @@ var rootCmd = &cobra.Command{
 		preRun(cmd, args)
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
-		logger := types.NewKairosLogger("kairos-init", loglevelFlag.Value, false)
+		logger := logger.NewKairosLogger("kairos-init", loglevelFlag.Value, false)
 		logger.Infof("Starting kairos-init version %s", values.GetVersion())
 		logger.Debug(litter.Sdump(values.GetFullVersion()))
 
