@@ -68,7 +68,6 @@ var BasePackagesModels = ModelPackageMap{
 					"grub2-common",
 					"libssl-dev",
 					"policykit-1",
-					"vim",
 				},
 			},
 			OrinNX: {
