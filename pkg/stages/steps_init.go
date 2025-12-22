@@ -972,7 +972,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			data = append(data, []schema.Stage{
 				{
 					Name:     "Add fips support to initramfs",
-					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|openSUSE.*|SUSE.*|[O-o]penSUSE.*",
+					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|openSUSE.*|SUSE.*|[O-o]penSUSE.*|Hadron.*",
 					Files: []schema.File{
 						{
 							Path:        bundled.DracutFipsPath,
