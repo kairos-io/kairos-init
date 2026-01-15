@@ -9,6 +9,7 @@
 /sbin/e2fsck
 /sbin/openrc
 /sbin/openrc-run
+/sbin/mkfs.*
 /etc/udev/*
 /lib/udev/*
 /usr/lib/udev/*
