@@ -12,7 +12,7 @@ require (
 	github.com/onsi/ginkgo/v2 v2.27.2
 	github.com/onsi/gomega v1.38.2
 	github.com/sanity-io/litter v1.5.8
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/twpayne/go-vfs/v5 v5.0.5
 	gopkg.in/yaml.v3 v3.0.1
 )
