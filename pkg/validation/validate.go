@@ -44,7 +44,10 @@ func (v *Validator) Validate() error {
 		"sudo",
 		"less",
 		"kcrypt-discovery-challenger",
-		"mount.nfs",
+	}
+	// Why do we check for "mount.nfs" ?? Is it that required somehow? Do we consider part of the requirements
+	if v.System.Family != values.HadronFamily {
+		binaries = append(binaries, "mount.nfs")
 	}
 
 	if config.DefaultConfig.Variant == "standard" {
