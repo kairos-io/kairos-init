@@ -167,7 +167,7 @@ func (v *Validator) Validate() error {
 	ExpectedDirs := []string{"/var/lock"}
 
 	for _, dir := range ExpectedDirs {
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if _, err := os.Lstat(dir); os.IsNotExist(err) {
 			multi = multierror.Append(multi, fmt.Errorf("[DIRS] directory %s does not exist", dir))
 		}
 	}
