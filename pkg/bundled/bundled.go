@@ -240,7 +240,10 @@ install() {
 
     inst_check_multiple immucore kairos-agent
     # add utils used by yip stages
-    inst_check_multiple sync udevadm blkid lsblk e2fsck mount umount rsync cryptsetup gawk awk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.fat
+    inst_check_multiple sync udevadm blkid lsblk e2fsck mount umount rsync cryptsetup gawk awk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat
+    # add mkfs.fat using inst_multiple which doesnt check for existence
+    # we should remove this as soon as Hadron supports mkfs.fat
+    inst_multiple mkfs.fat
 
     # Install libraries needed by gawk
     inst_libdir_file "libsigsegv.so*"
