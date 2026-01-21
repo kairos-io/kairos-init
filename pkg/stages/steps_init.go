@@ -781,7 +781,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 		// network-legacy is needed for ipxe as it comes up very fast which makes the livenet stuff work properly
 		// otherwise systemd-networkd does not trigger the dracut hooks to let it know that its up and running
 		// https://github.com/dracutdevs/dracut/issues/1822
-		networkModule := "systemd-networkd systemd-resolved network-legacy"
+		networkModule := "systemd-networkd network-legacy"
 		sysextModule := true
 
 		if sis.Distro == values.Ubuntu {
@@ -802,6 +802,12 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 					networkModule = "network"
 				}
 			}
+			constraint, _ = semver.NewConstraint(">=24.04")
+			// If its >= 24.04 we need to append resolved to the network module
+			if constraint.Check(ver) {
+				networkModule += " systemd-resolved"
+			}
+
 		}
 
 		if sis.Family == values.RedHatFamily {
