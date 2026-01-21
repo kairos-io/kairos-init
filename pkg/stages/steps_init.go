@@ -849,6 +849,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 
 		}
 
+		// Hadron uses the full systemd network stuff
 		if sis.Distro == values.Hadron {
 			networkModule = "systemd-networkd systemd-resolved"
 		}
