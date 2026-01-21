@@ -802,6 +802,12 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 					networkModule = "network"
 				}
 			}
+			constraint, _ = semver.NewConstraint(">=24.04")
+			// If its >= 24.04 we need to append resolved to the network module
+			if constraint.Check(ver) {
+				networkModule += " systemd-resolved"
+			}
+
 		}
 
 		if sis.Family == values.RedHatFamily {
@@ -833,6 +839,10 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			// Do we have systemd-networkd?
 			if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err == nil {
 				networkModule = "systemd-networkd"
+				// Do we have systemd-resolved?
+				if _, err := os.Stat("/usr/lib/systemd/systemd-resolved"); err == nil {
+					networkModule += " systemd-resolved"
+				}
 			}
 
 			constraint, _ = semver.NewConstraint("<10")
@@ -845,8 +855,9 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 
 		}
 
+		// Hadron uses the full systemd network stuff
 		if sis.Distro == values.Hadron {
-			networkModule = "systemd-networkd "
+			networkModule = "systemd-networkd systemd-resolved"
 		}
 
 		l.Logger.Debug().Str("networkModule", networkModule).Bool("sysextModule", sysextModule).Msg("Adding dracut modules to initramfs")
