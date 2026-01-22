@@ -240,7 +240,10 @@ install() {
 
     inst_check_multiple immucore kairos-agent
     # add utils used by yip stages
-    inst_check_multiple sync udevadm blkid lsblk e2fsck mount umount rsync cryptsetup gawk awk
+    inst_check_multiple sync udevadm blkid lsblk e2fsck mount umount rsync cryptsetup gawk awk mkfs.ext2 mkfs.ext3 mkfs.ext4 mkfs.vfat
+    # add mkfs.fat using inst_multiple which doesnt check for existence
+    # we should remove this as soon as Hadron supports mkfs.fat
+    inst_multiple mkfs.fat
 
     # Install libraries needed by gawk
     inst_libdir_file "libsigsegv.so*"
@@ -516,8 +519,7 @@ _/    _/    _/_/_/  _/  _/          _/_/    _/_/_/
 
 // ExtraGrubCfg /etc/kairos/branding/grubmenu.cfg is the extra grub config that is used for the system that can be
 // overridden by the user to provide its own entries in grub
-const ExtraGrubCfg = `
-menuentry "${display_name} remote recovery" --id remoterecovery {
+const ExtraGrubCfg = `menuentry "${display_name} remote recovery" --id remoterecovery {
     search --no-floppy --label --set=root COS_RECOVERY
     if [ test -s /cOS/recovery.squashfs ]; then
         set img=/cOS/recovery.squashfs

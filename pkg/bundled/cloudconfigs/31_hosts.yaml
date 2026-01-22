@@ -15,7 +15,7 @@ stages:
       name: "Ensure persistent hosts file"
       directories:
         - path: "/usr/local/etc/"
-          permissions: 0600
+          permissions: 0755
           owner: 0
           group: 0
       files:
@@ -33,7 +33,7 @@ stages:
       name: "Ensure persistent /etc/ directory"
       directories:
         - path: "/usr/local/etc/"
-          permissions: 0600
+          permissions: 0755
           owner: 0
           group: 0
     # Check that hostname is not already a symlink and the persistent file does not exist
