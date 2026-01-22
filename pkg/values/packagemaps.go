@@ -63,7 +63,7 @@ var BasePackagesModels = ModelPackageMap{
 				Common: {
 					"bridge-utils",
 					"efibootmgr",
-					"fuse",
+					"fuse3",
 					"grub2-common",
 					"libssl-dev",
 					"policykit-1",
