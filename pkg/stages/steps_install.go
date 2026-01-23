@@ -61,55 +61,17 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 	}
 
 	// Read the NVIDIA env variables, use defaults if not set
-	nvidiaRelease := os.Getenv("NVIDIA_RELEASE")
-	if nvidiaRelease == "" {
-		// This was just introduced in PR #211, however if you check the
-		// Dockerfile.nvidia-orin-nx it says 36 :shrug:, do we actually need a
-		// default or should the user always set it? if we have a default, should it
-		// ever change?
-		nvidiaRelease = "35"
-	}
-
-	nvidiaVersion := os.Getenv("NVIDIA_VERSION")
-	if nvidiaVersion == "" {
-		// This was just introduced in PR #211, however if you check the
-		// Dockerfile.nvidia-orin-nx it says 4.4 :shrug:, do we actually need a
-		// default or should the user always set it? if we have a default, should it
-		// ever change?
-		nvidiaVersion = "3.1"
-	}
-
-	l4tVersion := os.Getenv("L4T_VERSION")
-	if l4tVersion == "" {
-		l4tVersion = "36.4"
-	}
-
+	// This was just introduced in PR #211, however if you check the
+	// Dockerfile.nvidia-orin-nx it says 36 :shrug:, do we actually need a
+	// default or should the user always set it? if we have a default, should it
+	// ever change?
+	nvidiaRelease := getEnvOrDefault("NVIDIA_RELEASE", "35")
+	nvidiaVersion := getEnvOrDefault("NVIDIA_VERSION", "3.1")
+	l4tVersion := getEnvOrDefault("L4T_VERSION", "36.4")
 	// Get board model from environment or config
-	boardModel := os.Getenv("BOARD_MODEL")
-	if boardModel == "" {
-		// Does it make sense that both AGX Orin and Orin NX use the same board model?
-		boardModel = "t234"
-	}
-
-	// Prepare NVIDIA L4T extraction script
-	l4tScript := fmt.Sprintf(`#!/bin/bash
-		set -e
-
-		NVIDIA_RELEASE="%s"
-		NVIDIA_VERSION="%s"
-		NVIDIA_ARCHIVE_URI="https://developer.nvidia.com/downloads/embedded/l4t/r${NVIDIA_RELEASE}_release_v${NVIDIA_VERSION}/release"
-		TEGRA_ARCHIVE="jetson_linux_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
-		ROOTFS_ARCHIVE="tegra_linux_sample-root-filesystem_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
-		TEGRA_DIR="Linux_for_Tegra"
-
-		echo "Downloading NVIDIA L4T archives..."
-		wget "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" -O "$TEGRA_ARCHIVE"
-		wget "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" -O "$ROOTFS_ARCHIVE"
-
-		echo "Extracting Jetson Linux..."
-		tar -xjf "$TEGRA_ARCHIVE"
-		tar -xjf "$ROOTFS_ARCHIVE" -C "$TEGRA_DIR/rootfs"
-		`, nvidiaRelease, nvidiaVersion)
+	// Does it make sense that both AGX Orin and Orin NX use the same board model?
+	boardModel := getEnvOrDefault("BOARD_MODEL", "t234")
+	nvidiaAgxOrNxBoardCheck := fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model)
 
 	stage := []schema.Stage{
 		{
@@ -166,12 +128,14 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			Name: "Fetch Linux for Tegra (L4T)",
 			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model),
 			Commands: []string{
-				l4tScript,
+				fmt.Sprintf(bundled.NvidiaLT4Script, nvidiaRelease, nvidiaVersion),
 			},
 		},
 		{
+			// TODO: Should we run this **before** installing the packages?
+			// Should we also check if the family is debian based? This is putting apt-get stuff
 			Name: "Setup NVIDIA L4T repositories",
-			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			If:   nvidiaAgxOrNxBoardCheck,
 			Commands: []string{
 				// Clean up existing NVIDIA repository files
 				"rm -rf /etc/apt/sources.list.d/nvidia-l4t-apt-source.list",
@@ -191,14 +155,14 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 		},
 		{
 			Name: "Setup OpenCV symlink for NVIDIA devices",
-			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			If:   nvidiaAgxOrNxBoardCheck,
 			Commands: []string{
 				"ln -s /usr/include/opencv4/opencv2 /usr/include/opencv2",
 			},
 		},
 		{
 			Name: "Configure CUDA paths for NVIDIA devices",
-			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			If:   nvidiaAgxOrNxBoardCheck,
 			Commands: []string{
 				// Move CUDA out of the way to /opt so kairos can occupy /usr/local without workarounds
 				"update-alternatives --remove-all cuda || true",
@@ -210,7 +174,7 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 		},
 		{
 			Name: "Configure NVIDIA L4T USB device mode for NVIDIA devices",
-			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			If:   nvidiaAgxOrNxBoardCheck,
 			Commands: []string{
 				// Change mountpoint for l4t usb device mode, as rootfs is mounted ro
 				// /srv/data is made through cloud-config
@@ -219,17 +183,13 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 		},
 		{
 			Name: "Disable ISCSI for NVIDIA devices",
-			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
+			If:   nvidiaAgxOrNxBoardCheck,
 			Files: []schema.File{
 				{
 					Path:    "/etc/dracut.conf.d/iscsi.conf",
 					Content: "omit_dracutmodules+=\" iscsi \"",
 				},
 			},
-		},
-		{
-			Name: "Disable ISCSI services for NVIDIA devices",
-			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-agx-orin" ] || [ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model, config.DefaultConfig.Model),
 			Commands: []string{
 				// iscsid causes delays on the login shell, and we don't need it, so we'll disable it
 				"systemctl disable iscsi open-iscsi iscsid.socket || true",
@@ -778,4 +738,12 @@ func ProviderBuildInstallEvent(sis values.System, logger logger.KairosLogger) er
 		return combinedErr
 	}
 	return nil
+}
+
+func getEnvOrDefault(key, defaultValue string) string {
+	value, exists := os.LookupEnv(key)
+	if !exists {
+		return defaultValue
+	}
+	return value
 }
