@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   testing_build_matrix:
-    name: ${{ matrix.platform }} - ${{ matrix.base_image }}${{ matrix.trusted_boot && '-uki' || ''}}${{ matrix.variant == 'standard' && ' - ' || '' }} ${{ matrix.kubernetes_provider != '' && matrix.kubernetes_provider || '' }} ${{ matrix.kubernetes_version != '' && matrix.kubernetes_version || '' }}${{ matrix.fips == true && ' - FIPS' || '' }}
+    name: ${{ matrix.platform }} - ${{ matrix.base_image }} - ${{ matrix.model || 'generic' }}${{ matrix.trusted_boot && '-uki' || ''}}${{ matrix.variant == 'standard' && ' - ' || '' }} ${{ matrix.kubernetes_provider != '' && matrix.kubernetes_provider || '' }} ${{ matrix.kubernetes_version != '' && matrix.kubernetes_version || '' }}${{ matrix.fips == true && ' - FIPS' || '' }}
     runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
@@ -41,6 +41,14 @@ jobs:
             base_image: "fedora:41"
             trusted_boot: "true"
             fips: false
+          - platform: "arm64"
+            base_image: "ubuntu:22.04"
+            model: "nvidia-jetson-agx-orin"
+            fips: false
+          - platform: "arm64"
+            base_image: "ubuntu:22.04"
+            model: "nvidia-jetson-orin-nx"
+            fips: false
     steps:
       - uses: actions/checkout@v6
         with:
@@ -68,3 +76,4 @@ jobs:
             VERSION=${{ env.VERSION }}
             FIPS=${{ matrix.fips || false }}
             TRUSTED_BOOT=${{ matrix.trusted_boot || 'false' }}
+            MODEL=${{ matrix.model || 'generic' }}
