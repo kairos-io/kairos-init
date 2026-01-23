@@ -584,9 +584,8 @@ ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --any`
 
 // Services end here
 
-// Nvidia
-
-const NvidiaLT4Script = `#!/bin/bash
+// NvidiaL4TScript is the Nvidia Linux for Tegra (L4T) script to download and extract the necessary files
+const NvidiaL4TScript = `#!/bin/bash
 set -e
 
 NVIDIA_RELEASE="%s"

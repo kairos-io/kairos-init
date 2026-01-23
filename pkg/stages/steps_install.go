@@ -71,7 +71,7 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 	// Get board model from environment or config
 	// Does it make sense that both AGX Orin and Orin NX use the same board model?
 	boardModel := getEnvOrDefault("BOARD_MODEL", "t234")
-	nvidiaAgxOrNxBoardCheck := fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model)
+	isNvidiaAgxOrOrinNxBoard := fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model)
 
 	stage := []schema.Stage{
 		{
@@ -128,14 +128,13 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			Name: "Fetch Linux for Tegra (L4T)",
 			If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model),
 			Commands: []string{
-				fmt.Sprintf(bundled.NvidiaLT4Script, nvidiaRelease, nvidiaVersion),
+				fmt.Sprintf(bundled.NvidiaL4TScript, nvidiaRelease, nvidiaVersion),
 			},
 		},
 		{
-			// TODO: Should we run this **before** installing the packages?
-			// Should we also check if the family is debian based? This is putting apt-get stuff
+			// This repos are for NVIDIA L4T devices (AGX Orin and Orin NX) kernel packages
 			Name: "Setup NVIDIA L4T repositories",
-			If:   nvidiaAgxOrNxBoardCheck,
+			If:   isNvidiaAgxOrOrinNxBoard,
 			Commands: []string{
 				// Clean up existing NVIDIA repository files
 				"rm -rf /etc/apt/sources.list.d/nvidia-l4t-apt-source.list",
@@ -155,14 +154,14 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 		},
 		{
 			Name: "Setup OpenCV symlink for NVIDIA devices",
-			If:   nvidiaAgxOrNxBoardCheck,
+			If:   isNvidiaAgxOrOrinNxBoard,
 			Commands: []string{
 				"ln -s /usr/include/opencv4/opencv2 /usr/include/opencv2",
 			},
 		},
 		{
 			Name: "Configure CUDA paths for NVIDIA devices",
-			If:   nvidiaAgxOrNxBoardCheck,
+			If:   isNvidiaAgxOrOrinNxBoard,
 			Commands: []string{
 				// Move CUDA out of the way to /opt so kairos can occupy /usr/local without workarounds
 				"update-alternatives --remove-all cuda || true",
@@ -174,7 +173,7 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 		},
 		{
 			Name: "Configure NVIDIA L4T USB device mode for NVIDIA devices",
-			If:   nvidiaAgxOrNxBoardCheck,
+			If:   isNvidiaAgxOrOrinNxBoard,
 			Commands: []string{
 				// Change mountpoint for l4t usb device mode, as rootfs is mounted ro
 				// /srv/data is made through cloud-config
@@ -183,7 +182,7 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 		},
 		{
 			Name: "Disable ISCSI for NVIDIA devices",
-			If:   nvidiaAgxOrNxBoardCheck,
+			If:   isNvidiaAgxOrOrinNxBoard,
 			Files: []schema.File{
 				{
 					Path:    "/etc/dracut.conf.d/iscsi.conf",
