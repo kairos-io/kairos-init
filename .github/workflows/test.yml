@@ -29,7 +29,7 @@ jobs:
          - "alpine:3.21"
          - "alpine:3.23"
          - "opensuse/leap:15.6"
-         - "opensuse/leap:16"
+         - "opensuse/leap:16.0"
          - "opensuse/tumbleweed"
          - "rockylinux/rockylinux:9"
          - "rockylinux/rockylinux:10"
