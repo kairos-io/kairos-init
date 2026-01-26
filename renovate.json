@@ -17,14 +17,14 @@
       "automerge": true
     },
     {
-      "description": "Pin Ubuntu LTS versions (20.04, 22.04, 24.04) to avoid unwanted upgrades. NOTE: This list needs manual updates when new LTS versions are released (e.g., 26.04 in April 2026).",
+      "description": "Pin Ubuntu LTS versions (even-year releases: 20.04, 22.04, 24.04, etc.) to avoid unwanted upgrades",
       "matchDatasources": [
         "docker"
       ],
       "matchPackageNames": [
         "ubuntu"
       ],
-      "matchCurrentVersion": "/^(20\\.04|22\\.04|24\\.04)$/",
+      "matchCurrentVersion": "/^(20|22|24|26|28|30|32|34|36|38)\\.04$/",
       "enabled": false
     },
     {
@@ -35,7 +35,7 @@
       "matchPackageNames": [
         "ubuntu"
       ],
-      "matchCurrentVersion": "!/^(20\\.04|22\\.04|24\\.04)$/",
+      "matchCurrentVersion": "!/^(20|22|24|26|28|30|32|34|36|38)\\.04$/",
       "enabled": true
     }
   ],
@@ -187,7 +187,7 @@
     },
     {
       "customType": "regex",
-      "description": "Update Hadron beta Docker images in workflows",
+      "description": "Update Hadron beta Docker images in workflows - uses semver for versioned tags",
       "fileMatch": [
         "^\\.github/workflows/.*\\.ya?ml$"
       ],
@@ -200,7 +200,7 @@
     },
     {
       "customType": "regex",
-      "description": "Update Hadron main Docker images in workflows",
+      "description": "Update Hadron main Docker images in workflows - uses loose versioning for branch tracking (separate manager needed due to different versioning strategy)",
       "fileMatch": [
         "^\\.github/workflows/.*\\.ya?ml$"
       ],
