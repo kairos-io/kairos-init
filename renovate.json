@@ -187,19 +187,6 @@
     },
     {
       "customType": "regex",
-      "description": "Update OpenSUSE Tumbleweed Docker images in workflows",
-      "fileMatch": [
-        "^\\.github/workflows/.*\\.ya?ml$"
-      ],
-      "matchStrings": [
-        "\"opensuse/tumbleweed\"(?!:)"
-      ],
-      "datasourceTemplate": "docker",
-      "depNameTemplate": "opensuse/tumbleweed",
-      "currentValueTemplate": "latest"
-    },
-    {
-      "customType": "regex",
       "description": "Update Hadron beta Docker images in workflows",
       "fileMatch": [
         "^\\.github/workflows/.*\\.ya?ml$"
