@@ -15,6 +15,28 @@
         "patch"
       ],
       "automerge": true
+    },
+    {
+      "description": "Pin Ubuntu LTS versions (even-year releases: 20.04, 22.04, 24.04, etc.) to avoid unwanted upgrades",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ubuntu"
+      ],
+      "matchCurrentVersion": "/^(20|22|24|26|28|30|32|34|36|38)\\.04$/",
+      "enabled": false
+    },
+    {
+      "description": "Allow Ubuntu non-LTS versions to auto-update to newer versions",
+      "matchDatasources": [
+        "docker"
+      ],
+      "matchPackageNames": [
+        "ubuntu"
+      ],
+      "matchCurrentVersion": "!/^(20|22|24|26|28|30|32|34|36|38)\\.04$/",
+      "enabled": true
     }
   ],
   "customManagers": [
@@ -77,6 +99,117 @@
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
       "packageNameTemplate": "mudler/edgevpn"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Ubuntu Docker images in workflows",
+      "fileMatch": [
+        "^\\.github/workflows/.*\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "\"ubuntu:(?<currentValue>\\d+\\.\\d+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "ubuntu",
+      "versioningTemplate": "ubuntu"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Fedora Docker images in workflows",
+      "fileMatch": [
+        "^\\.github/workflows/.*\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "\"fedora:(?<currentValue>\\d+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "fedora"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Rocky Linux Docker images in workflows",
+      "fileMatch": [
+        "^\\.github/workflows/.*\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "\"rockylinux/rockylinux:(?<currentValue>\\d+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "rockylinux/rockylinux"
+    },
+    {
+      "customType": "regex",
+      "description": "Update AlmaLinux Docker images in workflows",
+      "fileMatch": [
+        "^\\.github/workflows/.*\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "\"almalinux:(?<currentValue>\\d+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "almalinux"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Debian Docker images in workflows",
+      "fileMatch": [
+        "^\\.github/workflows/.*\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "\"debian:(?<currentValue>\\d+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "debian"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Alpine Docker images in workflows",
+      "fileMatch": [
+        "^\\.github/workflows/.*\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "\"alpine:(?<currentValue>\\d+\\.\\d+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "alpine"
+    },
+    {
+      "customType": "regex",
+      "description": "Update OpenSUSE Leap Docker images in workflows",
+      "fileMatch": [
+        "^\\.github/workflows/.*\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "\"opensuse/leap:(?<currentValue>\\d+\\.\\d+)\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "opensuse/leap"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Hadron beta Docker images in workflows - uses semver for versioned tags",
+      "fileMatch": [
+        "^\\.github/workflows/.*\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "\"ghcr\\.io/kairos-io/hadron:(?<currentValue>v\\d+(?:\\.\\d+)*(?:-beta\\d+)?)\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "ghcr.io/kairos-io/hadron",
+      "versioningTemplate": "semver"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Hadron main Docker images in workflows - uses loose versioning for branch tracking (separate manager needed due to different versioning strategy)",
+      "fileMatch": [
+        "^\\.github/workflows/.*\\.ya?ml$"
+      ],
+      "matchStrings": [
+        "\"ghcr\\.io/kairos-io/hadron:(?<currentValue>main)\""
+      ],
+      "datasourceTemplate": "docker",
+      "depNameTemplate": "ghcr.io/kairos-io/hadron",
+      "versioningTemplate": "loose"
     }
   ]
 }
