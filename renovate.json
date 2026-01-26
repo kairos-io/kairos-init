@@ -17,7 +17,7 @@
       "automerge": true
     },
     {
-      "description": "Pin Ubuntu LTS versions (20.04, 22.04, 24.04) to avoid unwanted upgrades",
+      "description": "Pin Ubuntu LTS versions (20.04, 22.04, 24.04) to avoid unwanted upgrades. NOTE: This list needs manual updates when new LTS versions are released (e.g., 26.04 in April 2026).",
       "matchDatasources": [
         "docker"
       ],
@@ -192,7 +192,7 @@
         "^\\.github/workflows/.*\\.ya?ml$"
       ],
       "matchStrings": [
-        "\"ghcr\\.io/kairos-io/hadron:(?<currentValue>v[0-9.]+(?:-beta\\d+)?)\""
+        "\"ghcr\\.io/kairos-io/hadron:(?<currentValue>v\\d+(?:\\.\\d+)*(?:-beta\\d+)?)\""
       ],
       "datasourceTemplate": "docker",
       "depNameTemplate": "ghcr.io/kairos-io/hadron",
