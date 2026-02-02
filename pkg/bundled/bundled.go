@@ -596,6 +596,6 @@ ROOTFS_ARCHIVE="tegra_linux_sample-root-filesystem_r${NVIDIA_RELEASE}.${NVIDIA_V
 TEGRA_DIR="Linux_for_Tegra"
 
 echo "Downloading and extracting NVIDIA L4T archives..."
-wget -qO- "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" | tar -xjf -
-wget -qO- "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" | tar -xjf - -C "$TEGRA_DIR/rootfs"
+wget -nv -O- "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" | tar -xjf -
+wget -nv -O- "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" | tar -xjf - -C "$TEGRA_DIR/rootfs"
 `
