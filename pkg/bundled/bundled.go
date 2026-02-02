@@ -595,11 +595,7 @@ TEGRA_ARCHIVE="jetson_linux_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
 ROOTFS_ARCHIVE="tegra_linux_sample-root-filesystem_r${NVIDIA_RELEASE}.${NVIDIA_VERSION}_aarch64.tbz2"
 TEGRA_DIR="Linux_for_Tegra"
 
-echo "Downloading NVIDIA L4T archives..."
-wget "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" -O "$TEGRA_ARCHIVE"
-wget "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" -O "$ROOTFS_ARCHIVE"
-
-echo "Extracting Jetson Linux..."
-tar -xjf "$TEGRA_ARCHIVE"
-tar -xjf "$ROOTFS_ARCHIVE" -C "$TEGRA_DIR/rootfs"
+echo "Downloading and extracting NVIDIA L4T archives..."
+wget -qO- "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" | tar -xjf -
+wget -qO- "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" | tar -xjf - -C "$TEGRA_DIR/rootfs"
 `
