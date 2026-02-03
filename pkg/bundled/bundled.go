@@ -587,7 +587,6 @@ ExecStart=/usr/lib/systemd/systemd-networkd-wait-online --any`
 // NvidiaL4TScript is the Nvidia Linux for Tegra (L4T) script to download and extract the necessary files
 const NvidiaL4TScript = `#!/bin/bash
 set -e
-set -o pipefail
 
 NVIDIA_RELEASE="%s"
 NVIDIA_VERSION="%s"
@@ -597,11 +596,12 @@ ROOTFS_ARCHIVE="tegra_linux_sample-root-filesystem_r${NVIDIA_RELEASE}.${NVIDIA_V
 TEGRA_DIR="Linux_for_Tegra"
 
 echo "Downloading NVIDIA L4T archives..."
-wget -nv -O "${TEGRA_ARCHIVE}" "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}"
-wget -nv -O "${ROOTFS_ARCHIVE}" "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}"
+wget "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}" -O "$TEGRA_ARCHIVE"
+wget "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" -O "$ROOTFS_ARCHIVE"
 
-echo "Extracting NVIDIA L4T archives..."
-tar -xjf "${TEGRA_ARCHIVE}" && tar -xjf "${ROOTFS_ARCHIVE}" -C "$TEGRA_DIR/rootfs"
+echo "Extracting Jetson Linux..."
+tar -xjf "$TEGRA_ARCHIVE"
+tar -xjf "$ROOTFS_ARCHIVE" -C "$TEGRA_DIR/rootfs"
 
 echo "Removing downloaded archives..."
 rm -f "${TEGRA_ARCHIVE}" "${ROOTFS_ARCHIVE}"
