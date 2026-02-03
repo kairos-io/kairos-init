@@ -601,8 +601,7 @@ wget -nv -O "${TEGRA_ARCHIVE}" "${NVIDIA_ARCHIVE_URI}/${TEGRA_ARCHIVE}"
 wget -nv -O "${ROOTFS_ARCHIVE}" "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}"
 
 echo "Extracting NVIDIA L4T archives..."
-tar -xjf "${TEGRA_ARCHIVE}"
-tar -xjf "${ROOTFS_ARCHIVE}" -C "$TEGRA_DIR/rootfs"
+tar -xjf "${TEGRA_ARCHIVE}" && tar -xjf "${ROOTFS_ARCHIVE}" -C "$TEGRA_DIR/rootfs"
 
 echo "Removing downloaded archives..."
 rm -f "${TEGRA_ARCHIVE}" "${ROOTFS_ARCHIVE}"
