@@ -602,4 +602,7 @@ wget "${NVIDIA_ARCHIVE_URI}/${ROOTFS_ARCHIVE}" -O "$ROOTFS_ARCHIVE"
 echo "Extracting Jetson Linux..."
 tar -xjf "$TEGRA_ARCHIVE"
 tar -xjf "$ROOTFS_ARCHIVE" -C "$TEGRA_DIR/rootfs"
+
+echo "Removing downloaded archives..."
+rm -f "${TEGRA_ARCHIVE}" "${ROOTFS_ARCHIVE}"
 `
