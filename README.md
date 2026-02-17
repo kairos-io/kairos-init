@@ -6,7 +6,7 @@ You only need to run this once inside a Dockerfile to have a system that has all
 
 ## Quick example
 
-Create a Dockerfile with your desired base image, copy the kairos-init binary from the kairos-init image and run it:
+Create a Dockerfile with your desired base image, mount the kairos-init binary from the kairos-init image and run it:
 
 ```Dockerfile
 FROM quay.io/kairos/kairos-init:latest AS kairos-init
