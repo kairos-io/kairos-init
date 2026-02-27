@@ -1,0 +1,26 @@
+name: security.yml
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+
+permissions:
+  # Require writing security events to upload SARIF file to security tab
+  security-events: write
+  # Only need to read contents and actions
+  contents: read
+  actions: read
+
+jobs:
+  ovs-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Download bundled binaries
+        run: |
+          make download
+        env:
+          SKIP_UPX: true
+      - uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.2.4"
