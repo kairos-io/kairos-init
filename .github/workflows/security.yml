@@ -46,12 +46,15 @@ jobs:
           fi
 
           # Process the JSON file and check for critical vulnerabilities
-          jq -r '.matches[] | select(.vulnerability.severity == "Critical") | "\(.vulnerability.id) \t \(.artifact.name) \(.artifact.version) -> \(.artifact.locations[]?.path // "no-path")"' "${{ steps.grype.outputs.json }}" | tee grype-critical.txt
+          jq -r '.matches[] | select(.vulnerability.severity == "Critical") | "\(.vulnerability.id) \t \(.artifact.name) \(.artifact.version) -> \(.artifact.locations[]?.path // "no-path")"' "${{ steps.grype.outputs.json }}" > grype-critical.txt
 
           if [[ $(wc -l < grype-critical.txt) -gt 0 ]]; then
             echo "❌ Critical vulnerabilities found in the image. Failing the build."
             echo "   Vulnerabilities found:"
             cat grype-critical.txt
+            echo "❌ Critical vulnerabilities found in the image. Failing the build." >> $GITHUB_STEP_SUMMARY
+            echo "   Vulnerabilities found:" >> $GITHUB_STEP_SUMMARY
+            cat grype-critical.txt >> $GITHUB_STEP_SUMMARY
             exit 1
           else
             echo "✅ No critical vulnerabilities found in the image."
