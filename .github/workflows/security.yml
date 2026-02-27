@@ -27,6 +27,7 @@ jobs:
           SKIP_UPX: true
       - name: Run Grype security scan
         uses: anchore/scan-action@1638637db639e0ade3258b51db49a9a137574c3e # v6.5.1
+        id: grype
         with:
           path: ./pkg/bundled/binaries
           output-format: json
@@ -34,3 +35,46 @@ jobs:
           add-cpes-if-none: true
           only-fixed: true
           fail-build: false
+      - name: Grype detailed check
+        run: |
+          # Check if the JSON file exists and is not empty
+          if [[ ! -f "${{ steps.grype.outputs.json }}" ]] || [[ ! -s "${{ steps.grype.outputs.json }}" ]]; then
+            echo "❌ Error: Grype JSON output file is missing or empty"
+            echo "   Expected file: ${{ steps.grype.outputs.json }}"
+            echo "   This indicates the Grype scan failed or didn't produce output"
+            exit 1
+          fi
+
+          # Process the JSON file and check for critical vulnerabilities
+          jq -r '.matches[] | select(.vulnerability.severity == "Critical") | "\(.vulnerability.id) \t \(.artifact.name) \(.artifact.version) -> \(.artifact.locations[]?.path // "no-path")"' "${{ steps.grype.outputs.json }}" | tee grype-critical.txt
+
+          if [[ $(wc -l < grype-critical.txt) -gt 0 ]]; then
+            echo "❌ Critical vulnerabilities found in the image. Failing the build."
+            echo "   Vulnerabilities found:"
+            cat grype-critical.txt
+            exit 1
+          else
+            echo "✅ No critical vulnerabilities found in the image."
+          fi
+      - name: Generate Grype SARIF
+        uses: anchore/scan-action@1638637db639e0ade3258b51db49a9a137574c3e # v6.5.1
+        with:
+          path: ./pkg/bundled/binaries
+          output-format: sarif
+          output-file: grype.sarif
+          severity-cutoff: critical
+          add-cpes-if-none: true
+          only-fixed: true
+      - name: Filter Grype SARIF to critical
+        uses: itxaka/sarif-filter@e5315c19bd49c5a4ad76310a2640b2586247d433 # v1
+        with:
+          input: grype.sarif
+          output: grype.sarif
+          severity: critical
+
+
+      - name: Upload Grype scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@64d10c13136e1c5bce3e5fbde8d4906eeaafc885 # v3
+        with:
+          sarif_file: 'grype.sarif'
+          category: binaries
