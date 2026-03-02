@@ -34,45 +34,11 @@ func DetectSystem(l logger.KairosLogger) values.System {
 		return s
 	}
 	l.Logger.Trace().Interface("values", val).Msg("Read values from os-release")
-	// Match values to distros
-	switch values.Distro(val["ID"]) {
-	case values.Debian:
-		s.Distro = values.Debian
-		s.Family = values.DebianFamily
-	case values.Ubuntu:
-		s.Distro = values.Ubuntu
-		s.Family = values.DebianFamily
-	case values.Fedora:
-		s.Distro = values.Fedora
-		s.Family = values.RedHatFamily
-	case values.RockyLinux:
-		s.Distro = values.RockyLinux
-		s.Family = values.RedHatFamily
-	case values.AlmaLinux:
-		s.Distro = values.AlmaLinux
-		s.Family = values.RedHatFamily
-	case values.RedHat:
-		s.Distro = values.RedHat
-		s.Family = values.RedHatFamily
-	case values.Arch:
-		s.Distro = values.Arch
-		s.Family = values.ArchFamily
-	case values.Alpine:
-		s.Distro = values.Alpine
-		s.Family = values.AlpineFamily
-	case values.OpenSUSELeap:
-		s.Distro = values.OpenSUSELeap
-		s.Family = values.SUSEFamily
-	case values.OpenSUSETumbleweed:
-		s.Distro = values.OpenSUSETumbleweed
-		s.Family = values.SUSEFamily
-	case values.SLES:
-		s.Distro = values.SLES
-		s.Family = values.SUSEFamily
-	case values.Hadron:
-		s.Distro = values.Hadron
-		s.Family = values.HadronFamily
-	}
+
+	// Resolve distro/family according to os-release precedence:
+	//  1. ID (exact distro identifier)
+	//  2. ID_LIKE fallback for derivatives
+	s.Distro, s.Family = detectFromReleaseIDs(val["ID"], val["ID_LIKE"])
 
 	// Match architecture
 	switch values.Architecture(runtime.GOARCH) {
@@ -80,27 +46,6 @@ func DetectSystem(l logger.KairosLogger) values.System {
 		s.Arch = values.ArchAMD64
 	case values.ArchARM64:
 		s.Arch = values.ArchARM64
-	}
-
-	// Check if we are still unknown
-	if s.Distro == values.Unknown {
-		// Check ID_LIKE value
-		// For some derivatives they ID will be their own but the ID_LIKE will be the parent
-		// So we may be able to detect the parent and use the same family and such
-		switch values.Family(val["ID_LIKE"]) {
-		case values.DebianFamily:
-			s.Distro = values.Debian
-			s.Family = values.DebianFamily
-		case values.RedHatFamily, values.Family(values.Fedora):
-			s.Distro = values.Fedora
-			s.Family = values.RedHatFamily
-		case values.ArchFamily:
-			s.Distro = values.Arch
-			s.Family = values.ArchFamily
-		case values.SUSEFamily:
-			s.Distro = values.OpenSUSELeap
-			s.Family = values.SUSEFamily
-		}
 	}
 
 	// Store the version
@@ -125,4 +70,71 @@ func DetectSystem(l logger.KairosLogger) values.System {
 
 	l.Debugf("Detected system: %s", litter.Sdump(s))
 	return s
+}
+
+// detectFromReleaseIDs resolves distro/family using ID first and ID_LIKE as fallback.
+// ID is authoritative; ID_LIKE is only consulted when ID is not recognized.
+func detectFromReleaseIDs(id, idLike string) (values.Distro, values.Family) {
+	distro, family := detectFromID(id)
+	if distro != values.Unknown {
+		return distro, family
+	}
+
+	return detectFromIDLike(idLike)
+}
+
+// detectFromID maps a known os-release ID value to our distro/family types.
+func detectFromID(id string) (values.Distro, values.Family) {
+	switch values.Distro(id) {
+	case values.Debian:
+		return values.Debian, values.DebianFamily
+	case values.Ubuntu:
+		return values.Ubuntu, values.DebianFamily
+	case values.Fedora:
+		return values.Fedora, values.RedHatFamily
+	case values.RockyLinux:
+		return values.RockyLinux, values.RedHatFamily
+	case values.AlmaLinux:
+		return values.AlmaLinux, values.RedHatFamily
+	case values.RedHat:
+		return values.RedHat, values.RedHatFamily
+	case values.Arch:
+		return values.Arch, values.ArchFamily
+	case values.Alpine:
+		return values.Alpine, values.AlpineFamily
+	case values.OpenSUSELeap:
+		return values.OpenSUSELeap, values.SUSEFamily
+	case values.OpenSUSETumbleweed:
+		return values.OpenSUSETumbleweed, values.SUSEFamily
+	case values.SLES:
+		return values.SLES, values.SUSEFamily
+	case values.Hadron:
+		return values.Hadron, values.HadronFamily
+	default:
+		return values.Unknown, values.UnknownFamily
+	}
+}
+
+// detectFromIDLike resolves distro/family from ordered ID_LIKE tokens.
+// Per the os-release spec, ID_LIKE is a space-separated list of related distro
+// IDs, ordered from closest to least related. We iterate left-to-right and:
+//  1. Try each token as a distro ID via detectFromID.
+//  2. Fall back to family-only markers (e.g. "suse", "redhat") that are not
+//     valid distro IDs but indicate family membership.
+func detectFromIDLike(idLike string) (values.Distro, values.Family) {
+	for _, token := range strings.Fields(idLike) {
+		distro, family := detectFromID(token)
+		if distro != values.Unknown {
+			return distro, family
+		}
+
+		switch values.Family(token) {
+		case values.RedHatFamily:
+			return values.Fedora, values.RedHatFamily
+		case values.SUSEFamily:
+			return values.OpenSUSELeap, values.SUSEFamily
+		}
+	}
+
+	return values.Unknown, values.UnknownFamily
 }
