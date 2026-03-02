@@ -115,20 +115,26 @@ func detectFromID(id string) (values.Distro, values.Family) {
 	}
 }
 
-// detectFromIDLike maps ID_LIKE to a supported distro/family fallback.
-// BUG: ID_LIKE is treated as a single string but should be a space-separated list
-// per the os-release spec. This will be fixed in a follow-up commit.
+// detectFromIDLike resolves distro/family from ordered ID_LIKE tokens.
+// Per the os-release spec, ID_LIKE is a space-separated list of related distro
+// IDs, ordered from closest to least related. We iterate left-to-right and:
+//  1. Try each token as a distro ID via detectFromID.
+//  2. Fall back to family-only markers (e.g. "suse", "redhat") that are not
+//     valid distro IDs but indicate family membership.
 func detectFromIDLike(idLike string) (values.Distro, values.Family) {
-	switch values.Family(idLike) {
-	case values.DebianFamily:
-		return values.Debian, values.DebianFamily
-	case values.RedHatFamily, values.Family(values.Fedora):
-		return values.Fedora, values.RedHatFamily
-	case values.ArchFamily:
-		return values.Arch, values.ArchFamily
-	case values.SUSEFamily:
-		return values.OpenSUSELeap, values.SUSEFamily
-	default:
-		return values.Unknown, values.UnknownFamily
+	for _, token := range strings.Fields(idLike) {
+		distro, family := detectFromID(token)
+		if distro != values.Unknown {
+			return distro, family
+		}
+
+		switch values.Family(token) {
+		case values.RedHatFamily:
+			return values.Fedora, values.RedHatFamily
+		case values.SUSEFamily:
+			return values.OpenSUSELeap, values.SUSEFamily
+		}
 	}
+
+	return values.Unknown, values.UnknownFamily
 }

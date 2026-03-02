@@ -31,17 +31,24 @@ func TestDetectFromReleaseIDs(t *testing.T) {
 		// ID takes precedence over ID_LIKE
 		{name: "ID precedence over ID_LIKE", id: "ubuntu", idLike: "rhel fedora", expectedDistro: values.Ubuntu, expectedFamily: values.DebianFamily},
 
-		// ID_LIKE single-value fallback (current behavior)
+		// ID_LIKE single-value fallback via detectFromID
 		{name: "ID_LIKE debian", id: "custom", idLike: "debian", expectedDistro: values.Debian, expectedFamily: values.DebianFamily},
 		{name: "ID_LIKE fedora", id: "custom", idLike: "fedora", expectedDistro: values.Fedora, expectedFamily: values.RedHatFamily},
+		{name: "ID_LIKE rhel", id: "custom", idLike: "rhel", expectedDistro: values.RedHat, expectedFamily: values.RedHatFamily},
 		{name: "ID_LIKE arch", id: "custom", idLike: "arch", expectedDistro: values.Arch, expectedFamily: values.ArchFamily},
-		{name: "ID_LIKE suse", id: "custom", idLike: "suse", expectedDistro: values.OpenSUSELeap, expectedFamily: values.SUSEFamily},
-		{name: "ID_LIKE redhat", id: "custom", idLike: "redhat", expectedDistro: values.Fedora, expectedFamily: values.RedHatFamily},
+		{name: "ID_LIKE alpine", id: "custom", idLike: "alpine", expectedDistro: values.Alpine, expectedFamily: values.AlpineFamily},
 
-		// BUG: multi-value ID_LIKE is not parsed, so these currently fail to resolve.
-		// These document the broken behavior and will be fixed in a follow-up commit.
-		{name: "BUG: ID_LIKE multi-value not parsed", id: "custom", idLike: "rhel centos fedora", expectedDistro: values.Unknown, expectedFamily: values.UnknownFamily},
-		{name: "BUG: ID_LIKE ubuntu debian not parsed", id: "custom", idLike: "ubuntu debian", expectedDistro: values.Unknown, expectedFamily: values.UnknownFamily},
+		// ID_LIKE family-only markers (not valid distro IDs)
+		{name: "ID_LIKE suse (family marker)", id: "custom", idLike: "suse", expectedDistro: values.OpenSUSELeap, expectedFamily: values.SUSEFamily},
+		{name: "ID_LIKE redhat (family marker)", id: "custom", idLike: "redhat", expectedDistro: values.Fedora, expectedFamily: values.RedHatFamily},
+
+		// ID_LIKE multi-value: first recognized token wins (left-to-right)
+		{name: "ID_LIKE multi-value rhel centos fedora", id: "custom", idLike: "rhel centos fedora", expectedDistro: values.RedHat, expectedFamily: values.RedHatFamily},
+		{name: "ID_LIKE multi-value ubuntu debian", id: "custom", idLike: "ubuntu debian", expectedDistro: values.Ubuntu, expectedFamily: values.DebianFamily},
+		{name: "ID_LIKE ordered: debian before rhel", id: "custom", idLike: "debian rhel", expectedDistro: values.Debian, expectedFamily: values.DebianFamily},
+		{name: "ID_LIKE skips unknown then matches", id: "custom", idLike: "custom rhel", expectedDistro: values.RedHat, expectedFamily: values.RedHatFamily},
+		{name: "ID_LIKE opensuse-leap suse", id: "custom", idLike: "opensuse-leap suse", expectedDistro: values.OpenSUSELeap, expectedFamily: values.SUSEFamily},
+		{name: "ID_LIKE opensuse suse (family fallback)", id: "custom", idLike: "opensuse suse", expectedDistro: values.OpenSUSELeap, expectedFamily: values.SUSEFamily},
 
 		// Fully unknown
 		{name: "unknown ID and ID_LIKE", id: "custom", idLike: "custombase", expectedDistro: values.Unknown, expectedFamily: values.UnknownFamily},
