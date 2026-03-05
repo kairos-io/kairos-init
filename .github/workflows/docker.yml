@@ -16,7 +16,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build the docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         id: build-linux-amd64
         with:
           provenance: false
@@ -32,7 +32,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Build the docker image
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         id: build-linux-amr64
         with:
           provenance: false
