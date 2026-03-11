@@ -43,6 +43,7 @@ stages:
           /var/lib/dbus
           /var/lib/etcd
           /var/lib/extensions
+          /var/lib/confexts
           /var/lib/k0s
           /var/lib/kubelet
           /var/lib/longhorn

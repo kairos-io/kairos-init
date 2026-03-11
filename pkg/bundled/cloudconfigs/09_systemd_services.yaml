@@ -115,6 +115,27 @@ stages:
 
             [Install]
             WantedBy=multi-user.target
+    - name: "Override systemd-tpm2-setup/systemd-pcrproduct with temporary RW under /efi"
+      only_service_manager: "systemd"
+      if: '[ -e "/run/cos/uki_boot_mode" ]'
+      systemctl:
+        overrides:
+          - name: "efi-rw.conf"
+            service: systemd-tpm2-setup
+            content: |
+              [Service]
+              # Allow RW on /efi partition
+              ExecStartPre=mount -o remount,rw /efi
+              # Revert back to RO on /efi partition
+              ExecStartPost=mount -o remount,ro /efi
+          - name: "efi-rw.conf"
+            service: systemd-pcrproduct
+            content: |
+              [Service]
+              # Allow RW on /efi partition
+              ExecStartPre=mount -o remount,rw /efi
+              # Revert back to RO on /efi partition
+              ExecStartPost=mount -o remount,ro /efi
     - name: "Enable systemd services"
       only_service_manager: "systemd"
       commands:
