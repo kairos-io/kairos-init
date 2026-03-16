@@ -2,7 +2,7 @@
 AGENT_VERSION := v2.27.0
 IMMUCORE_VERSION := v0.13.1
 KCRYPT_DISCOVERY_CHALLENGER_VERSION := v0.12.2
-PROVIDER_KAIROS_VERSION := v2.14.0
+PROVIDER_KAIROS_VERSION := v2.14.1
 EDGEVPN_VERSION := v0.31.1
 ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
 BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger provider-kairos
