@@ -404,10 +404,20 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		{
 			Name:                 "Enable timesyncd service",
 			OnlyIfServiceManager: "systemd",
-			OnlyIfOs:             "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|SLES.*|[O-o]penSUSE.*|Hadron.*", // RHEL family has it optinally installed
+			OnlyIfOs:             "Ubuntu.*|Debian.*|SLES.*|[O-o]penSUSE.*|Hadron.*", // RHEL family and Fedora use chronyd instead
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"systemd-timesyncd",
+				},
+			},
+		},
+		{
+			Name:                 "Enable chronyd service for RHEL family and Fedora",
+			OnlyIfServiceManager: "systemd",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"chronyd",
 				},
 			},
 		},

@@ -551,6 +551,7 @@ var BasePackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				"audit",                   // For audit support, check if needed?
+				"chrony",                  // RHEL family uses chronyd for time sync (not systemd-timesyncd)
 				"cracklib-dicts",          // Password dictionary support
 				"device-mapper",           // Device mapper support, needed for lvm and cryptsetup
 				"device-mapper-multipath", // For multipath support, needed for dracut
