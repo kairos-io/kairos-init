@@ -87,7 +87,7 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			Files: []schema.File{
 				{
 					Path:    "/etc/zypp/repos.d/oss.repo",
-					Content: "[opensuse-oss]\nenabled=1\nautorefresh=0\nbaseurl=http://download.opensuse.org/distribution/leap/15.5/repo/oss/",
+					Content: "[opensuse-oss]\nenabled=1\nautorefresh=0\nbaseurl=https://download.opensuse.org/distribution/leap/15.5/repo/oss/",
 				},
 			},
 			Commands: []string{
