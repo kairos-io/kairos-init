@@ -53,8 +53,22 @@ func RunInstallStage(logger logger.KairosLogger) (schema.YipConfig, error) {
 	yipConsole := console.NewStandardConsole(console.WithLogger(logger))
 
 	data := schema.YipConfig{Stages: map[string][]schema.Stage{}}
-	// Run things before we install packages and framework
-	data.Stages["before-install"] = []schema.Stage{}
+	// Run things before we install packages
+
+	// In this case, the image already comes bundled with a lot of stuff from the kernel and we should remove it
+	data.Stages["before-install"] = []schema.Stage{
+		{
+			Name:     "Cleanup Sles Rancher Micro bundled kernels",
+			OnlyIfOs: values.OnlyMicroRegex,
+			Packages: schema.Packages{
+				Remove: []string{
+					"kernel-default",
+				},
+				Refresh: false,
+				Upgrade: false,
+			},
+		},
+	}
 
 	// On Rpi3 and Rpi4 we need to enable the non-free repository for Debian to get the firmware
 	if config.DefaultConfig.Model == values.Rpi3.String() || config.DefaultConfig.Model == values.Rpi4.String() {

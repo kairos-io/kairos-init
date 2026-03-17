@@ -433,7 +433,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name:                 "Disable Wicked for SUSE family", // Collides with systemd-networkd
+			Name:                 "Disable Wicked for SUSE family (excluding SLE Micro Rancher)", // Collides with systemd-networkd
 			OnlyIfOs:             values.AllSuseButMicroRegex,
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
@@ -446,7 +446,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name:                 "Enable services for SUSE family (Not SLES Micro for Rancher)",
+			Name:                 "Enable services for SUSE family (excluding SLE Micro Rancher)",
 			OnlyIfOs:             values.AllSuseButMicroRegex,
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
@@ -511,6 +511,17 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		{
 			Name:                 "Enable NetworkManager for RHEL if binary is available",
 			OnlyIfOs:             values.RHELFamilyRegex,
+			OnlyIfServiceManager: "systemd",
+			If:                   "test -f /usr/sbin/NetworkManager",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"NetworkManager",
+				},
+			},
+		},
+		{
+			Name:                 "Enable NetworkManager for SLE Micro Rancher",
+			OnlyIfOs:             values.OnlyMicroRegex,
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/sbin/NetworkManager",
 			Systemctl: schema.Systemctl{
