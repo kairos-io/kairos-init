@@ -162,7 +162,10 @@ func GetStepNames() []string {
 
 }
 
-// Some regexs as constants
+// AllSuseRegex matches any SUSE-based distribution name.
+// AllSuseButMicroRegex matches SLES, openSUSE, or SUSE Linux Enterprise Server names.
+// AlpineRegex matches Alpine Linux distribution names.
+// RHELFamilyRegex matches RHEL-family distributions such as Fedora, CentOS, Rocky, AlmaLinux, and Red Hat.
 const (
 	AllSuseRegex         = "SLES.*|openSUSE.*|SUSE.*"
 	AllSuseButMicroRegex = "^(?:SLES.*|openSUSE.*|SUSE Linux Enterprise Server.*)$"
