@@ -433,8 +433,8 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name:                 "Disable Wicked for SUSE family (excluding SLE Micro Rancher)", // Collides with systemd-networkd
-			OnlyIfOs:             values.AllSuseButMicroRegex,
+			Name:                 "Disable Wicked for SUSE family (excluding SLE Micro Rancher/Tumbleweed)", // Collides with systemd-networkd
+			OnlyIfOs:             values.AllSuseButMicroAndTumbleweed,
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Disable: []string{
