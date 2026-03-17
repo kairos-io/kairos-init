@@ -27,6 +27,7 @@ func TestDetectFromReleaseIDs(t *testing.T) {
 		{name: "ID opensuse-tumbleweed", id: "opensuse-tumbleweed", expectedDistro: values.OpenSUSETumbleweed, expectedFamily: values.SUSEFamily},
 		{name: "ID sles", id: "sles", expectedDistro: values.SLES, expectedFamily: values.SUSEFamily},
 		{name: "ID hadron", id: "hadron", expectedDistro: values.Hadron, expectedFamily: values.HadronFamily},
+		{name: "ID sle-micro-rancher", id: "sle-micro-rancher", expectedDistro: values.SLEMicroRancher, expectedFamily: values.SUSEFamily},
 
 		// ID takes precedence over ID_LIKE
 		{name: "ID precedence over ID_LIKE", id: "ubuntu", idLike: "rhel fedora", expectedDistro: values.Ubuntu, expectedFamily: values.DebianFamily},
