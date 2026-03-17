@@ -250,10 +250,8 @@ github.com/mudler/entities v0.8.3-0.20260109121712-af3b96567af9 h1:mxyMW50020PhF
 github.com/mudler/entities v0.8.3-0.20260109121712-af3b96567af9/go.mod h1:eoEj6XAvAsSnj/32dLPOThZTsEA8OetY7nr7RyHxoR4=
 github.com/mudler/go-pluggable v0.0.0-20230126220627-7710299a0ae5 h1:FaZD86+A9mVt7lh9glAryzQblMsbJYU2VnrdZ8yHlTs=
 github.com/mudler/go-pluggable v0.0.0-20230126220627-7710299a0ae5/go.mod h1:WmKcT8ONmhDQIqQ+HxU+tkGWjzBEyY/KFO8LTGCu4AI=
-github.com/mudler/yip v1.22.0 h1:aIv67G3xwcwKrMdNhyRzo3uCXkYoh01JrhMQ4oK70wg=
-github.com/mudler/yip v1.22.0/go.mod h1:sYBnRCRlablVkv69VMoEME/HVCd9bh7dJifv6XShTG0=
-github.com/mudler/yip v1.23.0 h1:2O0WepxpZJ4oRqAbclsVThEWassxjxLLMl5mm+YDiz4=
-github.com/mudler/yip v1.23.0/go.mod h1:sYBnRCRlablVkv69VMoEME/HVCd9bh7dJifv6XShTG0=
+github.com/mudler/yip v1.23.1 h1:T2hjMIs8fkg7cOGCVO1xyj8KECxTtwV8M3USBgxwb+o=
+github.com/mudler/yip v1.23.1/go.mod h1:sYBnRCRlablVkv69VMoEME/HVCd9bh7dJifv6XShTG0=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.11 h1:8feyoE3OzPrcshW5/MJ4sGESc5cqmGkGCWlco4l0bqY=
 github.com/nxadm/tail v1.4.11/go.mod h1:OTaG3NK980DZzxbRq6lEuzgU+mug70nY11sMd4JXXHc=
