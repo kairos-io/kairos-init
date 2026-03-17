@@ -472,9 +472,6 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			OnlyIfOs:             values.OnlyMicroRegex,
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
-				Disable: []string{
-					"NetworkManager",
-				},
 				Enable: []string{
 					"sshd",
 					"systemd-networkd",
