@@ -339,14 +339,14 @@ func GetCleanupStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:     "Cleanup",
-			OnlyIfOs: "Alpine.*",
+			OnlyIfOs: values.AlpineRegex,
 			Commands: []string{
 				"rm -rf /var/cache/apk/* /tmp/* /var/tmp/*",
 			},
 		},
 		{
 			Name:     "Cleanup",
-			OnlyIfOs: "openSUSE.*|SUSE.*",
+			OnlyIfOs: values.AllSuseRegex,
 			Commands: []string{
 				"zypper clean -a",
 				"rm -rf /var/cache/zypp/* /tmp/* /var/tmp/*",
@@ -434,7 +434,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Disable Wicked for SUSE family", // Collides with systemd-networkd
-			OnlyIfOs:             "SLES.*|openSUSE.*|SUSE.*",
+			OnlyIfOs:             values.AllSuseButMicroRegex,
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Disable: []string{
@@ -446,8 +446,8 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name:                 "Enable services for SUSE family",
-			OnlyIfOs:             "SLES.*|openSUSE.*|SUSE.*",
+			Name:                 "Enable services for SUSE family (Not SLES Micro for Rancher)",
+			OnlyIfOs:             values.AllSuseButMicroRegex,
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
@@ -499,7 +499,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable networkd for RHEL family if binary is available",
-			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Red\\sHat.*",
+			OnlyIfOs:             values.RHELFamilyRegex,
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/lib/systemd/systemd-networkd",
 			Systemctl: schema.Systemctl{
@@ -510,7 +510,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable NetworkManager for RHEL if binary is available",
-			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Red\\sHat.*",
+			OnlyIfOs:             values.RHELFamilyRegex,
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/sbin/NetworkManager",
 			Systemctl: schema.Systemctl{
@@ -521,7 +521,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable services for Alpine family",
-			OnlyIfOs:             "Alpine.*",
+			OnlyIfOs:             values.AlpineRegex,
 			OnlyIfServiceManager: "openrc",
 			Commands: []string{
 				"rc-update add sshd boot",
@@ -619,7 +619,7 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 		},
 		{ // On RHEL family, if we don't have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
 			Name:     "Copy kernel for Trusted Boot",
-			OnlyIfOs: "Fedora.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs: values.RHELFamilyRegex,
 			If:       fmt.Sprintf("test ! -f /boot/vmlinuz-%s && test -f /usr/lib/modules/%s/vmlinuz", kernel, kernel),
 			Commands: []string{
 				fmt.Sprintf("cp /usr/lib/modules/%s/vmlinuz /boot/vmlinuz-%s", kernel, kernel),
@@ -863,6 +863,10 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 				networkModule += " network"
 			}
 
+		}
+
+		if sis.Distro == values.SLEMicroRancher {
+			networkModule = "network network-legacy"
 		}
 
 		// Hadron uses the full systemd network stuff

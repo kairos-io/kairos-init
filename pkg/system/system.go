@@ -110,6 +110,8 @@ func detectFromID(id string) (values.Distro, values.Family) {
 		return values.SLES, values.SUSEFamily
 	case values.Hadron:
 		return values.Hadron, values.HadronFamily
+	case values.SLEMicroRancher:
+		return values.SLEMicroRancher, values.SUSEFamily
 	default:
 		return values.Unknown, values.UnknownFamily
 	}

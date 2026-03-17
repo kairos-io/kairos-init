@@ -39,6 +39,7 @@ const (
 	OpenSUSELeap       Distro = "opensuse-leap"
 	OpenSUSETumbleweed Distro = "opensuse-tumbleweed"
 	SLES               Distro = "sles"
+	SLEMicroRancher    Distro = "sle-micro-rancher"
 	Hadron             Distro = "hadron"
 )
 
@@ -160,3 +161,11 @@ func GetStepNames() []string {
 	return steps
 
 }
+
+// Some regexs as constants
+const (
+	AllSuseRegex         = "SLES.*|openSUSE.*|SUSE.*"
+	AllSuseButMicroRegex = "^(?:SLES.*|openSUSE.*|SUSE Linux Enterprise Server.*)$"
+	AlpineRegex          = "Alpine.*"
+	RHELFamilyRegex      = "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Red\\sHat.*"
+)

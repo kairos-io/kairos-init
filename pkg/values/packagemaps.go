@@ -443,12 +443,17 @@ var BasePackages = PackageMap{
 				"qemu-guest-agent", // TODO: Move this to generic model?
 				"strace",
 				"systemd",
-				"systemd-networkd",
-				"systemd-resolved",
 				"timezone",
 				"tmux",
 				"vim",
 				"which",
+			},
+			"!=5.4": {
+				"systemd-networkd",
+				"systemd-resolved",
+			},
+			"==5.4": { // Different name under sle-rancher-micro
+				"systemd-network",
 			},
 		},
 		ArchAMD64: {
