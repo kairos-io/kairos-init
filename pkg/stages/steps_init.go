@@ -458,6 +458,17 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			},
 		},
 		{
+			Name:                 "Enable services for SLE Micro Rancher",
+			OnlyIfOs:             values.OnlyMicroRegex,
+			OnlyIfServiceManager: "systemd",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"sshd",
+					"systemd-network",
+				},
+			},
+		},
+		{
 			Name:                 "Enable services for RHEL family",
 			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*",
 			OnlyIfServiceManager: "systemd",
@@ -511,17 +522,6 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		{
 			Name:                 "Enable NetworkManager for RHEL if binary is available",
 			OnlyIfOs:             values.RHELFamilyRegex,
-			OnlyIfServiceManager: "systemd",
-			If:                   "test -f /usr/sbin/NetworkManager",
-			Systemctl: schema.Systemctl{
-				Enable: []string{
-					"NetworkManager",
-				},
-			},
-		},
-		{
-			Name:                 "Enable NetworkManager for SLE Micro Rancher",
-			OnlyIfOs:             values.OnlyMicroRegex,
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/sbin/NetworkManager",
 			Systemctl: schema.Systemctl{
@@ -874,10 +874,6 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 				networkModule += " network"
 			}
 
-		}
-
-		if sis.Distro == values.SLEMicroRancher {
-			networkModule = "network network-legacy"
 		}
 
 		// Hadron uses the full systemd network stuff

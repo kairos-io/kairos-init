@@ -452,9 +452,6 @@ var BasePackages = PackageMap{
 				"systemd-networkd",
 				"systemd-resolved",
 			},
-			"=5.4": {
-				"sysvinit-tools", // install pidof, needed by multipath for the initramfs
-			},
 		},
 		ArchAMD64: {
 			Common: {
