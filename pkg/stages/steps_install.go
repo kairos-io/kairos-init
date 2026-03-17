@@ -105,7 +105,7 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			},
 		},
 		{
-			Name:     "Cleanup Sles Rancher Micro bundled kernels",
+			Name:     "Cleanup SLE Micro Rancher bundled kernels",
 			OnlyIfOs: values.OnlyMicroRegex, // Container comes with a kernel already, remove it first
 			Packages: schema.Packages{
 				Remove: []string{
