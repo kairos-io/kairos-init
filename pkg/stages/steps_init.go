@@ -458,13 +458,26 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			},
 		},
 		{
+			Name:                 "Disable services for SLE Micro Rancher",
+			OnlyIfOs:             values.OnlyMicroRegex,
+			OnlyIfServiceManager: "systemd",
+			Systemctl: schema.Systemctl{
+				Disable: []string{
+					"NetworkManager",
+				},
+			},
+		},
+		{
 			Name:                 "Enable services for SLE Micro Rancher",
 			OnlyIfOs:             values.OnlyMicroRegex,
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
+				Disable: []string{
+					"NetworkManager",
+				},
 				Enable: []string{
 					"sshd",
-					"systemd-network",
+					"systemd-networkd",
 				},
 			},
 		},
