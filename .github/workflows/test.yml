@@ -39,6 +39,7 @@ jobs:
          - "quay.io/centos/centos:stream10"
          - "ghcr.io/kairos-io/hadron:v0.0.1-beta6"
          - "ghcr.io/kairos-io/hadron:main"
+         - "registry.suse.com/suse/sle-micro-rancher/5.4:latest"
         include:
           - platform: "amd64"
             base_image: "ubuntu:22.04"

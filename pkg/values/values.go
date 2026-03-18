@@ -39,6 +39,7 @@ const (
 	OpenSUSELeap       Distro = "opensuse-leap"
 	OpenSUSETumbleweed Distro = "opensuse-tumbleweed"
 	SLES               Distro = "sles"
+	SLEMicroRancher    Distro = "sle-micro-rancher"
 	Hadron             Distro = "hadron"
 )
 
@@ -160,3 +161,16 @@ func GetStepNames() []string {
 	return steps
 
 }
+
+// AllSuseRegex matches any SUSE-based distribution name.
+// AllSuseButMicroRegex matches SLES, openSUSE, or SUSE Linux Enterprise Server names.
+// AlpineRegex matches Alpine Linux distribution names.
+// RHELFamilyRegex matches RHEL-family distributions such as Fedora, CentOS, Rocky, AlmaLinux, and Red Hat.
+const (
+	AllSuseRegex                 = "SLES.*|openSUSE.*|SUSE.*"
+	AllSuseButMicroRegex         = "^(?:SLES.*|openSUSE.*|SUSE Linux Enterprise Server.*)$"
+	AllSuseButMicroAndTumbleweed = "^(?:SLES.*|SUSE Linux Enterprise Server.*|openSUSE Leap.*)$"
+	OnlyMicroRegex               = "SUSE Linux Enterprise Micro for Rancher.*"
+	AlpineRegex                  = "Alpine.*"
+	RHELFamilyRegex              = "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Red\\sHat.*"
+)

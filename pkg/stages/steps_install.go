@@ -82,10 +82,37 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			},
 		},
 		{
+			Name:     "Install oss repository",
+			OnlyIfOs: values.OnlyMicroRegex, // From SLE Micro Rancher we need to do some workarounds
+			Files: []schema.File{
+				{
+					Path:    "/etc/zypp/repos.d/oss.repo",
+					Content: "[opensuse-oss]\nenabled=1\nautorefresh=0\nbaseurl=https://download.opensuse.org/distribution/leap/15.5/repo/oss/",
+				},
+			},
+			Commands: []string{
+				"zypper -n --gpg-auto-import-keys refresh",
+				"zypper -n install --force-resolution vim tpm2*",       // Fix deps issues
+				"zypper -n install --force-resolution policycoreutils", // Fix deps issues
+				"zypper -n install --force-resolution systemd-network", // Fix deps issues
+			},
+		},
+		{
 			Name:     "Install epel repository for Red Hat",
 			OnlyIfOs: "Red\\sHat.*",
 			Commands: []string{
 				fmt.Sprintf("dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-%d.noarch.rpm", fullVersion.Segments()[0]),
+			},
+		},
+		{
+			Name:     "Cleanup SLE Micro Rancher bundled kernels",
+			OnlyIfOs: values.OnlyMicroRegex, // Container comes with a kernel already, remove it first
+			Packages: schema.Packages{
+				Remove: []string{
+					"kernel-default",
+				},
+				Refresh: false,
+				Upgrade: false,
 			},
 		},
 		{
