@@ -3,7 +3,7 @@ stages:
   rootfs.before:
     - name: "Enable systemd-network config files for DHCP"  # Needed if systemd-networkd runs in the initramfs!
       only_service_manager: "systemd"
-      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|openSUSE.*|Hadron.*"
+      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|[Oo]penSUSE.*|Hadron.*"
       directories:
         - path: "/etc/systemd/network"  # doesnt exist on initramfs
           permissions: 0775
@@ -37,7 +37,7 @@ stages:
   initramfs:
     - name: "Enable systemd-network config files for DHCP"
       only_service_manager: "systemd"
-      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|openSUSE.*|Hadron.*"
+      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|[Oo]penSUSE.*|Hadron.*"
       files:
         - path: /etc/systemd/network/20-dhcp.network
           permissions: 0644
@@ -65,7 +65,7 @@ stages:
         - networkctl reload  # TODO: No systemd in initramfs is there?
     - name: "Disable NetworkManager and wicked" ## TODO: Check which distros this affects and set the only_os or move it to init
       only_service_manager: "systemd"
-      only_os: "openSUSE.*|SUSE.*"
+      only_os: "[Oo]penSUSE.*|SUSE.*"
       systemctl:
         disable:
           - NetworkManager
