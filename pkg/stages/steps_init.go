@@ -864,8 +864,12 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 
 			// If its 9.0 or lower, there is no dracut modules for systemd-network/resolved so default to network/network-legacy on those
 			constraint, _ = semver.NewConstraint("<=9.0")
-			if !constraint.Check(ver) {
-				// Do we have networkmanmager?
+			if constraint.Check(ver) {
+				// Default for <= 9.0: use the plain dracut network module;
+				// network-legacy will be appended below when <10.
+				networkModule = "network"
+			} else {
+				// Do we have networkmanager?
 				if _, err := os.Stat("/usr/sbin/NetworkManager"); err == nil {
 					networkModule = "network-manager"
 				}
