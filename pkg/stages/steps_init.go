@@ -878,6 +878,16 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 						if _, err := os.Stat("/usr/lib/systemd/systemd-resolved"); err == nil {
 							networkModule += " systemd-resolved"
 						}
+					} else {
+						// Fallback: if neither NetworkManager nor systemd-networkd is available on Fedora,
+						// add either network or network-legacy based on the version, same as other distros.
+						// network-legacy was dropped from 10.0 onwards
+						constraint, _ = semver.NewConstraint("<10")
+						if constraint.Check(ver) {
+							networkModule = "network-legacy"
+						} else {
+							networkModule = "network"
+						}
 					}
 				} else {
 					// On other distros add either network or network-legacy
