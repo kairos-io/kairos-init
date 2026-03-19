@@ -862,17 +862,21 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			// Start from scratch
 			networkModule = ""
 
-			// Do we have networkmanmager?
-			if _, err := os.Stat("/usr/sbin/NetworkManager"); err == nil {
-				networkModule = "network-manager"
-			}
+			// If its 9.0 or lower, there is no dracut modules for systemd-network/resolved so default to network/network-legacy on those
+			constraint, _ = semver.NewConstraint("<=9.0")
+			if !constraint.Check(ver) {
+				// Do we have networkmanmager?
+				if _, err := os.Stat("/usr/sbin/NetworkManager"); err == nil {
+					networkModule = "network-manager"
+				}
 
-			// Do we have systemd-networkd?
-			if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err == nil {
-				networkModule = "systemd-networkd"
-				// Do we have systemd-resolved?
-				if _, err := os.Stat("/usr/lib/systemd/systemd-resolved"); err == nil {
-					networkModule += " systemd-resolved"
+				// Do we have systemd-networkd?
+				if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err == nil {
+					networkModule = "systemd-networkd"
+					// Do we have systemd-resolved?
+					if _, err := os.Stat("/usr/lib/systemd/systemd-resolved"); err == nil {
+						networkModule += " systemd-resolved"
+					}
 				}
 			}
 
