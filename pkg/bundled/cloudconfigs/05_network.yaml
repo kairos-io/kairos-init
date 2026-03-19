@@ -3,7 +3,7 @@ stages:
   rootfs.before:
     - name: "Enable systemd-network config files for DHCP"  # Needed if systemd-networkd runs in the initramfs!
       only_service_manager: "systemd"
-      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|[Oo]penSUSE.*|Hadron.*"
+      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|[Oo]penSUSE.*|Hadron.*|Red.*Hat.*"
       directories:
         - path: "/etc/systemd/network"  # doesnt exist on initramfs
           permissions: 0775
@@ -37,36 +37,7 @@ stages:
   initramfs:
     - name: "Enable systemd-network config files for DHCP"
       only_service_manager: "systemd"
-      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|[Oo]penSUSE.*|Hadron.*"
-      files:
-        - path: /etc/systemd/network/20-dhcp.network
-          permissions: 0644
-          owner: 0
-          group: 0
-          content: |
-            [Match]
-            Name=en*
-            [Network]
-            DHCP=yes
-            [DHCP]
-            ClientIdentifier=mac
-        - path: /etc/systemd/network/20-dhcp-legacy.network
-          permissions: 0644
-          owner: 0
-          group: 0
-          content: |
-            [Match]
-            Name=eth*
-            [Network]
-            DHCP=yes
-            [DHCP]
-            ClientIdentifier=mac
-      commands:
-        - networkctl reload  # TODO: No systemd in initramfs is there?
-    - name: "Enable systemd-network config files for DHCP under Red Hat if binary is there"
-      only_service_manager: "systemd"
-      only_os: "Red.*Hat.*"
-      If: "test -f /usr/lib/systemd/systemd-networkd",
+      only_os: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|SUSE.*|[Oo]penSUSE.*|Hadron.*|Red.*Hat.*"
       files:
         - path: /etc/systemd/network/20-dhcp.network
           permissions: 0644
