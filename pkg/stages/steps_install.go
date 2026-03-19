@@ -93,7 +93,6 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			Commands: []string{
 				"zypper -n --gpg-auto-import-keys refresh",
 				"zypper -n install --force-resolution vim tpm2*",       // Fix deps issues
-				"zypper -n install --force-resolution policycoreutils", // Fix deps issues
 				"zypper -n install --force-resolution systemd-network", // Fix deps issues
 			},
 		},

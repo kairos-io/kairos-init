@@ -437,7 +437,6 @@ var BasePackages = PackageMap{
 				"openssh",
 				"open-vm-tools",
 				"pigz",
-				"policycoreutils",
 				"polkit",
 				"procps",
 				"qemu-guest-agent", // TODO: Move this to generic model?
