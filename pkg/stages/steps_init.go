@@ -856,42 +856,38 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			}
 
 			// Now network
-			// we default to networkmanager
+			// we default to NetworkManager
 			// if systemd-network is available we use it instead
 			// depending on the version we might add network-legacy
 			// Start from scratch
 			networkModule = ""
-
-			// If its 9.0 or lower, there is no dracut modules for systemd-network/resolved so default to network/network-legacy on those
-			constraint, _ = semver.NewConstraint("<=9.0")
-			if constraint.Check(ver) {
-				// Default for <= 9.0: use the plain dracut network module;
-				// network-legacy will be appended below when <10.
-				networkModule = "network"
+			// Do we have NetworkManager? Then add it and skip the rest of checks
+			if _, err := os.Stat("/usr/sbin/NetworkManager"); err == nil {
+				networkModule = "network-manager"
 			} else {
-				// Do we have networkmanager?
-				if _, err := os.Stat("/usr/sbin/NetworkManager"); err == nil {
-					networkModule = "network-manager"
-				}
-
-				// Do we have systemd-networkd?
-				if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err == nil {
-					networkModule = "systemd-networkd"
-					// Do we have systemd-resolved?
-					if _, err := os.Stat("/usr/lib/systemd/systemd-resolved"); err == nil {
-						networkModule += " systemd-resolved"
+				// Nothing seems to ship networkd modules for dracut in the RHEL+clones so only add them under Fedora
+				if sis.Distro == values.Fedora {
+					// Do we have systemd-networkd?
+					if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err == nil {
+						networkModule = "systemd-networkd"
+						// Systemd resolved modules only make sense if networkd is used alongside
+						// Otherwise other modules provide their own resolvers
+						// Do we have systemd-resolved?
+						if _, err := os.Stat("/usr/lib/systemd/systemd-resolved"); err == nil {
+							networkModule += " systemd-resolved"
+						}
+					}
+				} else {
+					// On other distros add either network or network-legacy
+					// network-legacy was dropped from 10.0 onwards
+					constraint, _ = semver.NewConstraint("<10")
+					if constraint.Check(ver) {
+						networkModule = "network-legacy"
+					} else {
+						networkModule = "network"
 					}
 				}
 			}
-
-			constraint, _ = semver.NewConstraint("<10")
-			// If its > 9.0 we cant add network-legacy
-			if constraint.Check(ver) {
-				networkModule += " network-legacy"
-			} else {
-				networkModule += " network"
-			}
-
 		}
 
 		// Hadron uses the full systemd network stuff
