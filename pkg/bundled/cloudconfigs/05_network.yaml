@@ -32,8 +32,6 @@ stages:
             DHCP=yes
             [DHCP]
             ClientIdentifier=mac
-      commands:
-        - networkctl reload  # TODO: No systemd in initramfs is there?
   initramfs:
     - name: "Enable systemd-network config files for DHCP"
       only_service_manager: "systemd"

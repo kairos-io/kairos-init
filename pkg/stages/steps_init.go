@@ -248,6 +248,16 @@ func GetWorkaroundsStage(_ values.System, l logger.KairosLogger) []schema.Stage 
 				},
 			},
 		},
+		{
+			Name:     "Disable SELinux for Red Hat",
+			OnlyIfOs: "Red.*Hat.*",
+			Files: []schema.File{
+				{
+					Path:    "/etc/selinux/config",
+					Content: `SELINUX=disabled`,
+				},
+			},
+		},
 	}
 
 	if config.DefaultConfig.TrustedBoot {
@@ -482,42 +492,43 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			Name:                 "Enable services for RHEL family",
 			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*",
 			OnlyIfServiceManager: "systemd",
+			Commands: []string{
+				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
+				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
+				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
+			},
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"sshd",
 					"systemd-resolved",
+					"systemd-udevd",
 				},
 				Disable: []string{
 					"dnf-makecache",
 					"dnf-makecache.timer",
 				},
-			},
-			Commands: []string{
-				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
-				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
-				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
 			},
 		},
 		{
 			Name:                 "Enable services for RHEL",
 			OnlyIfOs:             "Red\\sHat.*",
 			OnlyIfServiceManager: "systemd",
+			Commands: []string{
+				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
+				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
+				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
+			},
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"sshd",
 					"systemd-resolved",
-					"tmp.mount",
+					"systemd-udevd",
 				},
 				Disable: []string{
 					"dnf-makecache",
 					"dnf-makecache.timer",
 					"selinux-autorelabel-mark",
 				},
-			},
-			Commands: []string{
-				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
-				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
-				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
 			},
 		},
 		{
@@ -591,6 +602,8 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 		logger.Logger.Error().Msgf("Failed to get the latest kernel: %s", err)
 		return []schema.Stage{}, err
 	}
+
+	// TODO: link any KERNEL.hmac to .vmlinuz.hmac for FIPS?
 
 	return []schema.Stage{
 		{
