@@ -501,7 +501,6 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 				Enable: []string{
 					"sshd",
 					"systemd-resolved",
-					"systemd-udevd",
 				},
 				Disable: []string{
 					"dnf-makecache",
@@ -514,15 +513,23 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			OnlyIfOs:             "Red\\sHat.*",
 			OnlyIfServiceManager: "systemd",
 			Commands: []string{
-				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
-				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
-				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
+				"systemctl unmask getty.target",         // Unmask getty.target to allow login on ttys as it comes masked by default
+				"systemctl unmask console-getty",        // Unmask console-getty to allow console login on ttys as it comes masked by default
+				"systemctl unmask systemd-udevd",        // Unmask systemd-udevd as it comes masked by default
+				"systemctl unmask systemd-udev-trigger", // Unmask systemd-udev-trigger as it comes masked by default
+				"systemctl unmask systemd-logind",       // Unmask systemd-logind as it comes masked by default
+				"systemctl unmask systemd-random-seed",  // Unmask systemd-random-seed as it comes masked by default
+				"systemctl unmask systemd-remount-fs",   // Unmask systemd-remount-fs as it comes masked by default
 			},
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"sshd",
 					"systemd-resolved",
-					"systemd-udevd",
+					"getty@tty1",
+					"getty@tty2",
+					"getty@tty3",
+					"tmp.mount",
+					"proc-sys-fs-binfmt_misc.mount",
 				},
 				Disable: []string{
 					"dnf-makecache",

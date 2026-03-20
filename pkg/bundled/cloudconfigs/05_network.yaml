@@ -74,3 +74,17 @@ stages:
       commands:
         - rm /etc/resolv.conf
         - ln -s /run/systemd/resolve/resolv.conf /etc/resolv.conf
+    - name: "Enabled systemd-networkd on Red Hat if available"
+      only_os: "Red.*Hat.*"
+      only_service_manager: "systemd"
+      if: '[ -f /usr/lib/systemd/systemd-networkd ]'
+      systemctl:
+        enable:
+          - systemd-networkd
+    - name: "Enable systemd-resolved on Red Hat if available"
+      only_os: "Red.*Hat.*"
+      only_service_manager: "systemd"
+      if: '[ -f /usr/lib/systemd/systemd-resolved ]'
+      systemctl:
+        enable:
+          - systemd-resolved
