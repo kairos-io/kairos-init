@@ -475,6 +475,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 				Enable: []string{
 					"sshd",
 					"systemd-networkd",
+					"systemd-resolved",
 				},
 			},
 		},
