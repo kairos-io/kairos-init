@@ -677,6 +677,15 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 			},
 		},
 		{
+			// hmac files are used under FIPS. We ship them along but because dracut will use the kernel file name
+			// to search for the companion hmac file, we need to also link it to the name :)
+			Name: "Link .hmac if any",
+			If:   fmt.Sprintf("test -f /boot/.vmlinuz-%s.hmac", kernel),
+			Commands: []string{
+				fmt.Sprintf("ln -s /boot/.vmlinuz-%s.hmac /boot/.vmlinuz.hmac", kernel),
+			},
+		},
+		{
 			Name: "Link kernel",
 			If:   fmt.Sprintf("test -f /boot/Image-%s", kernel), // On suse arm64 kernel starts with Image
 			Commands: []string{
