@@ -248,6 +248,16 @@ func GetWorkaroundsStage(_ values.System, l logger.KairosLogger) []schema.Stage 
 				},
 			},
 		},
+		{
+			Name:     "Disable SELinux for Red Hat",
+			OnlyIfOs: "Red.*Hat.*",
+			Files: []schema.File{
+				{
+					Path:    "/etc/selinux/config",
+					Content: `SELINUX=disabled`,
+				},
+			},
+		},
 	}
 
 	if config.DefaultConfig.TrustedBoot {
@@ -483,6 +493,11 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			Name:                 "Enable services for RHEL family",
 			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*",
 			OnlyIfServiceManager: "systemd",
+			Commands: []string{
+				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
+				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
+				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
+			},
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"sshd",
@@ -492,31 +507,36 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 					"dnf-makecache",
 					"dnf-makecache.timer",
 				},
-			},
-			Commands: []string{
-				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
-				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
-				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
 			},
 		},
 		{
 			Name:                 "Enable services for RHEL",
 			OnlyIfOs:             "Red\\sHat.*",
 			OnlyIfServiceManager: "systemd",
+			Commands: []string{
+				"systemctl unmask getty.target",         // Unmask getty.target to allow login on ttys as it comes masked by default
+				"systemctl unmask console-getty",        // Unmask console-getty to allow console login on ttys as it comes masked by default
+				"systemctl unmask systemd-udevd",        // Unmask systemd-udevd as it comes masked by default
+				"systemctl unmask systemd-udev-trigger", // Unmask systemd-udev-trigger as it comes masked by default
+				"systemctl unmask systemd-logind",       // Unmask systemd-logind as it comes masked by default
+				"systemctl unmask systemd-random-seed",  // Unmask systemd-random-seed as it comes masked by default
+				"systemctl unmask systemd-remount-fs",   // Unmask systemd-remount-fs as it comes masked by default
+			},
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"sshd",
 					"systemd-resolved",
+					"getty@tty1",
+					"getty@tty2",
+					"getty@tty3",
+					"tmp.mount",
+					"proc-sys-fs-binfmt_misc.mount",
 				},
 				Disable: []string{
 					"dnf-makecache",
 					"dnf-makecache.timer",
+					"selinux-autorelabel-mark",
 				},
-			},
-			Commands: []string{
-				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
-				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
-				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
 			},
 		},
 		{
@@ -652,6 +672,22 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 			If:   fmt.Sprintf("test -f /boot/vmlinuz-%s", kernel),
 			Commands: []string{
 				fmt.Sprintf("ln -s /boot/vmlinuz-%s /boot/vmlinuz", kernel),
+			},
+		},
+		{
+			Name: "Remove any existing hmac symlinks",
+			If:   "test -L /boot/.vmlinuz.hmac",
+			Commands: []string{
+				"rm /boot/.vmlinuz.hmac",
+			},
+		},
+		{
+			// hmac files are used under FIPS. We ship them along but because dracut will use the kernel file name
+			// to search for the companion hmac file, we need to also link it to the name :)
+			Name: "Link .hmac if any",
+			If:   fmt.Sprintf("test -f /boot/.vmlinuz-%s.hmac", kernel),
+			Commands: []string{
+				fmt.Sprintf("ln -s /boot/.vmlinuz-%s.hmac /boot/.vmlinuz.hmac", kernel),
 			},
 		},
 		{
@@ -857,34 +893,48 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			}
 
 			// Now network
-			// we default to networkmanager
+			// we default to NetworkManager
 			// if systemd-network is available we use it instead
 			// depending on the version we might add network-legacy
 			// Start from scratch
 			networkModule = ""
-
-			// Do we have networkmanmager?
+			// Do we have NetworkManager? Then add it and skip the rest of checks
 			if _, err := os.Stat("/usr/sbin/NetworkManager"); err == nil {
 				networkModule = "network-manager"
-			}
-
-			// Do we have systemd-networkd?
-			if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err == nil {
-				networkModule = "systemd-networkd"
-				// Do we have systemd-resolved?
-				if _, err := os.Stat("/usr/lib/systemd/systemd-resolved"); err == nil {
-					networkModule += " systemd-resolved"
+			} else {
+				// Nothing seems to ship networkd modules for dracut in the RHEL+clones so only add them under Fedora
+				if sis.Distro == values.Fedora {
+					// Do we have systemd-networkd?
+					if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err == nil {
+						networkModule = "systemd-networkd"
+						// Systemd resolved modules only make sense if networkd is used alongside
+						// Otherwise other modules provide their own resolvers
+						// Do we have systemd-resolved?
+						if _, err := os.Stat("/usr/lib/systemd/systemd-resolved"); err == nil {
+							networkModule += " systemd-resolved"
+						}
+					} else {
+						// Fallback: if neither NetworkManager nor systemd-networkd is available on Fedora,
+						// add either network or network-legacy based on the version, same as other distros.
+						// network-legacy was dropped from 10.0 onwards
+						constraint, _ = semver.NewConstraint("<10")
+						if constraint.Check(ver) {
+							networkModule = "network-legacy"
+						} else {
+							networkModule = "network"
+						}
+					}
+				} else {
+					// On other distros add either network or network-legacy
+					// network-legacy was dropped from 10.0 onwards
+					constraint, _ = semver.NewConstraint("<10")
+					if constraint.Check(ver) {
+						networkModule = "network-legacy"
+					} else {
+						networkModule = "network"
+					}
 				}
 			}
-
-			constraint, _ = semver.NewConstraint("<10")
-			// If its > 9.0 we cant add network-legacy
-			if constraint.Check(ver) {
-				networkModule += " network-legacy"
-			} else {
-				networkModule += " network"
-			}
-
 		}
 
 		// Hadron uses the full systemd network stuff
