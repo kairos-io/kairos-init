@@ -675,6 +675,13 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 			},
 		},
 		{
+			Name: "Remove any existing hmac symlinks",
+			If:   "test -L /boot/.vmlinuz.hmac",
+			Commands: []string{
+				"rm /boot/.vmlinuz.hmac",
+			},
+		},
+		{
 			// hmac files are used under FIPS. We ship them along but because dracut will use the kernel file name
 			// to search for the companion hmac file, we need to also link it to the name :)
 			Name: "Link .hmac if any",
