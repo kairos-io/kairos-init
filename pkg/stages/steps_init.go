@@ -611,8 +611,6 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 		return []schema.Stage{}, err
 	}
 
-	// TODO: link any KERNEL.hmac to .vmlinuz.hmac for FIPS?
-
 	return []schema.Stage{
 		{
 			Name: "Create dir if not exists",
