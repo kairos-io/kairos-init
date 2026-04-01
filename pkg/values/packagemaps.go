@@ -253,13 +253,19 @@ var ImmucorePackages = PackageMap{
 var KernelPackages = PackageMap{
 	Ubuntu: {
 		ArchCommon: {
-			"20.04 || 22.04 || 24.04 || 26.04 || 28.04": {
+			"20.04 || 22.04 || 24.04 || 28.04": {
 				// Note: this logic only works for LTS release (x.04), any odd year or x.10 will not work
 				// This is a template, so we can replace the version with the actual version of the system
 				"linux-image-generic-hwe-{{.version}}",
 			},
+			"26.04": {
+				// Ubuntu 26.04 uses generic kernel instead of HWE
+				"linux-image-generic",
+			},
 			// 24.10 uses the 24.04 hwe kernel as it is the same hwe track https://ubuntu.com/kernel/lifecycle
-			">=24.10": {"linux-image-generic-hwe-24.04"},
+			"24.10 || 25.04 || 25.10": {
+				"linux-image-generic-hwe-24.04",
+			},
 		},
 	},
 	Debian: {
@@ -600,10 +606,15 @@ var BasePackages = PackageMap{
 				"tpm2-tools",             // For TPM support, mainly trusted boot
 				"dmsetup",                // Device mapper support, needed for lvm and cryptsetup
 				"networkd-dispatcher",
-				"packagekit-tools",
 				"publicsuffix",
 				"xdg-user-dirs",
 				"zfsutils-linux", // For zfs tools (zfs and zpool)
+			},
+			"<26.04": {
+				"packagekit-tools",
+			},
+			">=26.04": {
+				"packagekit",
 			},
 			// Ubuntu 20.04 does not support multipath + dracut due to initramfs-tools
 			// conflicting with dracut, so we dont install it there. This means
