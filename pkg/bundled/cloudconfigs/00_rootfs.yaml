@@ -117,7 +117,7 @@ stages:
         # https://www.freedesktop.org/software/systemd/man/latest/systemd-machine-id-setup.html
         - systemd-machine-id-setup
 
-    - if: '[ ! -f "/run/cos/recovery_mode" ] && [ -f "/sbin/openrc" ]'
+    - only_service_manager: "openrc"
       name: "Ensure /etc/machine-id for openrc systems"
       commands:
         - dbus-uuidgen --ensure  # This makes sure that the machine-id exists and its valid
