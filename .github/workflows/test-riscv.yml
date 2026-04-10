@@ -40,9 +40,4 @@ jobs:
           build-args: |
             BASE_IMAGE=${{ matrix.base_image }}
             VALIDATE_IMAGE=${{ matrix.base_image }}
-            PROVIDER_NAME=
-            PROVIDER_VERSION=
             VERSION=${{ env.VERSION }}
-            FIPS=false
-            TRUSTED_BOOT=false
-            MODEL=generic

@@ -79,15 +79,10 @@ COPY --from=build /app/kairos-init /kairos-init
 RUN /kairos-init validate
 
 FROM ${BASE_IMAGE} AS default
-ARG MODEL=generic
-ARG TRUSTED_BOOT=false
-ARG PROVIDER_NAME
-ARG PROVIDER_VERSION
 ARG VERSION=v0.0.1
-ARG FIPS=false
-ARG VALIDATE
+ARG VALIDATE=true
 
 COPY --from=kairos-init /kairos-init /kairos-init
-RUN /kairos-init -l debug -m "${MODEL}" -t "${TRUSTED_BOOT}" --provider "${PROVIDER_NAME}" --provider-"${PROVIDER_NAME}"-version "${PROVIDER_VERSION}" --version "${VERSION}" "$(if [ "${FIPS}" = "true" ]; then echo "--fips"; fi)"
-RUN if [ "${VALIDATE}" = 'true' ];then /kairos-init validate -t "${TRUSTED_BOOT}"; fi
+RUN /kairos-init -l debug --version "${VERSION}"
+RUN if [ "${VALIDATE}" = 'true' ]; then /kairos-init validate; fi
 RUN rm /kairos-init
