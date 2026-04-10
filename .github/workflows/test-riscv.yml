@@ -1,0 +1,47 @@
+name: Tests (RISC-V)
+
+on:
+  pull_request:
+  push:
+    branches:
+      - 'main'
+
+concurrency:
+  group: build-image-riscv-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  testing_build_matrix:
+    name: riscv64 - ${{ matrix.base_image }}
+    runs-on: ubuntu-24.04-riscv
+    strategy:
+      fail-fast: false
+      matrix:
+        base_image:
+          - "rockylinux/rockylinux:9"
+          - "debian:sid"
+          - "opensuse/tumbleweed"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Get version for docker build
+        run: echo "VERSION=$(git describe --tags --dirty)" >> $GITHUB_ENV
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Build the docker image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Dockerfile.test
+          platforms: linux/riscv64
+          push: false
+          tags: kairos-${{ matrix.base_image }}
+          build-args: |
+            BASE_IMAGE=${{ matrix.base_image }}
+            PROVIDER_NAME=
+            PROVIDER_VERSION=
+            VERSION=${{ env.VERSION }}
+            FIPS=false
+            TRUSTED_BOOT=false
+            MODEL=generic
