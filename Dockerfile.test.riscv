@@ -22,7 +22,8 @@ RUN git clone --depth 1 --branch ${AGENT_VERSION} https://github.com/kairos-io/k
     go build -o /out/kairos-agent .
 
 # Build immucore (temporarily using fork for RISC-V support)
-RUN git clone --depth 1 --branch ${IMMUCORE_VERSION} https://github.com/mauromorales/immucore.git && \
+# TODO: restore --branch ${IMMUCORE_VERSION} and switch back to kairos-io/immucore once RISC-V support is merged upstream
+RUN git clone --depth 1 https://github.com/mauromorales/immucore.git && \
     cd immucore && \
     go build -o /out/immucore .
 
