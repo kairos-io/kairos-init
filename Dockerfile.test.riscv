@@ -1,0 +1,92 @@
+ARG BASE_IMAGE=riscv64/debian:sid
+ARG VALIDATE_IMAGE=riscv64/debian:sid
+ARG VALIDATE=true
+
+# Build kairos dependencies from source for RISC-V
+FROM golang AS deps-builder
+ARG AGENT_VERSION=v2.27.1
+ARG IMMUCORE_VERSION=v0.13.2
+ARG KCRYPT_VERSION=v0.12.2
+ARG PROVIDER_VERSION=v2.14.2
+ARG EDGEVPN_VERSION=v0.31.1
+
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+ENV GOARCH=riscv64
+
+WORKDIR /build
+
+# Build kairos-agent
+RUN git clone --depth 1 --branch ${AGENT_VERSION} https://github.com/kairos-io/kairos-agent.git && \
+    cd kairos-agent && \
+    go build -o /out/kairos-agent .
+
+# Build immucore
+RUN git clone --depth 1 --branch ${IMMUCORE_VERSION} https://github.com/kairos-io/immucore.git && \
+    cd immucore && \
+    go build -o /out/immucore .
+
+# Build kcrypt-discovery-challenger
+RUN git clone --depth 1 --branch ${KCRYPT_VERSION} https://github.com/kairos-io/kcrypt-discovery-challenger.git && \
+    cd kcrypt-discovery-challenger && \
+    go build -o /out/kcrypt-discovery-challenger .
+
+# Build provider-kairos
+RUN git clone --depth 1 --branch ${PROVIDER_VERSION} https://github.com/kairos-io/provider-kairos.git && \
+    cd provider-kairos && \
+    go build -o /out/provider-kairos .
+
+# Build edgevpn
+RUN git clone --depth 1 --branch ${EDGEVPN_VERSION} https://github.com/mudler/edgevpn.git && \
+    cd edgevpn && \
+    go build -o /out/edgevpn .
+
+# Create version-info.yaml
+RUN echo "kairos-agent: ${AGENT_VERSION}" > /out/version-info.yaml && \
+    echo "immucore: ${IMMUCORE_VERSION}" >> /out/version-info.yaml && \
+    echo "kcrypt-discovery-challenger: ${KCRYPT_VERSION}" >> /out/version-info.yaml && \
+    echo "provider-kairos: ${PROVIDER_VERSION}" >> /out/version-info.yaml && \
+    echo "edgevpn: ${EDGEVPN_VERSION}" >> /out/version-info.yaml
+
+# Create placeholder FIPS binaries (FIPS not supported on RISC-V)
+RUN mkdir -p /out/fips && \
+    cp /out/kairos-agent /out/fips/kairos-agent && \
+    cp /out/immucore /out/fips/immucore && \
+    cp /out/kcrypt-discovery-challenger /out/fips/kcrypt-discovery-challenger && \
+    cp /out/provider-kairos /out/fips/provider-kairos
+
+
+FROM golang AS build
+WORKDIR /app
+
+# Copy pre-built RISC-V binaries (including fips placeholders)
+COPY --from=deps-builder /out/ /app/pkg/bundled/binaries/
+
+COPY go.mod go.sum ./
+RUN go mod download
+COPY . .
+ENV CGO_ENABLED=0
+RUN go build -o /app/kairos-init .
+
+
+FROM scratch AS kairos-init
+COPY --from=build /app/kairos-init /kairos-init
+
+# Target to use the validator directly inside a generated image with kairos-init
+FROM ${VALIDATE_IMAGE} AS validate
+COPY --from=build /app/kairos-init /kairos-init
+RUN /kairos-init validate
+
+FROM ${BASE_IMAGE} AS default
+ARG MODEL=generic
+ARG TRUSTED_BOOT=false
+ARG PROVIDER_NAME
+ARG PROVIDER_VERSION
+ARG VERSION=v0.0.1
+ARG FIPS=false
+ARG VALIDATE
+
+COPY --from=kairos-init /kairos-init /kairos-init
+RUN /kairos-init -l debug -m "${MODEL}" -t "${TRUSTED_BOOT}" --provider "${PROVIDER_NAME}" --provider-"${PROVIDER_NAME}"-version "${PROVIDER_VERSION}" --version "${VERSION}" "$(if [ "${FIPS}" = "true" ]; then echo "--fips"; fi)"
+RUN if [ "${VALIDATE}" = 'true' ];then /kairos-init validate -t "${TRUSTED_BOOT}"; fi
+RUN rm /kairos-init

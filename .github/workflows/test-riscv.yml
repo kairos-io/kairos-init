@@ -33,12 +33,13 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: Dockerfile.test
+          file: Dockerfile.test.riscv
           platforms: linux/riscv64
           push: false
           tags: kairos-${{ matrix.base_image }}
           build-args: |
             BASE_IMAGE=${{ matrix.base_image }}
+            VALIDATE_IMAGE=${{ matrix.base_image }}
             PROVIDER_NAME=
             PROVIDER_VERSION=
             VERSION=${{ env.VERSION }}
