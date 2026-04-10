@@ -18,9 +18,9 @@ jobs:
       fail-fast: false
       matrix:
         base_image:
-          - "rockylinux/rockylinux:9"
-          - "debian:sid"
-          - "opensuse/tumbleweed"
+          - "rockylinux/rockylinux:10"
+          - "riscv64/debian:sid"
+          - "registry.opensuse.org/opensuse/tumbleweed"
     steps:
       - uses: actions/checkout@v4
         with:
