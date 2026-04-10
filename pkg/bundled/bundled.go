@@ -443,16 +443,24 @@ function setExtraConsole {
     set baseExtraConsole="console=ttyS0"
     # rpi
     if test $KAIROS_MODEL == "rpi3" -o test $KAIROS_MODEL == "rpi4"; then
+		echo "Found rpi model"
         set baseExtraConsole="console=ttyS0,115200"
     fi
     # nvidia agx orin
     if test $KAIROS_MODEL == "nvidia-jetson-agx-orin"; then
+		echo "Found agx-orin model"
         set baseExtraConsole="console=ttyTCU0,115200"
     fi
     # nvidia orin nx - we set the terga TCU serial console and the ARM PL011 UART
     if test $KAIROS_MODEL == "nvidia-jetson-orin-nx"; then
+		echo "Found orin-nx model"
         set baseExtraConsole="console=ttyTCU0,115200 console=ttyAMA0,115200"
     fi
+	smbios --type 4 --get-string 5 --set model
+	if test $model == "Thor"; then
+		echo "Found Thor model, setting console options"
+		set baseExtraConsole="console=ttyUTC0,115200 earlycon=tegra_utc,mmio32,0xc5a0000"
+	fi
 }
 
 function setExtraArgs {
@@ -466,6 +474,13 @@ function setExtraArgs {
         # on rpi we need to enable memory cgroup for docker/k3s to work
         set baseExtraArgs="modprobe.blacklist=vc4 8250.nr_uarts=1 cgroup_enable=memory"
     fi
+	# try to get the model
+	smbios --type 4 --get-string 5 --set model
+	if test $model == "Thor"; then
+		echo "Found Thor model, setting ignore unused options"
+		# on thor we need to set the ignore unused so devices dont die during booting
+		set baseExtraArgs="pd_ignore_unused clk_ignore_unused fbcon=map:0 nospectre_bhb efi=runtime"
+	fi
 }
 
 function setKernelCmd {
