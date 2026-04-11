@@ -172,5 +172,5 @@ const (
 	AllSuseButMicroAndTumbleweed = "^(?:SLES.*|SUSE Linux Enterprise Server.*|[Oo]penSUSE Leap.*)$"
 	OnlyMicroRegex               = "SUSE Linux Enterprise Micro for Rancher.*"
 	AlpineRegex                  = "Alpine.*"
-	RHELFamilyRegex              = "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Red\\sHat.*"
+	RHELFamilyRegex              = "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|Red\\sHat.*"
 )

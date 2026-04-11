@@ -36,6 +36,8 @@ jobs:
          - "rockylinux/rockylinux:10"
          - "almalinux:9"
          - "almalinux:10"
+         - "oraclelinux:9"
+         - "oraclelinux:10"
          - "quay.io/centos/centos:stream9"
          - "quay.io/centos/centos:stream10"
          - "ghcr.io/kairos-io/hadron:v0.0.1-beta6"
