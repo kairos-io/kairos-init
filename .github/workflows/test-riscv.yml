@@ -18,9 +18,18 @@ jobs:
       fail-fast: false
       matrix:
         base_image:
-          - "rockylinux/rockylinux:10"
-          - "riscv64/debian:sid"
-          - "registry.opensuse.org/opensuse/tumbleweed"
+          # Working images
+          - "riscv64/ubuntu:24.04"
+          - "riscv64/ubuntu:26.04"
+          - "riscv64/debian:trixie"
+          - "fedorariscv/base:latest"
+          # TODO: Rocky Linux 10 - fails because epel-release package is not available for RISC-V
+          # kairos-init tries to install epel-release which doesn't exist in Rocky's RISC-V repos
+          # - "rockylinux/rockylinux:10"
+          # TODO: openSUSE Tumbleweed - fails because some packages are not available for RISC-V:
+          # shim, open-vm-tools, and possibly others from the zypper install command
+          # - "registry.opensuse.org/opensuse/tumbleweed"
+          # NOTE: openSUSE Leap does not have official RISC-V images
     steps:
       - uses: actions/checkout@v4
         with:
