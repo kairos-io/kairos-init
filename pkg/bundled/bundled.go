@@ -139,6 +139,8 @@ const (
 	DracutSysextPath              = "/etc/dracut.conf.d/kairos-sysext.conf"
 	DracutNetworkPath             = "/etc/dracut.conf.d/kairos-network.conf"
 	DracutMultipathPath           = "/etc/dracut.conf.d/kairos-multipath.conf"
+	DracutSkipNvidiaDriversPath   = "/etc/dracut.conf.d/kairos-skip-nvidia.conf"
+	DracutSkipScsiPath            = "/etc/dracut.conf.d/kairos-skip-scsi.conf"
 	DracutConfigPath              = "/etc/dracut.conf.d/99-immucore.conf"
 	DracutImmucoreModuleSetupPath = "/usr/lib/dracut/modules.d/28immucore/module-setup.sh"
 	DracutImmucoreGeneratorPath   = "/usr/lib/dracut/modules.d/28immucore/generator.sh"
@@ -281,6 +283,12 @@ const DracutSysextConfig = `add_dracutmodules+=" systemd-sysext "`
 
 // DracutNetworkConfig is the dracut config file that is used to enable network support in the initramfs
 const DracutNetworkConfig = `add_dracutmodules+=" %s "`
+
+// DracutSkipNvidiaDrivers is the dracut config to avoid loading drivers during initramfs which may be too soon for some systems
+const DracutSkipNvidiaDrivers = `omit_drivers+=" nvidia nvidia_drm nvidia_modeset nvidia_uvm "`
+
+// DracutSkipIscsi is the dracut config to avoid loading iscsi during initramfs
+const DracutSkipIscsi = `omit_dracutmodules+=" iscsi "`
 
 // DRACUT stuff ends here
 
