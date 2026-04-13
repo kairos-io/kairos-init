@@ -883,7 +883,11 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			if constraint.Check(ver) {
 				networkModule += " systemd-resolved"
 			}
-
+			constraint, _ = semver.NewConstraint(">=26.04")
+			if constraint.Check(ver) {
+				// For 26.04+, network-legacy is merged into systemd-networkd and removed
+				networkModule = "systemd-networkd systemd-resolved"
+			}
 		}
 
 		if sis.Family == values.RedHatFamily {
