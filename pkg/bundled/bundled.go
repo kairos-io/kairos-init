@@ -478,7 +478,7 @@ function setExtraArgs {
 	smbios --type 4 --get-string 5 --set model
 	if test $model == "Thor"; then
 		echo "Found Thor model, setting ignore unused options"
-		# on thor we need to set the ignore unused so devices dont die during booting
+		# on thor we need to set the ignore unused so devices don't die during booting
 		set baseExtraArgs="pd_ignore_unused clk_ignore_unused fbcon=map:0 nospectre_bhb efi=runtime"
 	fi
 }
