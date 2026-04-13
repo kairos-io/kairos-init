@@ -456,8 +456,7 @@ function setExtraConsole {
 		echo "Found orin-nx model"
         set baseExtraConsole="console=ttyTCU0,115200 console=ttyAMA0,115200"
     fi
-	smbios --type 4 --get-string 5 --set model
-	if test $model == "Thor"; then
+    if test -n "$model" -a "$model" == "Thor"; then
 		echo "Found Thor model, setting console options"
 		set baseExtraConsole="console=ttyUTC0,115200 earlycon=tegra_utc,mmio32,0xc5a0000"
 	fi
@@ -474,11 +473,9 @@ function setExtraArgs {
         # on rpi we need to enable memory cgroup for docker/k3s to work
         set baseExtraArgs="modprobe.blacklist=vc4 8250.nr_uarts=1 cgroup_enable=memory"
     fi
-	# try to get the model
-	smbios --type 4 --get-string 5 --set model
-	if test $model == "Thor"; then
+    if test -n "$model" -a "$model" == "Thor"; then
 		echo "Found Thor model, setting ignore unused options"
-		# on thor we need to set the ignore unused so devices don't die during booting
+		# on Thor we need to set the ignore unused so devices don't die during booting
 		set baseExtraArgs="pd_ignore_unused clk_ignore_unused fbcon=map:0 nospectre_bhb efi=runtime"
 	fi
 }
@@ -498,6 +495,9 @@ function setKernelCmd {
         set baseRootCmd="root=LABEL=$label cos-img/filename=$img"
     fi
     setSelinux
+    # load smbios module and detect model once, reused by setExtraConsole and setExtraArgs
+    insmod smbios
+    smbios --type 4 --get-string 5 --set model
     setExtraConsole
     setExtraArgs
     # finally set the full cmdline
