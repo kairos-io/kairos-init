@@ -96,6 +96,8 @@ func detectFromID(id string) (values.Distro, values.Family) {
 		return values.RockyLinux, values.RedHatFamily
 	case values.AlmaLinux:
 		return values.AlmaLinux, values.RedHatFamily
+	case values.OracleLinux:
+		return values.OracleLinux, values.RedHatFamily
 	case values.RedHat:
 		return values.RedHat, values.RedHatFamily
 	case values.Arch:

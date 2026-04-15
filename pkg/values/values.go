@@ -33,6 +33,7 @@ const (
 	RedHat             Distro = "rhel"
 	RockyLinux         Distro = "rocky"
 	AlmaLinux          Distro = "almalinux"
+	OracleLinux        Distro = "ol"
 	Fedora             Distro = "fedora"
 	Arch               Distro = "arch"
 	Alpine             Distro = "alpine"
@@ -165,7 +166,7 @@ func GetStepNames() []string {
 // AllSuseRegex matches any SUSE-based distribution name.
 // AllSuseButMicroRegex matches SLES, openSUSE, or SUSE Linux Enterprise Server names.
 // AlpineRegex matches Alpine Linux distribution names.
-// RHELFamilyRegex matches RHEL-family distributions such as Fedora, CentOS, Rocky, AlmaLinux, and Red Hat.
+// RHELFamilyRegex matches RHEL-family distributions such as Fedora, CentOS, Rocky, AlmaLinux, Oracle Linux, and Red Hat.
 const (
 	AllSuseRegex                 = "SLES.*|[Oo]penSUSE.*|SUSE.*"
 	AllSuseButMicroRegex         = "^(?:SLES.*|[Oo]penSUSE.*|SUSE Linux Enterprise Server.*)$"
