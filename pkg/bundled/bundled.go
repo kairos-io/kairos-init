@@ -505,11 +505,9 @@ setKernelCmd
 # Explicitly load the full DTB from the FAT partition (placed there by AuroraBoot)
 # to restore all peripheral nodes. The search is by file presence so it is a no-op
 # on any platform that does not have this file on any partition.
-if test $KAIROS_MODEL == "rpi4"; then
-    search --no-floppy --file --set=dtb_dev /bcm2711-rpi-4-b.dtb
-    if [ "${dtb_dev}" ]; then
-        devicetree (${dtb_dev})/bcm2711-rpi-4-b.dtb
-    fi
+search --no-floppy --file --set=dtb_dev /bcm2711-rpi-4-b.dtb
+if [ "${dtb_dev}" ]; then
+    devicetree (${dtb_dev})/bcm2711-rpi-4-b.dtb
 fi
 `
 
