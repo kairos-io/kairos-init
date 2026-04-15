@@ -1064,6 +1064,21 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			},
 		}...)
 
+		if sis.Distro == values.Hadron && config.DefaultConfig.Model == values.Rpi4.String() {
+			data = append(data, schema.Stage{
+				Name: "Add Raspberry Pi 4 drivers to initramfs",
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutRpi4Path,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.DracutRpi4Config,
+					},
+				},
+			})
+		}
+
 		if config.DefaultConfig.Fips {
 			// Add dracut fips support
 			data = append(data, []schema.Stage{

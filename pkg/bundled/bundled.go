@@ -138,6 +138,7 @@ const (
 	DracutFipsPath                = "/etc/dracut.conf.d/kairos-fips.conf"
 	DracutSysextPath              = "/etc/dracut.conf.d/kairos-sysext.conf"
 	DracutNetworkPath             = "/etc/dracut.conf.d/kairos-network.conf"
+	DracutRpi4Path                = "/etc/dracut.conf.d/kairos-rpi4.conf"
 	DracutMultipathPath           = "/etc/dracut.conf.d/kairos-multipath.conf"
 	DracutConfigPath              = "/etc/dracut.conf.d/99-immucore.conf"
 	DracutImmucoreModuleSetupPath = "/usr/lib/dracut/modules.d/28immucore/module-setup.sh"
@@ -281,6 +282,9 @@ const DracutSysextConfig = `add_dracutmodules+=" systemd-sysext "`
 
 // DracutNetworkConfig is the dracut config file that is used to enable network support in the initramfs
 const DracutNetworkConfig = `add_dracutmodules+=" %s "`
+
+// DracutRpi4Config adds early SD/USB drivers for Raspberry Pi 4 initramfs boots
+const DracutRpi4Config = `force_drivers+=" mmc_core mmc_block sdhci sdhci_pltfm sdhci_iproc sdhci_brcmstb xhci_plat_hcd "`
 
 // DRACUT stuff ends here
 
@@ -496,6 +500,17 @@ set kernel=/boot/vmlinuz
 set initramfs=/boot/initrd
 # set the kernelcmd dynamically
 setKernelCmd
+# RPi4: U-Boot runs in UEFI mode and passes its own minimal compiled-in DT to
+# the kernel, which omits the emmc2bus node and therefore the SD card controller.
+# Explicitly load the full DTB from the FAT partition (placed there by AuroraBoot)
+# to restore all peripheral nodes. The search is by file presence so it is a no-op
+# on any platform that does not have this file on any partition.
+if test $KAIROS_MODEL == "rpi4"; then
+    search --no-floppy --file --set=dtb_dev /bcm2711-rpi-4-b.dtb
+    if [ "${dtb_dev}" ]; then
+        devicetree (${dtb_dev})/bcm2711-rpi-4-b.dtb
+    fi
+fi
 `
 
 // MOTD /etc/motd is the message of the day that is displayed when the user logs in
