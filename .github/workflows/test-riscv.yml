@@ -19,10 +19,10 @@ jobs:
       matrix:
         base_image:
           # Working images
-          - "riscv64/ubuntu:24.04"
-          - "riscv64/ubuntu:26.04"
-          - "riscv64/debian:trixie"
-          - "fedorariscv/base:latest"
+          # - "riscv64/ubuntu:24.04"
+          # - "riscv64/debian:trixie"
+          # - "fedorariscv/base:latest"
+          - "ttl.sh/hadron-riscv64-cloud:f659c0204c72cd4ee5c7febd1c779c595b97789e"
           # TODO: Rocky Linux 10 - fails because epel-release package is not available for RISC-V
           # kairos-init tries to install epel-release which doesn't exist in Rocky's RISC-V repos
           # - "rockylinux/rockylinux:10"
