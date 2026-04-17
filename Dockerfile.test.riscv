@@ -1,9 +1,10 @@
+# hadolint global ignore=DL3006
 ARG BASE_IMAGE=riscv64/debian:sid
 ARG VALIDATE_IMAGE=riscv64/debian:sid
 ARG VALIDATE=true
 
 # Build kairos dependencies from source for RISC-V
-FROM golang AS deps-builder
+FROM golang:1.24 AS deps-builder
 ARG AGENT_VERSION=v2.27.1
 ARG IMMUCORE_VERSION=v0.13.2
 ARG KCRYPT_VERSION=v0.12.2
@@ -17,47 +18,49 @@ ENV GOARCH=riscv64
 WORKDIR /build
 
 # Build kairos-agent
-RUN git clone --depth 1 --branch ${AGENT_VERSION} https://github.com/kairos-io/kairos-agent.git && \
-    cd kairos-agent && \
-    go build -o /out/kairos-agent .
+RUN git clone --depth 1 --branch ${AGENT_VERSION} https://github.com/kairos-io/kairos-agent.git
+WORKDIR /build/kairos-agent
+RUN go build -o /out/kairos-agent .
 
 # Build immucore (temporarily using fork for RISC-V support)
 # TODO: restore --branch ${IMMUCORE_VERSION} and switch back to kairos-io/immucore once RISC-V support is merged upstream
-RUN git clone --depth 1 https://github.com/mauromorales/immucore.git && \
-    cd immucore && \
-    go build -o /out/immucore .
+WORKDIR /build
+RUN git clone --depth 1 https://github.com/mauromorales/immucore.git
+WORKDIR /build/immucore
+RUN go build -o /out/immucore .
 
 # Build kcrypt-discovery-challenger
-RUN git clone --depth 1 --branch ${KCRYPT_VERSION} https://github.com/kairos-io/kcrypt-discovery-challenger.git && \
-    cd kcrypt-discovery-challenger && \
-    go build -o /out/kcrypt-discovery-challenger .
+WORKDIR /build
+RUN git clone --depth 1 --branch ${KCRYPT_VERSION} https://github.com/kairos-io/kcrypt-discovery-challenger.git
+WORKDIR /build/kcrypt-discovery-challenger
+RUN go build -o /out/kcrypt-discovery-challenger .
 
 # Build provider-kairos
-RUN git clone --depth 1 --branch ${PROVIDER_VERSION} https://github.com/kairos-io/provider-kairos.git && \
-    cd provider-kairos && \
-    go build -o /out/provider-kairos .
+WORKDIR /build
+RUN git clone --depth 1 --branch ${PROVIDER_VERSION} https://github.com/kairos-io/provider-kairos.git
+WORKDIR /build/provider-kairos
+RUN go build -o /out/provider-kairos .
 
 # Build edgevpn
-RUN git clone --depth 1 --branch ${EDGEVPN_VERSION} https://github.com/mudler/edgevpn.git && \
-    cd edgevpn && \
-    go build -o /out/edgevpn .
+WORKDIR /build
+RUN git clone --depth 1 --branch ${EDGEVPN_VERSION} https://github.com/mudler/edgevpn.git
+WORKDIR /build/edgevpn
+RUN go build -o /out/edgevpn .
 
-# Create version-info.yaml
+# Create version-info.yaml and placeholder FIPS binaries
 RUN echo "kairos-agent: ${AGENT_VERSION}" > /out/version-info.yaml && \
     echo "immucore: ${IMMUCORE_VERSION}" >> /out/version-info.yaml && \
     echo "kcrypt-discovery-challenger: ${KCRYPT_VERSION}" >> /out/version-info.yaml && \
     echo "provider-kairos: ${PROVIDER_VERSION}" >> /out/version-info.yaml && \
-    echo "edgevpn: ${EDGEVPN_VERSION}" >> /out/version-info.yaml
-
-# Create placeholder FIPS binaries (FIPS not supported on RISC-V)
-RUN mkdir -p /out/fips && \
+    echo "edgevpn: ${EDGEVPN_VERSION}" >> /out/version-info.yaml && \
+    mkdir -p /out/fips && \
     cp /out/kairos-agent /out/fips/kairos-agent && \
     cp /out/immucore /out/fips/immucore && \
     cp /out/kcrypt-discovery-challenger /out/fips/kcrypt-discovery-challenger && \
     cp /out/provider-kairos /out/fips/provider-kairos
 
 
-FROM golang AS build
+FROM golang:1.24 AS build
 WORKDIR /app
 
 # Copy pre-built RISC-V binaries (including fips placeholders)
@@ -83,6 +86,6 @@ ARG VERSION=v0.0.1
 ARG VALIDATE=true
 
 COPY --from=kairos-init /kairos-init /kairos-init
-RUN /kairos-init -l debug --version "${VERSION}"
-RUN if [ "${VALIDATE}" = 'true' ]; then /kairos-init validate; fi
-RUN rm /kairos-init
+RUN /kairos-init -l debug --version "${VERSION}" && \
+    if [ "${VALIDATE}" = 'true' ]; then /kairos-init validate; fi && \
+    rm /kairos-init
