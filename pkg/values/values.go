@@ -14,9 +14,10 @@ func (a Architecture) String() string {
 }
 
 const (
-	ArchAMD64  Architecture = "amd64"
-	ArchARM64  Architecture = "arm64"
-	ArchCommon Architecture = "common"
+	ArchAMD64   Architecture = "amd64"
+	ArchARM64   Architecture = "arm64"
+	ArchRISCV64 Architecture = "riscv64"
+	ArchCommon  Architecture = "common"
 )
 
 type Distro string
