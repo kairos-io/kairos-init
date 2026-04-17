@@ -4,7 +4,7 @@ ARG VALIDATE_IMAGE=riscv64/debian:sid
 ARG VALIDATE=true
 
 # Build kairos dependencies from source for RISC-V
-FROM golang:1.24 AS deps-builder
+FROM golang:1.26 AS deps-builder
 ARG AGENT_VERSION=v2.27.1
 ARG IMMUCORE_VERSION=v0.13.2
 ARG KCRYPT_VERSION=v0.12.2
@@ -60,7 +60,7 @@ RUN echo "kairos-agent: ${AGENT_VERSION}" > /out/version-info.yaml && \
     cp /out/provider-kairos /out/fips/provider-kairos
 
 
-FROM golang:1.24 AS build
+FROM golang:1.26 AS build
 WORKDIR /app
 
 # Copy pre-built RISC-V binaries (including fips placeholders)
