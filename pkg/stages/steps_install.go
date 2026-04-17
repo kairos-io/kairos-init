@@ -82,6 +82,15 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			},
 		},
 		{
+			Name:     "Install EPEL repository for Oracle Linux",
+			OnlyIfOs: "Oracle\\sLinux.*",
+			Packages: schema.Packages{
+				Install: []string{
+					fmt.Sprintf("oracle-epel-release-el%d", fullVersion.Segments()[0]),
+				},
+			},
+		},
+		{
 			Name:     "Install oss repository",
 			OnlyIfOs: values.OnlyMicroRegex, // From SLE Micro Rancher we need to do some workarounds
 			Files: []schema.File{
@@ -249,6 +258,15 @@ func GetInstallKernelStage(sis values.System, logger logger.KairosLogger) ([]sch
 	}
 
 	stage := []schema.Stage{
+		{
+			Name:            "Enable UEK Repository for Oracle Linux 10 on ARM64",
+			OnlyIfOs:        "Oracle\\sLinux.*",
+			OnlyIfOsVersion: "10\\..*",
+			OnlyIfArch:      "arm64",
+			Commands: []string{
+				"dnf config-manager --enable ol10_UEKR8",
+			},
+		},
 		{
 			Name: "Install kernel packages",
 			Packages: schema.Packages{

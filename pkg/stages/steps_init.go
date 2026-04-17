@@ -59,7 +59,7 @@ func GetInitrdStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 		stage = append(stage, []schema.Stage{
 			{
 				Name:     "Create new initrd",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|SLES.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 				Commands: []string{
 					fmt.Sprintf("depmod -a %s", kernel),
 					dracutCmd,
@@ -341,7 +341,7 @@ func GetCleanupStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:     "Cleanup",
-			OnlyIfOs: "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs: "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*",
 			Commands: []string{
 				"dnf clean all",
 				"rm -rf /var/cache/dnf/* /tmp/* /var/tmp/*",
@@ -394,7 +394,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			Name:                 "Enable fail2ban service for RHEL family",
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/bin/fail2ban-server",
-			OnlyIfOs:             "CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs:             "CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"fail2ban",
@@ -424,7 +424,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		{
 			Name:                 "Enable chronyd service for RHEL family and Fedora",
 			OnlyIfServiceManager: "systemd",
-			OnlyIfOs:             "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"chronyd",
@@ -491,7 +491,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable services for RHEL family",
-			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*",
 			OnlyIfServiceManager: "systemd",
 			Commands: []string{
 				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
@@ -958,7 +958,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 		data = append(data, []schema.Stage{
 			{
 				Name:     "Add pmem modules to initramfs",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|[Oo]penSUSE.*|SUSE.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*",
 				Files: []schema.File{
 					{
 						Path:        bundled.DracutPmemPath,
@@ -971,7 +971,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			},
 			{
 				Name:     "Add sysext module to initramfs",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 				If:       strconv.FormatBool(sysextModule),
 				Files: []schema.File{
 					{
@@ -985,7 +985,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			},
 			{
 				Name:     "Add network module to initramfs",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 				Files: []schema.File{
 					{
 						Path:        bundled.DracutNetworkPath,
@@ -998,7 +998,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			},
 			{
 				Name:     "Add immucore module to initramfs",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 				Files: []schema.File{
 					{
 						Path:        bundled.DracutConfigPath,
@@ -1051,7 +1051,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			},
 			{
 				Name:     "Add Multipath module to initramfs",
-				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
+				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 				Files: []schema.File{
 					{
 						Path:        bundled.DracutMultipathPath,
@@ -1069,7 +1069,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			data = append(data, []schema.Stage{
 				{
 					Name:     "Add fips support to initramfs",
-					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
+					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 					Files: []schema.File{
 						{
 							Path:        bundled.DracutFipsPath,
