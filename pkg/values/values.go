@@ -73,6 +73,16 @@ const (
 	Thor    Model = "nvidia-jetson-thor"
 )
 
+var SupportedModels = []Model{Generic, Rpi3, Rpi4, AgxOrin, OrinNX, Thor}
+
+func SupportedModelStrings() []string {
+	s := make([]string, len(SupportedModels))
+	for i, m := range SupportedModels {
+		s[i] = m.String()
+	}
+	return s
+}
+
 type System struct {
 	Name    string
 	Distro  Distro

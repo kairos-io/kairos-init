@@ -24,6 +24,7 @@ var (
 	version       string
 	stageFlag     = newEnumFlag([]string{"init", "install", "all"}, "all")
 	loglevelFlag  = newEnumFlag([]string{"debug", "info", "warn", "error", "trace"}, "info")
+	modelFlag     = newEnumFlag(values.SupportedModelStrings(), values.Generic.String())
 	skipStepsFlag = newEnumSliceFlag(values.GetStepNames(), []string{})
 	providers     []string
 )
@@ -54,6 +55,7 @@ func preRun(cmd *cobra.Command, _ []string) {
 		config.DefaultConfig.Variant = config.CoreVariant
 	}
 	config.DefaultConfig.SkipSteps = skipStepsFlag.Value
+	config.DefaultConfig.Model = modelFlag.Value
 }
 
 var stepsInfo = &cobra.Command{
@@ -205,7 +207,7 @@ func init() {
 	rootCmd.Flags().VarP(stageFlag, "stage", "s", fmt.Sprintf("set the stage to run (%s)", strings.Join(stageFlag.Allowed, ", ")))
 	rootCmd.Flags().VarP(loglevelFlag, "level", "l", fmt.Sprintf("set the log level (%s)", strings.Join(loglevelFlag.Allowed, ", ")))
 	// rest of the flags
-	rootCmd.Flags().StringVarP(&config.DefaultConfig.Model, "model", "m", "generic", "model to build for, like generic or rpi4")
+	rootCmd.Flags().VarP(modelFlag, "model", "m", fmt.Sprintf("model to build for (%s)", strings.Join(modelFlag.Allowed, ", ")))
 	rootCmd.Flags().StringSliceVarP(&providers, "provider", "p", []string{}, fmt.Sprintf("Provider plugin (repeatable)"))
 	rootCmd.Flags().BoolVar(&config.DefaultConfig.Fips, "fips", false, "use fips kairos binary versions. For FIPS 140-2 compliance images")
 	rootCmd.Flags().StringVarP(&version, "version", "v", "", "set a version number to use for the generated system. Its used to identify this system for upgrades and such. Required.")
