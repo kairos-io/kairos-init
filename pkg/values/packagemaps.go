@@ -191,6 +191,12 @@ var BasePackagesModels = ModelPackageMap{
 					"zstd",
 				},
 			},
+			Thor: {
+				Common: {
+					"bridge-utils",
+					"fuse3",
+				},
+			},
 		},
 	},
 }
@@ -282,6 +288,22 @@ var KernelPackages = PackageMap{
 			},
 		},
 	},
+	OracleLinux: {
+		ArchAMD64: {
+			Common: {
+				"kernel",
+				"kernel-modules",
+				"kernel-modules-extra",
+			},
+		},
+		ArchARM64: {
+			Common: {
+				"kernel-uek",
+				"kernel-uek-modules",
+				"kernel-uek-modules-extra",
+			},
+		},
+	},
 	RedHatFamily: {
 		ArchCommon: {
 			Common: {
@@ -333,6 +355,22 @@ var KernelPackagesTrustedBoot = PackageMap{
 			Common: {
 				"linux-image-arm64",
 				"firmware-linux-free",
+			},
+		},
+	},
+	OracleLinux: {
+		ArchAMD64: {
+			Common: {
+				"kernel",
+				"kernel-modules",
+				"kernel-modules-extra",
+			},
+		},
+		ArchARM64: {
+			Common: {
+				"kernel-uek",
+				"kernel-uek-modules",
+				"kernel-uek-modules-extra",
 			},
 		},
 	},
@@ -956,6 +994,32 @@ var KernelPackagesModels = ModelPackageMap{
 					"libopencv-dev",
 				},
 			},
+			Thor: {
+				Common: {
+					"nvidia-l4t-3d-core",
+					"nvidia-l4t-gbm",
+					"nvidia-l4t-init",
+					"nvidia-l4t-nvfancontrol",
+					"nvidia-l4t-nvsci",
+					"nvidia-l4t-openwfd",
+					"nvidia-l4t-optee",
+					"nvidia-l4t-tools",
+					"nvidia-l4t-vulkan-sc-openrm",
+					"nvidia-l4t-configs",
+					"nvidia-l4t-core",
+					"nvidia-l4t-cuda",
+					"nvidia-l4t-nvml",
+					"nvidia-l4t-firmware",
+					"nvidia-l4t-extlinux",
+					"nvidia-l4t-initrd",
+					"nvidia-l4t-kernel",
+					"nvidia-l4t-kernel-openrm",
+					"nvidia-l4t-kernel-dtbs",
+					"nvidia-l4t-kernel-oot-modules",
+					"nvidia-l4t-display-kernel",
+					"nvidia-l4t-kernel-module-configs",
+				},
+			},
 		},
 	},
 	SUSEFamily: {
@@ -1069,10 +1133,14 @@ func GetKernelPackages(s System, l logger.KairosLogger) ([]string, error) {
 	if config.DefaultConfig.TrustedBoot {
 		// Kernel packages by model
 		if config.DefaultConfig.Model == Generic.String() {
+			distroKernel := KernelPackagesTrustedBoot[s.Distro]
+			hasDistroOverride := distroKernel != nil && (distroKernel[ArchCommon] != nil || distroKernel[s.Arch] != nil)
 			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][ArchCommon]) // Common kernel packages to both arches
-			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][ArchCommon]) // Common kernel packages to both arches by family
 			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][s.Arch])     // Specific kernel packages for the arch
-			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+			if !hasDistroOverride {
+				filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][ArchCommon]) // Common kernel packages to both arches by family
+				filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+			}
 		} else {
 			// Get specific packages for the model
 			// TODO: No support for trusted boot on models yet, so this part is probably useless for now?
@@ -1083,10 +1151,14 @@ func GetKernelPackages(s System, l logger.KairosLogger) ([]string, error) {
 		}
 	} else {
 		if config.DefaultConfig.Model == Generic.String() {
+			distroKernel := KernelPackages[s.Distro]
+			hasDistroOverride := distroKernel != nil && (distroKernel[ArchCommon] != nil || distroKernel[s.Arch] != nil)
 			filteredPackages = append(filteredPackages, KernelPackages[s.Distro][ArchCommon]) // Common kernel packages to both arches
-			filteredPackages = append(filteredPackages, KernelPackages[s.Family][ArchCommon]) // Common kernel packages to both arches by family
 			filteredPackages = append(filteredPackages, KernelPackages[s.Distro][s.Arch])     // Specific kernel packages for the arch
-			filteredPackages = append(filteredPackages, KernelPackages[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+			if !hasDistroOverride {
+				filteredPackages = append(filteredPackages, KernelPackages[s.Family][ArchCommon]) // Common kernel packages to both arches by family
+				filteredPackages = append(filteredPackages, KernelPackages[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+			}
 		} else {
 			// Get specific packages for the model
 			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][ArchCommon][Model(config.DefaultConfig.Model)])
