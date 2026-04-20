@@ -8,26 +8,14 @@ import (
 //go:embed binaries/kairos-agent
 var EmbeddedAgent []byte
 
-//go:embed binaries/fips/kairos-agent
-var EmbeddedAgentFips []byte
-
 //go:embed binaries/immucore
 var EmbeddedImmucore []byte
-
-//go:embed binaries/fips/immucore
-var EmbeddedImmucoreFips []byte
 
 //go:embed binaries/kcrypt-discovery-challenger
 var EmbeddedKcryptChallenger []byte
 
-//go:embed binaries/fips/kcrypt-discovery-challenger
-var EmbeddedKcryptChallengerFips []byte
-
 //go:embed binaries/provider-kairos
 var EmbeddedKairosProvider []byte
-
-//go:embed binaries/fips/provider-kairos
-var EmbeddedKairosProviderFips []byte
 
 //nolint:staticcheck
 //go:embed binaries/edgevpn
