@@ -74,6 +74,14 @@ jobs:
             base_image: "ubuntu:22.04"
             model: "nvidia-jetson-orin-nx"
             fips: false
+          - platform: "riscv64"
+            base_image: "ubuntu:24.04"
+            model: "generic"
+            fips: false
+          - platform: "riscv64"
+            base_image: "ubuntu:24.04"
+            model: "generic"
+            fips: false
     steps:
       - uses: actions/checkout@v6
         with:

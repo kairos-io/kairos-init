@@ -1,8 +1,8 @@
 # Variables
 AGENT_VERSION := v2.27.1
-IMMUCORE_VERSION := v0.13.2
-KCRYPT_DISCOVERY_CHALLENGER_VERSION := v0.12.2
-PROVIDER_KAIROS_VERSION := v2.14.2
+IMMUCORE_VERSION := v0.14.0
+KCRYPT_DISCOVERY_CHALLENGER_VERSION := v0.13.0
+PROVIDER_KAIROS_VERSION := v2.15.0
 EDGEVPN_VERSION := v0.31.1
 ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
 BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger provider-kairos
@@ -48,9 +48,22 @@ $(OUTPUT_DIR):
 	@echo "Creating directory $(OUTPUT_DIR)..."
 	@mkdir -p $(OUTPUT_DIR)
 
-# Download all binaries (standard and FIPS)
-download: $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES)) $(addprefix $(OUTPUT_DIR_FIPS)/, $(addsuffix -fips, $(BINARY_NAMES)))
-	@# Download edgevpn by itself
+download: download-edgevpn
+
+# Set FIPS_BINARIES variable based on ARCH
+ifeq ($(ARCH),riscv64)
+FIPS_BINARIES :=
+else
+FIPS_BINARIES := $(addprefix $(OUTPUT_DIR_FIPS)/, $(addsuffix -fips, $(BINARY_NAMES)))
+endif
+
+download: $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES)) $(FIPS_BINARIES) download-edgevpn
+ifeq ($(ARCH),riscv64)
+	@echo "Skipping FIPS binaries download for riscv64."
+endif
+
+# Download edgevpn by itself
+download-edgevpn:
 	@echo "Downloading and extracting edgevpn for architecture $(ARCH)..."
 	@mkdir -p $(OUTPUT_DIR)
 	@# Unfortunately edgevpn uses x86_64 instead of amd64 so we need to do some string manipulation here
@@ -70,11 +83,12 @@ $(OUTPUT_DIR_FIPS)/%-fips:
 
 
 # Run upx to compress binaries unless SKIP_UPX is set
+
 compress:
 	@if [ -z "$(SKIP_UPX)" ]; then \
 		echo "Running upx compress..."; \
 		upx -q --best --lzma $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn ); \
-		upx -q --best --lzma $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); \
+		if [ "$(ARCH)" != "riscv64" ]; then upx -q --best --lzma $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); fi; \
 	else \
 		echo "Skipping upx compression as SKIP_UPX is set"; \
 	fi
@@ -82,7 +96,7 @@ compress:
 cleanup:
 	@echo "Cleaning up non-binary files..."
 	@find $(OUTPUT_DIR) -type f ! -exec file {} \; | grep -v "executable" | awk -F: '{print $$1}' | xargs -r rm -f
-	@find $(OUTPUT_DIR_FIPS) -type f ! -exec file {} \; | grep -v "executable" | awk -F: '{print $$1}' | xargs -r rm -f
+	@if [ "$(ARCH)" != "riscv64" ]; then find $(OUTPUT_DIR_FIPS) -type f ! -exec file {} \; | grep -v "executable" | awk -F: '{print $$1}' | xargs -r rm -f;fi
 
 # Add version info config to the bundled binaries dir into a single yaml file
 version-info:
