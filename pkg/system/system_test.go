@@ -20,6 +20,7 @@ func TestDetectFromReleaseIDs(t *testing.T) {
 		{name: "ID fedora", id: "fedora", expectedDistro: values.Fedora, expectedFamily: values.RedHatFamily},
 		{name: "ID rocky", id: "rocky", expectedDistro: values.RockyLinux, expectedFamily: values.RedHatFamily},
 		{name: "ID almalinux", id: "almalinux", expectedDistro: values.AlmaLinux, expectedFamily: values.RedHatFamily},
+		{name: "ID ol", id: "ol", expectedDistro: values.OracleLinux, expectedFamily: values.RedHatFamily},
 		{name: "ID rhel", id: "rhel", expectedDistro: values.RedHat, expectedFamily: values.RedHatFamily},
 		{name: "ID arch", id: "arch", expectedDistro: values.Arch, expectedFamily: values.ArchFamily},
 		{name: "ID alpine", id: "alpine", expectedDistro: values.Alpine, expectedFamily: values.AlpineFamily},
