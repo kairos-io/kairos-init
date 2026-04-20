@@ -306,6 +306,12 @@ var KernelPackages = PackageMap{
 				"firmware-linux-free",
 			},
 		},
+		ArchRiscV64: {
+			Common: {
+				"linux-image-riscv64",
+				"firmware-linux-free",
+			},
+		},
 	},
 	OracleLinux: {
 		ArchAMD64: {

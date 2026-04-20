@@ -80,6 +80,10 @@ jobs:
             base_image: "ubuntu:24.04"
             model: "generic"
             fips: false
+          - platform: "riscv64"
+            base_image: "debian:13"
+            model: "generic"
+            fips: false
     steps:
       - uses: actions/checkout@v6
         with:
