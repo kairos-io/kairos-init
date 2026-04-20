@@ -70,6 +70,7 @@ const (
 	Rpi4    Model = "rpi4"
 	AgxOrin Model = "nvidia-jetson-agx-orin"
 	OrinNX  Model = "nvidia-jetson-orin-nx"
+	Thor    Model = "nvidia-jetson-thor"
 )
 
 type System struct {

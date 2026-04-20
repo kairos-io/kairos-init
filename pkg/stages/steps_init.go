@@ -258,6 +258,14 @@ func GetWorkaroundsStage(_ values.System, l logger.KairosLogger) []schema.Stage 
 				},
 			},
 		},
+		{
+			Name: "Link nvidia-smi into the expected place",
+			// Check and only do if the link/binary is not there
+			If: "test -f /usr/sbin/nvidia-smi && ! test -e /usr/bin/nvidia-smi",
+			Commands: []string{
+				"ln -s /usr/sbin/nvidia-smi /usr/bin/nvidia-smi",
+			},
+		},
 	}
 
 	if config.DefaultConfig.TrustedBoot {
@@ -1059,6 +1067,36 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 						Group:       0,
 						Permissions: 0644,
 						Content:     bundled.DracutMultipathConfig,
+					},
+				},
+			},
+			{
+				Name: "Disable ISCSI for NVIDIA devices",
+				If:   fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model),
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutSkipScsiPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.DracutSkipIscsi,
+					},
+				},
+				Commands: []string{
+					// iscsid causes delays on the login shell, and we don't need it, so we'll disable it
+					"systemctl disable iscsi open-iscsi iscsid.socket || true",
+				},
+			},
+			{
+				Name: "Omit nvidia drivers loading in the initramfs",
+				If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-thor" ]`, config.DefaultConfig.Model),
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutSkipNvidiaDriversPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.DracutSkipNvidiaDrivers,
 					},
 				},
 			},

@@ -139,6 +139,8 @@ const (
 	DracutSysextPath              = "/etc/dracut.conf.d/kairos-sysext.conf"
 	DracutNetworkPath             = "/etc/dracut.conf.d/kairos-network.conf"
 	DracutMultipathPath           = "/etc/dracut.conf.d/kairos-multipath.conf"
+	DracutSkipNvidiaDriversPath   = "/etc/dracut.conf.d/kairos-skip-nvidia.conf"
+	DracutSkipScsiPath            = "/etc/dracut.conf.d/kairos-skip-scsi.conf"
 	DracutConfigPath              = "/etc/dracut.conf.d/99-immucore.conf"
 	DracutImmucoreModuleSetupPath = "/usr/lib/dracut/modules.d/28immucore/module-setup.sh"
 	DracutImmucoreGeneratorPath   = "/usr/lib/dracut/modules.d/28immucore/generator.sh"
@@ -281,6 +283,12 @@ const DracutSysextConfig = `add_dracutmodules+=" systemd-sysext "`
 
 // DracutNetworkConfig is the dracut config file that is used to enable network support in the initramfs
 const DracutNetworkConfig = `add_dracutmodules+=" %s "`
+
+// DracutSkipNvidiaDrivers is the dracut config to avoid loading drivers during initramfs which may be too soon for some systems
+const DracutSkipNvidiaDrivers = `omit_drivers+=" nvidia nvidia_drm nvidia_modeset nvidia_uvm "`
+
+// DracutSkipIscsi is the dracut config to avoid loading iscsi during initramfs
+const DracutSkipIscsi = `omit_dracutmodules+=" iscsi "`
 
 // DRACUT stuff ends here
 
@@ -447,16 +455,23 @@ function setExtraConsole {
     set baseExtraConsole="console=ttyS0"
     # rpi
     if test $KAIROS_MODEL == "rpi3" -o test $KAIROS_MODEL == "rpi4"; then
+		echo "Found rpi model"
         set baseExtraConsole="console=ttyS0,115200"
     fi
     # nvidia agx orin
     if test $KAIROS_MODEL == "nvidia-jetson-agx-orin"; then
+		echo "Found agx-orin model"
         set baseExtraConsole="console=ttyTCU0,115200"
     fi
     # nvidia orin nx - we set the terga TCU serial console and the ARM PL011 UART
     if test $KAIROS_MODEL == "nvidia-jetson-orin-nx"; then
+		echo "Found orin-nx model"
         set baseExtraConsole="console=ttyTCU0,115200 console=ttyAMA0,115200"
     fi
+    if test -n "$model" -a "$model" == "Thor"; then
+		echo "Found Thor model, setting console options"
+		set baseExtraConsole="console=ttyUTC0,115200 earlycon=tegra_utc,mmio32,0xc5a0000"
+	fi
 }
 
 function setExtraArgs {
@@ -470,6 +485,11 @@ function setExtraArgs {
         # on rpi we need to enable memory cgroup for docker/k3s to work
         set baseExtraArgs="modprobe.blacklist=vc4 8250.nr_uarts=1 cgroup_enable=memory"
     fi
+    if test -n "$model" -a "$model" == "Thor"; then
+		echo "Found Thor model, setting ignore unused options"
+		# on Thor we need to set the ignore unused so devices don't die during booting
+		set baseExtraArgs="pd_ignore_unused clk_ignore_unused fbcon=map:0 nospectre_bhb efi=runtime"
+	fi
 }
 
 function setKernelCmd {
@@ -487,6 +507,9 @@ function setKernelCmd {
         set baseRootCmd="root=LABEL=$label cos-img/filename=$img"
     fi
     setSelinux
+    # load smbios module and detect model once, reused by setExtraConsole and setExtraArgs
+    insmod smbios
+    smbios --type 4 --get-string 5 --set model
     setExtraConsole
     setExtraArgs
     # finally set the full cmdline
