@@ -67,7 +67,7 @@ download-edgevpn:
 	@echo "Downloading and extracting edgevpn for architecture $(ARCH)..."
 	@mkdir -p $(OUTPUT_DIR)
 	@# Unfortunately edgevpn uses x86_64 instead of amd64 so we need to do some string manipulation here
-	@curl -L -s https://github.com/mudler/edgevpn/releases/download/$(EDGEVPN_VERSION)/edgevpn-$(EDGEVPN_VERSION)-Linux-$(shell uname -m | sed -e 's/aarch64/arm64/').tar.gz | tar -xz -C $(OUTPUT_DIR)
+	@curl -L -s https://github.com/mudler/edgevpn/releases/download/$(EDGEVPN_VERSION)/edgevpn-$(EDGEVPN_VERSION)-Linux-$(shell echo $(ARCH) | sed -e 's/amd64/x86_64/').tar.gz | tar -xz -C $(OUTPUT_DIR)
 
 # Download each binary
 $(OUTPUT_DIR)/%:
@@ -95,8 +95,8 @@ compress:
 # Remove non-binary files from the output directory
 cleanup:
 	@echo "Cleaning up non-binary files..."
-	@find $(OUTPUT_DIR) -type f ! -exec file {} \; | grep -v "executable" | awk -F: '{print $$1}' | xargs -r rm -f
-	@if [ "$(ARCH)" != "riscv64" ]; then find $(OUTPUT_DIR_FIPS) -type f ! -exec file {} \; | grep -v "executable" | awk -F: '{print $$1}' | xargs -r rm -f;fi
+	@find $(OUTPUT_DIR) -type f ! -executable -delete
+	@if [ "$(ARCH)" != "riscv64" ]; then find $(OUTPUT_DIR_FIPS) -type f ! -executable -delete; fi
 
 # Add version info config to the bundled binaries dir into a single yaml file
 version-info:
