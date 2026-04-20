@@ -13,7 +13,7 @@ concurrency:
 jobs:
   testing_build_matrix:
     name: ${{ matrix.platform }} - ${{ matrix.base_image }} - ${{ matrix.model || 'generic' }}${{ matrix.trusted_boot && '-uki' || ''}}${{ matrix.variant == 'standard' && ' - ' || '' }} ${{ matrix.kubernetes_provider != '' && matrix.kubernetes_provider || '' }} ${{ matrix.kubernetes_version != '' && matrix.kubernetes_version || '' }}${{ matrix.fips == true && ' - FIPS' || '' }}
-    runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    runs-on: ${{ matrix.platform == 'arm64' && 'ubuntu-24.04-arm' || matrix.platform == 'riscv64' && 'ubuntu-24.04-riscv' || 'ubuntu-24.04' }}
     strategy:
       fail-fast: false
       matrix:
@@ -86,10 +86,6 @@ jobs:
           fetch-depth: 0
       - name: Get version for docker build
         run:  echo "VERSION=$(git describe --tags --dirty )" >> $GITHUB_ENV
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@master
-        with:
-          platforms: all
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
       - name: Build the docker image
