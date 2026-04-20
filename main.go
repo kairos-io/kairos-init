@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"strings"
 
 	"github.com/kairos-io/kairos-init/pkg/bundled"
@@ -118,8 +119,12 @@ var rootCmd = &cobra.Command{
 	Use:   "kairos-init",
 	Short: "Kairos init tool",
 	Long:  `Kairos init tool for system initialization and configuration`,
-	PreRun: func(cmd *cobra.Command, args []string) {
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		if runtime.GOARCH == "riscv64" && config.DefaultConfig.Fips {
+			return fmt.Errorf("FIPS is not supported on riscv64")
+		}
 		preRun(cmd, args)
+		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger := logger.NewKairosLogger("kairos-init", loglevelFlag.Value, false)
