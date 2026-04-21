@@ -26,7 +26,7 @@ RUN go mod download
 # Copy the rest of the source code
 COPY . .
 ENV CGO_ENABLED=0
-RUN echo "Building version: $(git describe --tags --always --dirty)}"
+RUN echo "Building version: $(git describe --tags --always --dirty)"
 RUN echo "Building commit: $(git rev-parse --short HEAD)"
 # Cross-compile for TARGETARCH — runs natively on BUILDARCH, no emulation needed
 RUN GOOS=linux GOARCH=${TARGETARCH} go build -o /app/kairos-init --ldflags "-w -s -X github.com/kairos-io/kairos-init/pkg/values.version=$(git describe --tags --always --dirty) -X github.com/kairos-io/kairos-init/pkg/values.gitCommit=$(git rev-parse --short HEAD)"
