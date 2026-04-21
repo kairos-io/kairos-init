@@ -654,8 +654,19 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 			},
 		},
 		{
-			Name: "Clean debug kernel",
-			If:   fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
+			// On debian riscv machine, the kernel is named like this
+			Name:       "Clean debug kernel",
+			If:         fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
+			OnlyIfArch: "amd64",
+			Commands: []string{
+				fmt.Sprintf("rm /boot/vmlinux-%s", kernel),
+			},
+		},
+		{
+			// On debian riscv machine, the kernel is named like this
+			Name:       "Clean debug kernel",
+			If:         fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
+			OnlyIfArch: "arm64",
 			Commands: []string{
 				fmt.Sprintf("rm /boot/vmlinux-%s", kernel),
 			},
@@ -680,6 +691,15 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 			If:   fmt.Sprintf("test -f /boot/vmlinuz-%s", kernel),
 			Commands: []string{
 				fmt.Sprintf("ln -s /boot/vmlinuz-%s /boot/vmlinuz", kernel),
+			},
+		},
+		{
+			// On debian riscv machine, the kernel is named like this
+			Name:       "Link kernel",
+			If:         fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
+			OnlyIfArch: "riscv64",
+			Commands: []string{
+				fmt.Sprintf("ln -s /boot/vmlinux-%s /boot/vmlinuz", kernel),
 			},
 		},
 		{
