@@ -255,10 +255,29 @@ var ImmucorePackages = PackageMap{
 }
 
 // KernelPackages is a map of packages to install for each distro.
-// No arch required here, maybe models will need different packages?
 var KernelPackages = PackageMap{
-	Ubuntu: {
-		ArchCommon: {
+	Ubuntu: { // unfortunately thanks to riscv64 we need to duplicate the same kernels for amd/arm as they do follow the expected behaviour but not riscv64
+		ArchRiscV64: {
+			Common: {
+				"linux-image-generic",
+			},
+		},
+		ArchARM64: {
+			"20.04 || 22.04 || 24.04 || 28.04": {
+				// Note: this logic only works for LTS release (x.04), any odd year or x.10 will not work
+				// This is a template, so we can replace the version with the actual version of the system
+				"linux-image-generic-hwe-{{.version}}",
+			},
+			"26.04": {
+				// Ubuntu 26.04 uses generic kernel instead of HWE
+				"linux-image-generic",
+			},
+			// 24.10 uses the 24.04 hwe kernel as it is the same hwe track https://ubuntu.com/kernel/lifecycle
+			"24.10 || 25.04 || 25.10": {
+				"linux-image-generic-hwe-24.04",
+			},
+		},
+		ArchAMD64: {
 			"20.04 || 22.04 || 24.04 || 28.04": {
 				// Note: this logic only works for LTS release (x.04), any odd year or x.10 will not work
 				// This is a template, so we can replace the version with the actual version of the system
@@ -284,6 +303,12 @@ var KernelPackages = PackageMap{
 		ArchARM64: {
 			Common: {
 				"linux-image-arm64",
+				"firmware-linux-free",
+			},
+		},
+		ArchRiscV64: {
+			Common: {
+				"linux-image-riscv64",
 				"firmware-linux-free",
 			},
 		},
@@ -439,7 +464,6 @@ var BasePackages = PackageMap{
 				"nftables",
 				"open-iscsi",
 				"openssh-server",
-				"open-vm-tools",
 				"os-prober",
 				"pigz",
 				"pkg-config",
@@ -690,7 +714,6 @@ var GrubPackages = PackageMap{
 			Common: {
 				"kbd",            // Keyboard configuration
 				"lldpd",          // For lldp support, check if needed?
-				"shim-signed",    // For secure boot support
 				"snmpd",          // For snmp support, check if needed? Move to BasePackages if so?
 				"squashfs-tools", // For squashfs support, probably needs to be part of BasePackages
 				//"zfsutils-linux",        // For zfs tools (zfs and zpool), probably needs to be part of BasePackages
@@ -699,6 +722,7 @@ var GrubPackages = PackageMap{
 		},
 		ArchAMD64: {
 			Common: {
+				"shim-signed",           // For secure boot support
 				"grub2",                 // Basic grub support
 				"grub-efi-amd64-bin",    // Basic grub support for EFI
 				"grub-efi-amd64-signed", // For secure boot support
@@ -708,6 +732,7 @@ var GrubPackages = PackageMap{
 		},
 		ArchARM64: {
 			Common: {
+				"shim-signed",           // For secure boot support
 				"grub-efi-arm64",        // Basic grub support for EFI
 				"grub-efi-arm64-bin",    // Basic grub support for EFI
 				"grub-efi-arm64-signed", // For secure boot support

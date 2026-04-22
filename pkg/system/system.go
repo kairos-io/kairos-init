@@ -46,6 +46,8 @@ func DetectSystem(l logger.KairosLogger) values.System {
 		s.Arch = values.ArchAMD64
 	case values.ArchARM64:
 		s.Arch = values.ArchARM64
+	case values.ArchRiscV64:
+		s.Arch = values.ArchRiscV64
 	}
 
 	// Store the version

@@ -39,7 +39,6 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 		return nil, fmt.Errorf("FIPS is not supported on Ubuntu without a PRO account and extra packages.\n" +
 			"See https://github.com/kairos-io/kairos/blob/master/examples/builds/ubuntu-fips/Dockerfile for an example on how to build it")
 	}
-
 	// Get the packages
 	packages, err := values.GetPackages(sis, logger)
 	if err != nil {

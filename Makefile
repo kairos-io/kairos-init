@@ -48,13 +48,26 @@ $(OUTPUT_DIR):
 	@echo "Creating directory $(OUTPUT_DIR)..."
 	@mkdir -p $(OUTPUT_DIR)
 
-# Download all binaries (standard and FIPS)
-download: $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES)) $(addprefix $(OUTPUT_DIR_FIPS)/, $(addsuffix -fips, $(BINARY_NAMES)))
-	@# Download edgevpn by itself
+download: download-edgevpn
+
+# Set FIPS_BINARIES variable based on ARCH
+ifeq ($(ARCH),riscv64)
+FIPS_BINARIES :=
+else
+FIPS_BINARIES := $(addprefix $(OUTPUT_DIR_FIPS)/, $(addsuffix -fips, $(BINARY_NAMES)))
+endif
+
+download: $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES)) $(FIPS_BINARIES) download-edgevpn
+ifeq ($(ARCH),riscv64)
+	@echo "Skipping FIPS binaries download for riscv64."
+endif
+
+# Download edgevpn by itself
+download-edgevpn:
 	@echo "Downloading and extracting edgevpn for architecture $(ARCH)..."
 	@mkdir -p $(OUTPUT_DIR)
 	@# Unfortunately edgevpn uses x86_64 instead of amd64 so we need to do some string manipulation here
-	@curl -L -s https://github.com/mudler/edgevpn/releases/download/$(EDGEVPN_VERSION)/edgevpn-$(EDGEVPN_VERSION)-Linux-$(shell uname -m | sed -e 's/aarch64/arm64/').tar.gz | tar -xz -C $(OUTPUT_DIR)
+	@curl -L -s https://github.com/mudler/edgevpn/releases/download/$(EDGEVPN_VERSION)/edgevpn-$(EDGEVPN_VERSION)-Linux-$(shell echo $(ARCH) | sed -e 's/amd64/x86_64/').tar.gz | tar -xz -C $(OUTPUT_DIR)
 
 # Download each binary
 $(OUTPUT_DIR)/%:
@@ -70,19 +83,20 @@ $(OUTPUT_DIR_FIPS)/%-fips:
 
 
 # Run upx to compress binaries unless SKIP_UPX is set
+
 compress:
 	@if [ -z "$(SKIP_UPX)" ]; then \
 		echo "Running upx compress..."; \
 		upx -q --best --lzma $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn ); \
-		upx -q --best --lzma $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); \
+		if [ "$(ARCH)" != "riscv64" ]; then upx -q --best --lzma $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); fi; \
 	else \
 		echo "Skipping upx compression as SKIP_UPX is set"; \
 	fi
 # Remove non-binary files from the output directory
 cleanup:
 	@echo "Cleaning up non-binary files..."
-	@find $(OUTPUT_DIR) -type f ! -exec file {} \; | grep -v "executable" | awk -F: '{print $$1}' | xargs -r rm -f
-	@find $(OUTPUT_DIR_FIPS) -type f ! -exec file {} \; | grep -v "executable" | awk -F: '{print $$1}' | xargs -r rm -f
+	@find $(OUTPUT_DIR) -type f ! -executable -delete
+	@if [ "$(ARCH)" != "riscv64" ]; then find $(OUTPUT_DIR_FIPS) -type f ! -executable -delete; fi
 
 # Add version info config to the bundled binaries dir into a single yaml file
 version-info:
