@@ -654,7 +654,7 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 			},
 		},
 		{
-			// On debian riscv machine, the kernel is named like this
+			// On debian riscv machine, the kernel is named like this so only remove it on other arches
 			Name:       "Clean debug kernel",
 			If:         fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
 			OnlyIfArch: "amd64",
@@ -663,7 +663,7 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 			},
 		},
 		{
-			// On debian riscv machine, the kernel is named like this
+			// On debian riscv machine, the kernel is named like this so only remove it on other arches
 			Name:       "Clean debug kernel",
 			If:         fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
 			OnlyIfArch: "arm64",
