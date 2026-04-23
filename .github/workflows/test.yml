@@ -85,7 +85,7 @@ jobs:
             model: "generic"
             fips: false
           - platform: "riscv64"
-            base_image: "fedorariscv/base:latest"
+            base_image: "fedorariscv/fedora:41"
             model: "generic"
             fips: false
           - platform: "riscv64"
