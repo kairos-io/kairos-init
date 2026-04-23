@@ -84,6 +84,14 @@ jobs:
             base_image: "debian:13"
             model: "generic"
             fips: false
+          - platform: "riscv64"
+            base_image: "fedorariscv/fedora:43"
+            model: "generic"
+            fips: false
+          - platform: "riscv64"
+            base_image: "ghcr.io/kairos-io/hadron:v0.1.1"
+            model: "generic"
+            fips: false
     steps:
       - uses: actions/checkout@v6
         with:
