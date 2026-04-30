@@ -116,7 +116,10 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			Name:     "Install epel repository for Red Hat",
 			OnlyIfOs: "Red\\sHat.*",
 			Commands: []string{
-				fmt.Sprintf("dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-%d.noarch.rpm", fullVersion.Segments()[0]),
+				fmt.Sprintf(
+					"dnf install -y epel-release || dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-%d.noarch.rpm",
+					fullVersion.Segments()[0],
+				),
 			},
 		},
 		{
