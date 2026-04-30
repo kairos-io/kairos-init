@@ -1,5 +1,5 @@
-ARG BASE_IMAGE=ubuntu:24.04
-ARG VALIDATE_IMAGE=ubuntu:24.04
+ARG BASE_IMAGE=ubuntu:26.04
+ARG VALIDATE_IMAGE=ubuntu:26.04
 ARG VALIDATE=true
 
 # Build stage runs on host's native platform to avoid QEMU emulation overhead.
