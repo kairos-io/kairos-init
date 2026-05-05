@@ -351,8 +351,7 @@ menuentry "${display_name}" --id cos {
   search --no-floppy --label --set=root COS_STATE
   set img=/cOS/active.img
   set label=COS_ACTIVE
-  if [ -d (loop0) ]; then
-    loopback -d loop0
+  if loopback -d loop0; then
   fi
   loopback loop0 /$img
   set root=($root)
@@ -365,8 +364,7 @@ menuentry "${display_name} (fallback)" --id fallback {
   search --no-floppy --label --set=root COS_STATE
   set img=/cOS/passive.img
   set label=COS_PASSIVE
-  if [ -d (loop0) ]; then
-    loopback -d loop0
+  if loopback -d loop0; then
   fi
   loopback loop0 /$img
   set root=($root)
@@ -384,8 +382,7 @@ menuentry "${display_name} recovery" --id recovery {
     set img=/cOS/recovery.img
   fi
   set label=COS_SYSTEM
-  if [ -d (loop0) ]; then
-    loopback -d loop0
+  if loopback -d loop0; then
   fi
   loopback loop0 /$img
   set root=($root)
@@ -403,8 +400,7 @@ menuentry "${display_name} state reset (auto)" --id statereset {
     set img=/cOS/recovery.img
   fi
   set label=COS_SYSTEM
-  if [ -d (loop0) ]; then
-    loopback -d loop0
+  if loopback -d loop0; then
   fi
   loopback loop0 /$img
   set root=($root)
@@ -551,8 +547,7 @@ const ExtraGrubCfg = `menuentry "${display_name} remote recovery" --id remoterec
         set img=/cOS/recovery.img
     fi
     set label=COS_SYSTEM
-    if [ -d (loop0) ]; then
-        loopback -d loop0
+    if loopback -d loop0; then
     fi
     loopback loop0 /$img
     set root=($root)
