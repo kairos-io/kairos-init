@@ -1092,7 +1092,12 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			},
 			{
 				Name: "Disable ISCSI for NVIDIA devices",
-				If:   fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model),
+				If: fmt.Sprintf(`[ "%[1]s" = "%s" ] || [ "%[1]s" = "%s" ] || [ "%[1]s" = "%s" ]`,
+					config.DefaultConfig.Model,
+					values.AgxOrin,
+					values.OrinNX,
+					values.Thor,
+				),
 				Files: []schema.File{
 					{
 						Path:        bundled.DracutSkipScsiPath,
@@ -1102,14 +1107,24 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 						Content:     bundled.DracutSkipIscsi,
 					},
 				},
-				Commands: []string{
-					// iscsid causes delays on the login shell, and we don't need it, so we'll disable it
-					"systemctl disable iscsi open-iscsi iscsid.socket || true",
+				Systemctl: schema.Systemctl{
+					Disable: []string{
+						"iscsi",
+						"iscsid",
+						"open-iscsi",
+						"iscsiuio",
+					},
+					Mask: []string{
+						"iscsi",
+						"iscsid",
+						"open-iscsi",
+						"iscsiuio",
+					},
 				},
 			},
 			{
 				Name: "Omit nvidia drivers loading in the initramfs",
-				If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-thor" ]`, config.DefaultConfig.Model),
+				If:   fmt.Sprintf(`[ "%s" = "%s" ]`, config.DefaultConfig.Model, values.Thor),
 				Files: []schema.File{
 					{
 						Path:        bundled.DracutSkipNvidiaDriversPath,

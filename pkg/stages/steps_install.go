@@ -69,10 +69,19 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 	l4tVersion := getEnvOrDefault("L4T_VERSION", "36.4")
 	// Get board model from environment or config
 	boardModel := getEnvOrDefault("BOARD_MODEL", "t234")
-	isNvidiaAgxOrOrinNxBoard := fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model)
-	isNvidiaThorBoard := fmt.Sprintf(`[ "%s" = "nvidia-jetson-thor" ]`, config.DefaultConfig.Model)
+	isNvidiaAgxOrOrinNxBoard := fmt.Sprintf(`[ "%[1]s" = "%s" ] || [ "%[1]s" = "%s" ]`,
+		config.DefaultConfig.Model,
+		values.AgxOrin,
+		values.OrinNX,
+	)
+	isNvidiaThorBoard := fmt.Sprintf(`[ "%s" = "%s" ]`, config.DefaultConfig.Model, values.Thor)
 	// This matches any of the nvidia boards for steps shared between them
-	isNvidiaBoard := fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ] || [ "%[1]s" = "nvidia-jetson-thor" ]`, config.DefaultConfig.Model)
+	isNvidiaBoard := fmt.Sprintf(`[ "%[1]s" = "%s" ] || [ "%[1]s" = "%s" ] || [ "%[1]s" = "%s" ]`,
+		config.DefaultConfig.Model,
+		values.AgxOrin,
+		values.OrinNX,
+		values.Thor,
+	)
 
 	if values.Model(config.DefaultConfig.Model) == values.Thor {
 		logger.Logger.Info().Msg("NVIDIA Thor detected, using L4T version 38.4 for repository setup")

@@ -71,7 +71,7 @@ const (
 	Rpi4    Model = "rpi4"
 	AgxOrin Model = "nvidia-jetson-agx-orin"
 	OrinNX  Model = "nvidia-jetson-orin-nx"
-	Thor    Model = "nvidia-jetson-thor"
+	Thor    Model = "nvidia-jetson-agx-thor"
 )
 
 var SupportedModels = []Model{Generic, Rpi3, Rpi4, AgxOrin, OrinNX, Thor}
