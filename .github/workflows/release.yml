@@ -86,7 +86,6 @@ jobs:
   build:
     permissions:
       contents: read
-      packages: write
     needs:
       - build-linux-amd64
       - build-linux-arm64
