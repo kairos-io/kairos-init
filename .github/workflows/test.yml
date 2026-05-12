@@ -89,7 +89,7 @@ jobs:
             model: "generic"
             fips: false
           - platform: "riscv64"
-            base_image: "ghcr.io/kairos-io/hadron:v0.1.1"
+            base_image: "ghcr.io/kairos-io/hadron:v0.2.0-beta.1"
             model: "generic"
             fips: false
     steps:
