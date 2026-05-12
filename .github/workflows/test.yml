@@ -6,6 +6,9 @@ on:
     branches:
       - 'main'
 
+permissions:
+  contents: read
+
 concurrency:
   group: build-image-matrix-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
