@@ -7,7 +7,6 @@ on:
 
 permissions:
   contents: read
-  packages: write
 
 concurrency:
   group: build-main-${{ github.head_ref || github.ref }}-${{ github.repository }}
