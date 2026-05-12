@@ -5,8 +5,13 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   goreleaser:
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -79,6 +84,9 @@ jobs:
           push: true
           tags: ttl.sh/kairos:${{ github.sha }}-riscv64 # This are just temp images to build the final one
   build:
+    permissions:
+      contents: read
+      packages: write
     needs:
       - build-linux-amd64
       - build-linux-arm64
