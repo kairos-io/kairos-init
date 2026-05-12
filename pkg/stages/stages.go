@@ -53,7 +53,9 @@ func RunInstallStage(logger logger.KairosLogger) (schema.YipConfig, error) {
 	yipConsole := console.NewStandardConsole(console.WithLogger(logger))
 
 	data := schema.YipConfig{Stages: map[string][]schema.Stage{}}
-	// Run things before we install packages and framework
+	// Run things before we install packages
+
+	// Initialize the "before-install" stage; it will be populated with model-specific repo tweaks and extensions
 	data.Stages["before-install"] = []schema.Stage{}
 
 	// On Rpi3 and Rpi4 we need to enable the non-free repository for Debian to get the firmware

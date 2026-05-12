@@ -39,7 +39,6 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 		return nil, fmt.Errorf("FIPS is not supported on Ubuntu without a PRO account and extra packages.\n" +
 			"See https://github.com/kairos-io/kairos/blob/master/examples/builds/ubuntu-fips/Dockerfile for an example on how to build it")
 	}
-
 	// Get the packages
 	packages, err := values.GetPackages(sis, logger)
 	if err != nil {
@@ -69,9 +68,17 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 	nvidiaVersion := getEnvOrDefault("NVIDIA_VERSION", "3.1")
 	l4tVersion := getEnvOrDefault("L4T_VERSION", "36.4")
 	// Get board model from environment or config
-	// Does it make sense that both AGX Orin and Orin NX use the same board model?
 	boardModel := getEnvOrDefault("BOARD_MODEL", "t234")
 	isNvidiaAgxOrOrinNxBoard := fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model)
+	isNvidiaThorBoard := fmt.Sprintf(`[ "%s" = "nvidia-jetson-thor" ]`, config.DefaultConfig.Model)
+	// This matches any of the nvidia boards for steps shared between them
+	isNvidiaBoard := fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ] || [ "%[1]s" = "nvidia-jetson-thor" ]`, config.DefaultConfig.Model)
+
+	if values.Model(config.DefaultConfig.Model) == values.Thor {
+		logger.Logger.Info().Msg("NVIDIA Thor detected, using L4T version 38.4 for repository setup")
+		boardModel = "t264"
+		l4tVersion = getEnvOrDefault("L4T_VERSION", "38.4")
+	}
 
 	stage := []schema.Stage{
 		{
@@ -82,10 +89,48 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			},
 		},
 		{
+			Name:     "Install EPEL repository for Oracle Linux",
+			OnlyIfOs: "Oracle\\sLinux.*",
+			Packages: schema.Packages{
+				Install: []string{
+					fmt.Sprintf("oracle-epel-release-el%d", fullVersion.Segments()[0]),
+				},
+			},
+		},
+		{
+			Name:     "Install oss repository",
+			OnlyIfOs: values.OnlyMicroRegex, // From SLE Micro Rancher we need to do some workarounds
+			Files: []schema.File{
+				{
+					Path:    "/etc/zypp/repos.d/oss.repo",
+					Content: "[opensuse-oss]\nenabled=1\nautorefresh=0\nbaseurl=https://download.opensuse.org/distribution/leap/15.5/repo/oss/",
+				},
+			},
+			Commands: []string{
+				"zypper -n --gpg-auto-import-keys refresh",
+				"zypper -n install --force-resolution vim tpm2*",       // Fix deps issues
+				"zypper -n install --force-resolution systemd-network", // Fix deps issues
+			},
+		},
+		{
 			Name:     "Install epel repository for Red Hat",
 			OnlyIfOs: "Red\\sHat.*",
 			Commands: []string{
-				fmt.Sprintf("dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-%d.noarch.rpm", fullVersion.Segments()[0]),
+				fmt.Sprintf(
+					"dnf install -y epel-release || dnf install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-%d.noarch.rpm",
+					fullVersion.Segments()[0],
+				),
+			},
+		},
+		{
+			Name:     "Cleanup SLE Micro Rancher bundled kernels",
+			OnlyIfOs: values.OnlyMicroRegex, // Container comes with a kernel already, remove it first
+			Packages: schema.Packages{
+				Remove: []string{
+					"kernel-default",
+				},
+				Refresh: false,
+				Upgrade: false,
 			},
 		},
 		{
@@ -132,9 +177,8 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			},
 		},
 		{
-			// This repos are for NVIDIA L4T devices (AGX Orin and Orin NX) kernel packages
-			Name: "Setup NVIDIA L4T repositories",
-			If:   isNvidiaAgxOrOrinNxBoard,
+			Name: "Setup Nvidia L4T repositories for Nvidia Boards",
+			If:   isNvidiaBoard,
 			Commands: []string{
 				// Clean up existing NVIDIA repository files
 				"rm -rf /etc/apt/sources.list.d/nvidia-l4t-apt-source.list",
@@ -145,11 +189,25 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 				"curl -fSsL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/3bf863cc.pub | gpg --dearmor | tee /usr/share/keyrings/nvidia-drivers-2004.gpg > /dev/null 2>&1",
 				"curl -fSsL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/3bf863cc.pub | gpg --dearmor | tee /usr/share/keyrings/nvidia-drivers-2204.gpg > /dev/null 2>&1",
 				"curl -fSsL https://repo.download.nvidia.com/jetson/jetson-ota-public.asc | gpg --dearmor | tee /usr/share/keyrings/jetson-ota.gpg > /dev/null 2>&1",
+				fmt.Sprintf("echo 'deb [signed-by=/usr/share/keyrings/jetson-ota.gpg] https://repo.download.nvidia.com/jetson/common r%s main' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list", l4tVersion),
+			},
+		},
+		{
+			Name: "Setup Nvidia L4T repositories for Thor",
+			If:   isNvidiaThorBoard,
+			Commands: []string{
+				fmt.Sprintf("echo 'deb [signed-by=/usr/share/keyrings/jetson-ota.gpg] https://repo.download.nvidia.com/jetson/som r%s main' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list", l4tVersion),
+			},
+		},
+		{
+			// This repos are for NVIDIA L4T devices (AGX Orin and Orin NX) kernel packages
+			Name: "Setup NVIDIA L4T repositories for Orin NX and AGX Orin",
+			If:   isNvidiaAgxOrOrinNxBoard,
+			Commands: []string{
 				// Add NVIDIA repositories
 				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-drivers-2204.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/ /' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list",
 				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-drivers-2004.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list",
-				fmt.Sprintf("echo 'deb [signed-by=/usr/share/keyrings/jetson-ota.gpg] https://repo.download.nvidia.com/jetson/common/ r%s main' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list", l4tVersion),
-				fmt.Sprintf("echo 'deb [signed-by=/usr/share/keyrings/jetson-ota.gpg] https://repo.download.nvidia.com/jetson/%s/ r%s main' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list", boardModel, l4tVersion),
+				fmt.Sprintf("echo 'deb [signed-by=/usr/share/keyrings/jetson-ota.gpg] https://repo.download.nvidia.com/jetson/%s r%s main' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list", boardModel, l4tVersion),
 			},
 		},
 		{
@@ -178,20 +236,6 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 				// Change mountpoint for l4t usb device mode, as rootfs is mounted ro
 				// /srv/data is made through cloud-config
 				"sed -i -e 's|mntpoint=\"/mnt|mntpoint=\"/srv/data|' /opt/nvidia/l4t-usb-device-mode/nv-l4t-usb-device-mode-start.sh || true",
-			},
-		},
-		{
-			Name: "Disable ISCSI for NVIDIA devices",
-			If:   isNvidiaAgxOrOrinNxBoard,
-			Files: []schema.File{
-				{
-					Path:    "/etc/dracut.conf.d/iscsi.conf",
-					Content: "omit_dracutmodules+=\" iscsi \"",
-				},
-			},
-			Commands: []string{
-				// iscsid causes delays on the login shell, and we don't need it, so we'll disable it
-				"systemctl disable iscsi open-iscsi iscsid.socket || true",
 			},
 		},
 	}
@@ -223,6 +267,15 @@ func GetInstallKernelStage(sis values.System, logger logger.KairosLogger) ([]sch
 	}
 
 	stage := []schema.Stage{
+		{
+			Name:            "Enable UEK Repository for Oracle Linux 10 on ARM64",
+			OnlyIfOs:        "Oracle\\sLinux.*",
+			OnlyIfOsVersion: "10\\..*",
+			OnlyIfArch:      "arm64",
+			Commands: []string{
+				"dnf config-manager --enable ol10_UEKR8",
+			},
+		},
 		{
 			Name: "Install kernel packages",
 			Packages: schema.Packages{

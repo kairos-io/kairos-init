@@ -1,16 +1,20 @@
-name: "sysext"
+name: "sysext and confext configuration"
 stages:
   fs.after:
-    - name: "Default sysext extensions dirs"
+    - name: "Default sysext/confext extensions dirs"
       only_service_manager: "systemd"
       directories:
         - path: /etc/extensions
+        - path: /run/confexts
         - path: /run/extensions
         - path: /var/lib/extensions
+        - path: /var/lib/confexts
         - path: /usr/lib/extensions
+        - path: /usr/lib/confexts
         - path: /usr/local/lib/extensions
+        - path: /usr/local/lib/confexts
   initramfs:
-    - name: "systemd-sysext uki config"
+    - name: "systemd-sysext/confext uki config"
       if: '[ -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
       only_service_manager: "systemd"
       files:
@@ -35,7 +39,23 @@ stages:
             [Unit]
             # Make it timeout early to avoid blocking boot if keys are not in there to unlock sysext
             JobRunningTimeoutSec=5
-    - name: "systemd-sysext config"
+        - path: /etc/systemd/system/systemd-confext.service.d/kairos-uki.conf
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            [Service]
+            # Make it timeout early to avoid blocking boot if keys are not in there to unlock sysext
+            TimeoutStartSec=10
+            # override exec and reload to set the image policy
+            ExecStart=
+            ExecStart=systemd-confext refresh --image-policy="root=verity+signed+absent:usr=verity+signed+absent"
+            ExecReload=
+            ExecReload=systemd-confext refresh --image-policy="root=verity+signed+absent:usr=verity+signed+absent"
+            [Unit]
+            # Make it timeout early to avoid blocking boot if keys are not in there to unlock sysext
+            JobRunningTimeoutSec=5
+    - name: "systemd-sysext/confext config"
       if: '[ ! -e "/run/cos/uki_boot_mode" ] && [ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
       only_service_manager: "systemd"
       files:
@@ -60,6 +80,22 @@ stages:
             [Unit]
             # Make it timeout early to avoid blocking boot if keys are not in there to unlock sysext
             JobRunningTimeoutSec=5
+        - path: /etc/systemd/system/systemd-confext.service.d/kairos.conf
+          permissions: 0644
+          owner: 0
+          group: 0
+          content: |
+            [Service]
+            # Make it timeout early to avoid blocking boot if keys are not in there to unlock sysext
+            TimeoutStartSec=10
+            # override exec and reload to set the image policy
+            ExecStart=
+            ExecStart=systemd-confext refresh --image-policy="root=verity+absent:usr=verity+absent"
+            ExecReload=
+            ExecReload=systemd-confext refresh --image-policy="root=verity+absent:usr=verity+absent"
+            [Unit]
+            # Make it timeout early to avoid blocking boot if keys are not in there to unlock sysext
+            JobRunningTimeoutSec=5
     - name: "systemd-sysext set hierarchy system-wide"
       if: '[ ! -e "/run/cos/recovery_mode" ] && [ ! -e "/run/cos/autoreset_mode" ]'
       only_service_manager: "systemd"
@@ -70,8 +106,9 @@ stages:
           group: 0
           content: |
             export SYSTEMD_SYSEXT_HIERARCHIES="/usr/local/bin:/usr/local/sbin:/usr/local/include:/usr/local/lib:/usr/local/share:/usr/local/src:/usr/bin:/usr/share:/usr/lib:/usr/include:/usr/src:/usr/sbin"
-    - name: "systemd-sysext initramfs settings"
+    - name: "systemd-sysext/confext initramfs settings"
       only_service_manager: "systemd"
       systemctl:
         enable:
           - systemd-sysext
+          - systemd-confext

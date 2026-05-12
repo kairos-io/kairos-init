@@ -14,9 +14,10 @@ func (a Architecture) String() string {
 }
 
 const (
-	ArchAMD64  Architecture = "amd64"
-	ArchARM64  Architecture = "arm64"
-	ArchCommon Architecture = "common"
+	ArchAMD64   Architecture = "amd64"
+	ArchARM64   Architecture = "arm64"
+	ArchRiscV64 Architecture = "riscv64"
+	ArchCommon  Architecture = "common"
 )
 
 type Distro string
@@ -33,12 +34,14 @@ const (
 	RedHat             Distro = "rhel"
 	RockyLinux         Distro = "rocky"
 	AlmaLinux          Distro = "almalinux"
+	OracleLinux        Distro = "ol"
 	Fedora             Distro = "fedora"
 	Arch               Distro = "arch"
 	Alpine             Distro = "alpine"
 	OpenSUSELeap       Distro = "opensuse-leap"
 	OpenSUSETumbleweed Distro = "opensuse-tumbleweed"
 	SLES               Distro = "sles"
+	SLEMicroRancher    Distro = "sle-micro-rancher"
 	Hadron             Distro = "hadron"
 )
 
@@ -68,7 +71,18 @@ const (
 	Rpi4    Model = "rpi4"
 	AgxOrin Model = "nvidia-jetson-agx-orin"
 	OrinNX  Model = "nvidia-jetson-orin-nx"
+	Thor    Model = "nvidia-jetson-thor"
 )
+
+var SupportedModels = []Model{Generic, Rpi3, Rpi4, AgxOrin, OrinNX, Thor}
+
+func SupportedModelStrings() []string {
+	s := make([]string, len(SupportedModels))
+	for i, m := range SupportedModels {
+		s[i] = m.String()
+	}
+	return s
+}
 
 type System struct {
 	Name    string
@@ -160,3 +174,16 @@ func GetStepNames() []string {
 	return steps
 
 }
+
+// AllSuseRegex matches any SUSE-based distribution name.
+// AllSuseButMicroRegex matches SLES, openSUSE, or SUSE Linux Enterprise Server names.
+// AlpineRegex matches Alpine Linux distribution names.
+// RHELFamilyRegex matches RHEL-family distributions such as Fedora, CentOS, Rocky, AlmaLinux, Oracle Linux, and Red Hat.
+const (
+	AllSuseRegex                 = "SLES.*|[Oo]penSUSE.*|SUSE.*"
+	AllSuseButMicroRegex         = "^(?:SLES.*|[Oo]penSUSE.*|SUSE Linux Enterprise Server.*)$"
+	AllSuseButMicroAndTumbleweed = "^(?:SLES.*|SUSE Linux Enterprise Server.*|[Oo]penSUSE Leap.*)$"
+	OnlyMicroRegex               = "SUSE Linux Enterprise Micro for Rancher.*"
+	AlpineRegex                  = "Alpine.*"
+	RHELFamilyRegex              = "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|Red\\sHat.*"
+)

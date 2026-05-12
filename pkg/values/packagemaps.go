@@ -191,6 +191,12 @@ var BasePackagesModels = ModelPackageMap{
 					"zstd",
 				},
 			},
+			Thor: {
+				Common: {
+					"bridge-utils",
+					"fuse3",
+				},
+			},
 		},
 	},
 }
@@ -249,17 +255,42 @@ var ImmucorePackages = PackageMap{
 }
 
 // KernelPackages is a map of packages to install for each distro.
-// No arch required here, maybe models will need different packages?
 var KernelPackages = PackageMap{
-	Ubuntu: {
-		ArchCommon: {
-			"20.04 || 22.04 || 24.04 || 26.04 || 28.04": {
+	Ubuntu: { // unfortunately thanks to riscv64 we need to duplicate the same kernels for amd/arm as they do follow the expected behaviour but not riscv64
+		ArchRiscV64: {
+			Common: {
+				"linux-image-generic",
+			},
+		},
+		ArchARM64: {
+			"20.04 || 22.04 || 24.04 || 28.04": {
 				// Note: this logic only works for LTS release (x.04), any odd year or x.10 will not work
 				// This is a template, so we can replace the version with the actual version of the system
 				"linux-image-generic-hwe-{{.version}}",
 			},
+			"26.04": {
+				// Ubuntu 26.04 uses generic kernel instead of HWE
+				"linux-image-generic",
+			},
 			// 24.10 uses the 24.04 hwe kernel as it is the same hwe track https://ubuntu.com/kernel/lifecycle
-			">=24.10": {"linux-image-generic-hwe-24.04"},
+			"24.10 || 25.04 || 25.10": {
+				"linux-image-generic-hwe-24.04",
+			},
+		},
+		ArchAMD64: {
+			"20.04 || 22.04 || 24.04 || 28.04": {
+				// Note: this logic only works for LTS release (x.04), any odd year or x.10 will not work
+				// This is a template, so we can replace the version with the actual version of the system
+				"linux-image-generic-hwe-{{.version}}",
+			},
+			"26.04": {
+				// Ubuntu 26.04 uses generic kernel instead of HWE
+				"linux-image-generic",
+			},
+			// 24.10 uses the 24.04 hwe kernel as it is the same hwe track https://ubuntu.com/kernel/lifecycle
+			"24.10 || 25.04 || 25.10": {
+				"linux-image-generic-hwe-24.04",
+			},
 		},
 	},
 	Debian: {
@@ -273,6 +304,28 @@ var KernelPackages = PackageMap{
 			Common: {
 				"linux-image-arm64",
 				"firmware-linux-free",
+			},
+		},
+		ArchRiscV64: {
+			Common: {
+				"linux-image-riscv64",
+				"firmware-linux-free",
+			},
+		},
+	},
+	OracleLinux: {
+		ArchAMD64: {
+			Common: {
+				"kernel",
+				"kernel-modules",
+				"kernel-modules-extra",
+			},
+		},
+		ArchARM64: {
+			Common: {
+				"kernel-uek",
+				"kernel-uek-modules",
+				"kernel-uek-modules-extra",
 			},
 		},
 	},
@@ -327,6 +380,22 @@ var KernelPackagesTrustedBoot = PackageMap{
 			Common: {
 				"linux-image-arm64",
 				"firmware-linux-free",
+			},
+		},
+	},
+	OracleLinux: {
+		ArchAMD64: {
+			Common: {
+				"kernel",
+				"kernel-modules",
+				"kernel-modules-extra",
+			},
+		},
+		ArchARM64: {
+			Common: {
+				"kernel-uek",
+				"kernel-uek-modules",
+				"kernel-uek-modules-extra",
 			},
 		},
 	},
@@ -395,7 +464,6 @@ var BasePackages = PackageMap{
 				"nftables",
 				"open-iscsi",
 				"openssh-server",
-				"open-vm-tools",
 				"os-prober",
 				"pigz",
 				"pkg-config",
@@ -437,18 +505,19 @@ var BasePackages = PackageMap{
 				"openssh",
 				"open-vm-tools",
 				"pigz",
-				"policycoreutils",
 				"polkit",
 				"procps",
 				"qemu-guest-agent", // TODO: Move this to generic model?
 				"strace",
 				"systemd",
-				"systemd-networkd",
-				"systemd-resolved",
 				"timezone",
 				"tmux",
 				"vim",
 				"which",
+			},
+			"!=5.4": {
+				"systemd-networkd",
+				"systemd-resolved",
 			},
 		},
 		ArchAMD64: {
@@ -551,6 +620,7 @@ var BasePackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				"audit",                   // For audit support, check if needed?
+				"chrony",                  // RHEL family uses chronyd for time sync (not systemd-timesyncd)
 				"cracklib-dicts",          // Password dictionary support
 				"device-mapper",           // Device mapper support, needed for lvm and cryptsetup
 				"device-mapper-multipath", // For multipath support, needed for dracut
@@ -598,10 +668,15 @@ var BasePackages = PackageMap{
 				"tpm2-tools",             // For TPM support, mainly trusted boot
 				"dmsetup",                // Device mapper support, needed for lvm and cryptsetup
 				"networkd-dispatcher",
-				"packagekit-tools",
 				"publicsuffix",
 				"xdg-user-dirs",
 				"zfsutils-linux", // For zfs tools (zfs and zpool)
+			},
+			"<26.04": {
+				"packagekit-tools",
+			},
+			">=26.04": {
+				"packagekit",
 			},
 			// Ubuntu 20.04 does not support multipath + dracut due to initramfs-tools
 			// conflicting with dracut, so we dont install it there. This means
@@ -639,7 +714,6 @@ var GrubPackages = PackageMap{
 			Common: {
 				"kbd",            // Keyboard configuration
 				"lldpd",          // For lldp support, check if needed?
-				"shim-signed",    // For secure boot support
 				"snmpd",          // For snmp support, check if needed? Move to BasePackages if so?
 				"squashfs-tools", // For squashfs support, probably needs to be part of BasePackages
 				//"zfsutils-linux",        // For zfs tools (zfs and zpool), probably needs to be part of BasePackages
@@ -648,6 +722,7 @@ var GrubPackages = PackageMap{
 		},
 		ArchAMD64: {
 			Common: {
+				"shim-signed",           // For secure boot support
 				"grub2",                 // Basic grub support
 				"grub-efi-amd64-bin",    // Basic grub support for EFI
 				"grub-efi-amd64-signed", // For secure boot support
@@ -657,6 +732,7 @@ var GrubPackages = PackageMap{
 		},
 		ArchARM64: {
 			Common: {
+				"shim-signed",           // For secure boot support
 				"grub-efi-arm64",        // Basic grub support for EFI
 				"grub-efi-arm64-bin",    // Basic grub support for EFI
 				"grub-efi-arm64-signed", // For secure boot support
@@ -943,6 +1019,32 @@ var KernelPackagesModels = ModelPackageMap{
 					"libopencv-dev",
 				},
 			},
+			Thor: {
+				Common: {
+					"nvidia-l4t-3d-core",
+					"nvidia-l4t-gbm",
+					"nvidia-l4t-init",
+					"nvidia-l4t-nvfancontrol",
+					"nvidia-l4t-nvsci",
+					"nvidia-l4t-openwfd",
+					"nvidia-l4t-optee",
+					"nvidia-l4t-tools",
+					"nvidia-l4t-vulkan-sc-openrm",
+					"nvidia-l4t-configs",
+					"nvidia-l4t-core",
+					"nvidia-l4t-cuda",
+					"nvidia-l4t-nvml",
+					"nvidia-l4t-firmware",
+					"nvidia-l4t-extlinux",
+					"nvidia-l4t-initrd",
+					"nvidia-l4t-kernel",
+					"nvidia-l4t-kernel-openrm",
+					"nvidia-l4t-kernel-dtbs",
+					"nvidia-l4t-kernel-oot-modules",
+					"nvidia-l4t-display-kernel",
+					"nvidia-l4t-kernel-module-configs",
+				},
+			},
 		},
 	},
 	SUSEFamily: {
@@ -1056,10 +1158,14 @@ func GetKernelPackages(s System, l logger.KairosLogger) ([]string, error) {
 	if config.DefaultConfig.TrustedBoot {
 		// Kernel packages by model
 		if config.DefaultConfig.Model == Generic.String() {
+			distroKernel := KernelPackagesTrustedBoot[s.Distro]
+			hasDistroOverride := distroKernel != nil && (distroKernel[ArchCommon] != nil || distroKernel[s.Arch] != nil)
 			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][ArchCommon]) // Common kernel packages to both arches
-			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][ArchCommon]) // Common kernel packages to both arches by family
 			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Distro][s.Arch])     // Specific kernel packages for the arch
-			filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+			if !hasDistroOverride {
+				filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][ArchCommon]) // Common kernel packages to both arches by family
+				filteredPackages = append(filteredPackages, KernelPackagesTrustedBoot[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+			}
 		} else {
 			// Get specific packages for the model
 			// TODO: No support for trusted boot on models yet, so this part is probably useless for now?
@@ -1070,10 +1176,14 @@ func GetKernelPackages(s System, l logger.KairosLogger) ([]string, error) {
 		}
 	} else {
 		if config.DefaultConfig.Model == Generic.String() {
+			distroKernel := KernelPackages[s.Distro]
+			hasDistroOverride := distroKernel != nil && (distroKernel[ArchCommon] != nil || distroKernel[s.Arch] != nil)
 			filteredPackages = append(filteredPackages, KernelPackages[s.Distro][ArchCommon]) // Common kernel packages to both arches
-			filteredPackages = append(filteredPackages, KernelPackages[s.Family][ArchCommon]) // Common kernel packages to both arches by family
 			filteredPackages = append(filteredPackages, KernelPackages[s.Distro][s.Arch])     // Specific kernel packages for the arch
-			filteredPackages = append(filteredPackages, KernelPackages[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+			if !hasDistroOverride {
+				filteredPackages = append(filteredPackages, KernelPackages[s.Family][ArchCommon]) // Common kernel packages to both arches by family
+				filteredPackages = append(filteredPackages, KernelPackages[s.Family][s.Arch])     // Specific kernel packages for the arch by family
+			}
 		} else {
 			// Get specific packages for the model
 			filteredPackages = append(filteredPackages, KernelPackagesModels[s.Distro][ArchCommon][Model(config.DefaultConfig.Model)])

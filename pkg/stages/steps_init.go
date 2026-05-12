@@ -59,7 +59,7 @@ func GetInitrdStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 		stage = append(stage, []schema.Stage{
 			{
 				Name:     "Create new initrd",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|SLES.*|[O-o]penSUSE.*|SUSE.*|Hadron.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|SLES.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 				Commands: []string{
 					fmt.Sprintf("depmod -a %s", kernel),
 					dracutCmd,
@@ -248,6 +248,24 @@ func GetWorkaroundsStage(_ values.System, l logger.KairosLogger) []schema.Stage 
 				},
 			},
 		},
+		{
+			Name:     "Disable SELinux for Red Hat",
+			OnlyIfOs: "Red.*Hat.*",
+			Files: []schema.File{
+				{
+					Path:    "/etc/selinux/config",
+					Content: `SELINUX=disabled`,
+				},
+			},
+		},
+		{
+			Name: "Link nvidia-smi into the expected place",
+			// Check and only do if the link/binary is not there
+			If: "test -f /usr/sbin/nvidia-smi && ! test -e /usr/bin/nvidia-smi",
+			Commands: []string{
+				"ln -s /usr/sbin/nvidia-smi /usr/bin/nvidia-smi",
+			},
+		},
 	}
 
 	if config.DefaultConfig.TrustedBoot {
@@ -331,7 +349,7 @@ func GetCleanupStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:     "Cleanup",
-			OnlyIfOs: "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs: "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*",
 			Commands: []string{
 				"dnf clean all",
 				"rm -rf /var/cache/dnf/* /tmp/* /var/tmp/*",
@@ -339,14 +357,14 @@ func GetCleanupStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:     "Cleanup",
-			OnlyIfOs: "Alpine.*",
+			OnlyIfOs: values.AlpineRegex,
 			Commands: []string{
 				"rm -rf /var/cache/apk/* /tmp/* /var/tmp/*",
 			},
 		},
 		{
 			Name:     "Cleanup",
-			OnlyIfOs: "openSUSE.*|SUSE.*",
+			OnlyIfOs: values.AllSuseRegex,
 			Commands: []string{
 				"zypper clean -a",
 				"rm -rf /var/cache/zypp/* /tmp/* /var/tmp/*",
@@ -384,7 +402,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			Name:                 "Enable fail2ban service for RHEL family",
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/bin/fail2ban-server",
-			OnlyIfOs:             "CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs:             "CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"fail2ban",
@@ -394,7 +412,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		{
 			Name:                 "Enable fail2ban service",
 			OnlyIfServiceManager: "systemd",
-			OnlyIfOs:             "Ubuntu.*|Debian.*|SLES.*|openSUSE.*|Fedora.*", // RHEL family has it optinally installed
+			OnlyIfOs:             "Ubuntu.*|Debian.*|SLES.*|[Oo]penSUSE.*|Fedora.*", // RHEL family has it optionally installed
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"fail2ban",
@@ -404,10 +422,20 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		{
 			Name:                 "Enable timesyncd service",
 			OnlyIfServiceManager: "systemd",
-			OnlyIfOs:             "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|SLES.*|[O-o]penSUSE.*|Hadron.*", // RHEL family has it optinally installed
+			OnlyIfOs:             "Ubuntu.*|Debian.*|SLES.*|[Oo]penSUSE.*|Hadron.*", // RHEL family and Fedora use chronyd instead
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"systemd-timesyncd",
+				},
+			},
+		},
+		{
+			Name:                 "Enable chronyd service for RHEL family and Fedora",
+			OnlyIfServiceManager: "systemd",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"chronyd",
 				},
 			},
 		},
@@ -423,8 +451,8 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name:                 "Disable Wicked for SUSE family", // Collides with systemd-networkd
-			OnlyIfOs:             "SLES.*|openSUSE.*|SUSE.*",
+			Name:                 "Disable Wicked for SUSE family (excluding SLE Micro Rancher/Tumbleweed)", // Collides with systemd-networkd
+			OnlyIfOs:             values.AllSuseButMicroAndTumbleweed,
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Disable: []string{
@@ -436,8 +464,30 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 			},
 		},
 		{
-			Name:                 "Enable services for SUSE family",
-			OnlyIfOs:             "SLES.*|openSUSE.*|SUSE.*",
+			Name:                 "Enable services for SUSE family (excluding SLE Micro Rancher)",
+			OnlyIfOs:             values.AllSuseButMicroRegex,
+			OnlyIfServiceManager: "systemd",
+			Systemctl: schema.Systemctl{
+				Enable: []string{
+					"sshd",
+					"systemd-networkd",
+					"systemd-resolved",
+				},
+			},
+		},
+		{
+			Name:                 "Disable services for SLE Micro Rancher",
+			OnlyIfOs:             values.OnlyMicroRegex,
+			OnlyIfServiceManager: "systemd",
+			Systemctl: schema.Systemctl{
+				Disable: []string{
+					"NetworkManager",
+				},
+			},
+		},
+		{
+			Name:                 "Enable services for SLE Micro Rancher",
+			OnlyIfOs:             values.OnlyMicroRegex,
 			OnlyIfServiceManager: "systemd",
 			Systemctl: schema.Systemctl{
 				Enable: []string{
@@ -449,8 +499,13 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable services for RHEL family",
-			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*",
 			OnlyIfServiceManager: "systemd",
+			Commands: []string{
+				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
+				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
+				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
+			},
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"sshd",
@@ -460,36 +515,41 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 					"dnf-makecache",
 					"dnf-makecache.timer",
 				},
-			},
-			Commands: []string{
-				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
-				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
-				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
 			},
 		},
 		{
 			Name:                 "Enable services for RHEL",
 			OnlyIfOs:             "Red\\sHat.*",
 			OnlyIfServiceManager: "systemd",
+			Commands: []string{
+				"systemctl unmask getty.target",         // Unmask getty.target to allow login on ttys as it comes masked by default
+				"systemctl unmask console-getty",        // Unmask console-getty to allow console login on ttys as it comes masked by default
+				"systemctl unmask systemd-udevd",        // Unmask systemd-udevd as it comes masked by default
+				"systemctl unmask systemd-udev-trigger", // Unmask systemd-udev-trigger as it comes masked by default
+				"systemctl unmask systemd-logind",       // Unmask systemd-logind as it comes masked by default
+				"systemctl unmask systemd-random-seed",  // Unmask systemd-random-seed as it comes masked by default
+				"systemctl unmask systemd-remount-fs",   // Unmask systemd-remount-fs as it comes masked by default
+			},
 			Systemctl: schema.Systemctl{
 				Enable: []string{
 					"sshd",
 					"systemd-resolved",
+					"getty@tty1",
+					"getty@tty2",
+					"getty@tty3",
+					"tmp.mount",
+					"proc-sys-fs-binfmt_misc.mount",
 				},
 				Disable: []string{
 					"dnf-makecache",
 					"dnf-makecache.timer",
+					"selinux-autorelabel-mark",
 				},
-			},
-			Commands: []string{
-				"systemctl unmask getty.target",   // Unmask getty.target to allow login on ttys as it comes masked by default
-				"systemctl unmask systemd-udevd",  // Unmask systemd-udevd as it comes masked by default
-				"systemctl unmask systemd-logind", // Unmask systemd-logind as it comes masked by default
 			},
 		},
 		{
 			Name:                 "Enable networkd for RHEL family if binary is available",
-			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Red\\sHat.*",
+			OnlyIfOs:             values.RHELFamilyRegex,
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/lib/systemd/systemd-networkd",
 			Systemctl: schema.Systemctl{
@@ -500,7 +560,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable NetworkManager for RHEL if binary is available",
-			OnlyIfOs:             "Fedora.*|CentOS.*|Rocky.*|AlmaLinux.*|Red\\sHat.*",
+			OnlyIfOs:             values.RHELFamilyRegex,
 			OnlyIfServiceManager: "systemd",
 			If:                   "test -f /usr/sbin/NetworkManager",
 			Systemctl: schema.Systemctl{
@@ -511,7 +571,7 @@ func GetServicesStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 		},
 		{
 			Name:                 "Enable services for Alpine family",
-			OnlyIfOs:             "Alpine.*",
+			OnlyIfOs:             values.AlpineRegex,
 			OnlyIfServiceManager: "openrc",
 			Commands: []string{
 				"rc-update add sshd boot",
@@ -594,8 +654,19 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 			},
 		},
 		{
-			Name: "Clean debug kernel",
-			If:   fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
+			// On debian riscv machine, the kernel is named like this so only remove it on other arches
+			Name:       "Clean debug kernel",
+			If:         fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
+			OnlyIfArch: "amd64",
+			Commands: []string{
+				fmt.Sprintf("rm /boot/vmlinux-%s", kernel),
+			},
+		},
+		{
+			// On debian riscv machine, the kernel is named like this so only remove it on other arches
+			Name:       "Clean debug kernel",
+			If:         fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
+			OnlyIfArch: "arm64",
 			Commands: []string{
 				fmt.Sprintf("rm /boot/vmlinux-%s", kernel),
 			},
@@ -609,7 +680,7 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 		},
 		{ // On RHEL family, if we don't have grub2 installed, it wont copy the kernel and rename it to the /boot dir, so we need to do it manually
 			Name:     "Copy kernel for Trusted Boot",
-			OnlyIfOs: "Fedora.*|Red\\sHat.*|Rocky.*|AlmaLinux.*",
+			OnlyIfOs: values.RHELFamilyRegex,
 			If:       fmt.Sprintf("test ! -f /boot/vmlinuz-%s && test -f /usr/lib/modules/%s/vmlinuz", kernel, kernel),
 			Commands: []string{
 				fmt.Sprintf("cp /usr/lib/modules/%s/vmlinuz /boot/vmlinuz-%s", kernel, kernel),
@@ -620,6 +691,31 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 			If:   fmt.Sprintf("test -f /boot/vmlinuz-%s", kernel),
 			Commands: []string{
 				fmt.Sprintf("ln -s /boot/vmlinuz-%s /boot/vmlinuz", kernel),
+			},
+		},
+		{
+			// On debian riscv machine, the kernel is named like this
+			Name:       "Link kernel",
+			If:         fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
+			OnlyIfArch: "riscv64",
+			Commands: []string{
+				fmt.Sprintf("ln -s /boot/vmlinux-%s /boot/vmlinuz", kernel),
+			},
+		},
+		{
+			Name: "Remove any existing hmac symlinks",
+			If:   "test -L /boot/.vmlinuz.hmac",
+			Commands: []string{
+				"rm /boot/.vmlinuz.hmac",
+			},
+		},
+		{
+			// hmac files are used under FIPS. We ship them along but because dracut will use the kernel file name
+			// to search for the companion hmac file, we need to also link it to the name :)
+			Name: "Link .hmac if any",
+			If:   fmt.Sprintf("test -f /boot/.vmlinuz-%s.hmac", kernel),
+			Commands: []string{
+				fmt.Sprintf("ln -s /boot/.vmlinuz-%s.hmac /boot/.vmlinuz.hmac", kernel),
 			},
 		},
 		{
@@ -807,7 +903,11 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			if constraint.Check(ver) {
 				networkModule += " systemd-resolved"
 			}
-
+			constraint, _ = semver.NewConstraint(">=26.04")
+			if constraint.Check(ver) {
+				// For 26.04+, network-legacy is merged into systemd-networkd and removed
+				networkModule = "systemd-networkd systemd-resolved"
+			}
 		}
 
 		if sis.Family == values.RedHatFamily {
@@ -825,34 +925,48 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			}
 
 			// Now network
-			// we default to networkmanager
+			// we default to NetworkManager
 			// if systemd-network is available we use it instead
 			// depending on the version we might add network-legacy
 			// Start from scratch
 			networkModule = ""
-
-			// Do we have networkmanmager?
+			// Do we have NetworkManager? Then add it and skip the rest of checks
 			if _, err := os.Stat("/usr/sbin/NetworkManager"); err == nil {
 				networkModule = "network-manager"
-			}
-
-			// Do we have systemd-networkd?
-			if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err == nil {
-				networkModule = "systemd-networkd"
-				// Do we have systemd-resolved?
-				if _, err := os.Stat("/usr/lib/systemd/systemd-resolved"); err == nil {
-					networkModule += " systemd-resolved"
+			} else {
+				// Nothing seems to ship networkd modules for dracut in the RHEL+clones so only add them under Fedora
+				if sis.Distro == values.Fedora {
+					// Do we have systemd-networkd?
+					if _, err := os.Stat("/usr/lib/systemd/systemd-networkd"); err == nil {
+						networkModule = "systemd-networkd"
+						// Systemd resolved modules only make sense if networkd is used alongside
+						// Otherwise other modules provide their own resolvers
+						// Do we have systemd-resolved?
+						if _, err := os.Stat("/usr/lib/systemd/systemd-resolved"); err == nil {
+							networkModule += " systemd-resolved"
+						}
+					} else {
+						// Fallback: if neither NetworkManager nor systemd-networkd is available on Fedora,
+						// add either network or network-legacy based on the version, same as other distros.
+						// network-legacy was dropped from 10.0 onwards
+						constraint, _ = semver.NewConstraint("<10")
+						if constraint.Check(ver) {
+							networkModule = "network-legacy"
+						} else {
+							networkModule = "network"
+						}
+					}
+				} else {
+					// On other distros add either network or network-legacy
+					// network-legacy was dropped from 10.0 onwards
+					constraint, _ = semver.NewConstraint("<10")
+					if constraint.Check(ver) {
+						networkModule = "network-legacy"
+					} else {
+						networkModule = "network"
+					}
 				}
 			}
-
-			constraint, _ = semver.NewConstraint("<10")
-			// If its > 9.0 we cant add network-legacy
-			if constraint.Check(ver) {
-				networkModule += " network-legacy"
-			} else {
-				networkModule += " network"
-			}
-
 		}
 
 		// Hadron uses the full systemd network stuff
@@ -872,7 +986,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 		data = append(data, []schema.Stage{
 			{
 				Name:     "Add pmem modules to initramfs",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|openSUSE.*|SUSE.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*",
 				Files: []schema.File{
 					{
 						Path:        bundled.DracutPmemPath,
@@ -885,7 +999,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			},
 			{
 				Name:     "Add sysext module to initramfs",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|openSUSE.*|SUSE.*[O-o]penSUSE.*|Hadron.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 				If:       strconv.FormatBool(sysextModule),
 				Files: []schema.File{
 					{
@@ -899,7 +1013,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			},
 			{
 				Name:     "Add network module to initramfs",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|openSUSE.*|SUSE.*|[O-o]penSUSE.*|Hadron.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 				Files: []schema.File{
 					{
 						Path:        bundled.DracutNetworkPath,
@@ -912,7 +1026,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			},
 			{
 				Name:     "Add immucore module to initramfs",
-				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|openSUSE.*|SUSE.*|[O-o]penSUSE.*|Hadron.*",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 				Files: []schema.File{
 					{
 						Path:        bundled.DracutConfigPath,
@@ -965,7 +1079,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			},
 			{
 				Name:     "Add Multipath module to initramfs",
-				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|openSUSE.*|SUSE.*|[O-o]penSUSE.*|Hadron.*",
+				OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 				Files: []schema.File{
 					{
 						Path:        bundled.DracutMultipathPath,
@@ -976,6 +1090,36 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 					},
 				},
 			},
+			{
+				Name: "Disable ISCSI for NVIDIA devices",
+				If:   fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ]`, config.DefaultConfig.Model),
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutSkipScsiPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.DracutSkipIscsi,
+					},
+				},
+				Commands: []string{
+					// iscsid causes delays on the login shell, and we don't need it, so we'll disable it
+					"systemctl disable iscsi open-iscsi iscsid.socket || true",
+				},
+			},
+			{
+				Name: "Omit nvidia drivers loading in the initramfs",
+				If:   fmt.Sprintf(`[ "%s" = "nvidia-jetson-thor" ]`, config.DefaultConfig.Model),
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutSkipNvidiaDriversPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.DracutSkipNvidiaDrivers,
+					},
+				},
+			},
 		}...)
 
 		if config.DefaultConfig.Fips {
@@ -983,7 +1127,7 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 			data = append(data, []schema.Stage{
 				{
 					Name:     "Add fips support to initramfs",
-					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|openSUSE.*|SUSE.*|[O-o]penSUSE.*|Hadron.*",
+					OnlyIfOs: "Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 					Files: []schema.File{
 						{
 							Path:        bundled.DracutFipsPath,
