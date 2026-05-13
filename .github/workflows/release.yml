@@ -5,9 +5,14 @@ on:
     tags:
       - 'v*'
 
+permissions:
+  contents: read
+
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
       - run: |
