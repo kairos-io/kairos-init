@@ -213,6 +213,8 @@ github.com/mattn/go-isatty v0.0.20 h1:xfD0iDuEKnDkl03q4limB+vH+GxLEtL/jb4xVJSWWE
 github.com/mattn/go-isatty v0.0.20/go.mod h1:W+V8PltTTMOvKvAeJH7IuucS94S2C6jfK/D7dTCTo3Y=
 github.com/mauromorales/xpasswd v0.4.4 h1:+vPapYCwgVH6Mb2qL+OEBQla1dJIRPxmF1fpr1s0KJU=
 github.com/mauromorales/xpasswd v0.4.4/go.mod h1:yWLv2YuHAVoZyDEUYLLrpGqP7DTnx3+Pnso+Xx7gMWM=
+github.com/mauromorales/xpasswd v0.4.7 h1:s5I/zVkV1UG2fof4f98KVpw4k0aQJ8QKoAQvSAU2GPg=
+github.com/mauromorales/xpasswd v0.4.7/go.mod h1:FZdWdaNfMX97OBXggPsbA5pvXJlx2HJKcJz0/TVQ2YY=
 github.com/mfridman/tparse v0.18.0 h1:wh6dzOKaIwkUGyKgOntDW4liXSo37qg5AXbIhkMV3vE=
 github.com/mfridman/tparse v0.18.0/go.mod h1:gEvqZTuCgEhPbYk/2lS3Kcxg1GmTxxU7kTC8DvP0i/A=
 github.com/mitchellh/copystructure v1.2.0 h1:vpKXTN4ewci03Vljg/q9QvCGUDttBOGBIa15WveJJGw=
@@ -239,6 +241,8 @@ github.com/mudler/go-pluggable v0.0.0-20230126220627-7710299a0ae5 h1:FaZD86+A9mV
 github.com/mudler/go-pluggable v0.0.0-20230126220627-7710299a0ae5/go.mod h1:WmKcT8ONmhDQIqQ+HxU+tkGWjzBEyY/KFO8LTGCu4AI=
 github.com/mudler/yip v1.23.5 h1:ggiHMKxBPUnjpxDqP0VSoc2vGlJjScM3L/EAS/8+EHM=
 github.com/mudler/yip v1.23.5/go.mod h1:0mHLGdYGWyqyiUQMEaR+OuCfG4Ehx90geovHyTNgr8U=
+github.com/mudler/yip v1.23.6 h1:LWBFImjWnCap3LLvUSrt4Cwe/IWawhBFIXm+BMRl7hc=
+github.com/mudler/yip v1.23.6/go.mod h1:KNMV7L33Gyf45T2Otu2u7VJK5zVaOu90ECvHJjdOJNw=
 github.com/nxadm/tail v1.4.4/go.mod h1:kenIhsEOeOJmVchQTgglprH7qJGnHDVpk1VPCcaMI8A=
 github.com/nxadm/tail v1.4.11 h1:8feyoE3OzPrcshW5/MJ4sGESc5cqmGkGCWlco4l0bqY=
 github.com/nxadm/tail v1.4.11/go.mod h1:OTaG3NK980DZzxbRq6lEuzgU+mug70nY11sMd4JXXHc=
