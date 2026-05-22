@@ -82,7 +82,7 @@ jobs:
           file: Dockerfile
           platforms: linux/riscv64
           build-args: |
-            DISABLE_UPX=1
+            SKIP_UPX=1
           push: true
           tags: ttl.sh/kairos:${{ github.sha }}-riscv64 # This are just temp images to build the final one
   build:

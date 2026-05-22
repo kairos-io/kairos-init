@@ -8,9 +8,9 @@ builds:
   - env:
       - CGO_ENABLED=0
       - ARCH={{ .Arch }}
-      # UPX does not reliably support riscv64 ELFs; match release Docker build (DISABLE_UPX=1).
+      # UPX does not reliably support riscv64 ELFs; match release Docker build (SKIP_UPX=1).
       - >-
-        {{- if eq .Arch "riscv64" }}DISABLE_UPX=1{{- end }}
+        {{- if eq .Arch "riscv64" }}SKIP_UPX=1{{- end }}
     goos:
       - linux
     goarch:
