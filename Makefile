@@ -9,6 +9,8 @@ BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger provider-kairo
 OUTPUT_DIR := pkg/bundled/binaries
 OUTPUT_DIR_FIPS := pkg/bundled/binaries/fips
 
+# UPX compression: set SKIP_UPX to any non-empty value to disable compression
+# and to skip requiring the upx executable in prepare.
 # URLs for binaries
 define URL_TEMPLATE
 https://github.com/kairos-io/$1/releases/download/$2/$1-$2-Linux-$(ARCH)$3.tar.gz
@@ -82,7 +84,7 @@ $(OUTPUT_DIR_FIPS)/%-fips:
 	@curl -L -s $($*-fips_URL) | tar -xz -C $(OUTPUT_DIR_FIPS)
 
 
-# Run upx to compress binaries unless SKIP_UPX is set
+# Run upx to compress binaries unless SKIP_UPX is non-empty
 
 compress:
 	@if [ -z "$(SKIP_UPX)" ]; then \
@@ -90,7 +92,7 @@ compress:
 		upx -q --best --lzma $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn ); \
 		if [ "$(ARCH)" != "riscv64" ]; then upx -q --best --lzma $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); fi; \
 	else \
-		echo "Skipping upx compression as SKIP_UPX is set"; \
+		echo "Skipping upx compression (SKIP_UPX is set)"; \
 	fi
 # Remove non-binary files from the output directory
 cleanup:

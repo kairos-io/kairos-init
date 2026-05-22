@@ -760,6 +760,14 @@ var GrubPackages = PackageMap{
 				"shim-aa64",
 			},
 		},
+		ArchRiscV64: {
+			Common: {
+				// EFI grub + *.mod payload for kairos-agent (loopback, squash4, gzip/xzio, regexp, ...)
+				"grub2-efi-riscv64",
+				"grub2-efi-riscv64-modules",
+				// No Fedora shim package for riscv64 at parity with shim-x64 / shim-aa64; boot with grub.efi directly.
+			},
+		},
 	},
 	AlpineFamily: {
 		ArchAMD64: {

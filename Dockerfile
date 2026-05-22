@@ -8,6 +8,9 @@ FROM --platform=$BUILDPLATFORM golang AS build
 ARG TARGETARCH
 # BUILDARCH: arch we're building ON (used to download tools like UPX that run during build)
 ARG BUILDARCH
+# Set SKIP_UPX=1 when bundled binaries must not be UPX-compressed (e.g. linux/riscv64); CI passes this as build-arg.
+ARG SKIP_UPX
+ENV SKIP_UPX=${SKIP_UPX}
 WORKDIR /app
 # Install UPX for BUILDARCH — it runs on the build machine to compress TARGETARCH binaries
 RUN apt-get update && apt-get install -y --no-install-recommends xz-utils file && \
