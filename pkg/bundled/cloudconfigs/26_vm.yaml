@@ -25,3 +25,15 @@ stages:
       only_service_manager: "systemd"
       commands:
         - systemctl start vmtoolsd
+    - name: "Enable VMWARE"
+      if: |
+        grep -iE "VMware" /sys/class/dmi/id/product_name
+      only_service_manager: "openrc"
+      commands:
+        - rc-service open-vm-tools start
+    - name: "Enable VMWARE"
+      if: |
+        grep -iE "VMware" /sys/class/dmi/id/product_name
+      only_service_manager: "systemd"
+      commands:
+        - systemctl start vmtoolsd
