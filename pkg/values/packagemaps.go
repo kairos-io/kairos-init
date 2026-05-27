@@ -515,7 +515,7 @@ var BasePackages = PackageMap{
 				"vim",
 				"which",
 			},
-			"!=5.4": {
+			"!=5.4, !=5.5": {
 				"systemd-networkd",
 				"systemd-resolved",
 			},
