@@ -77,6 +77,17 @@
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
       "packageNameTemplate": "mudler/edgevpn"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^\\.github\\/workflows\\/.*\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "(?<depName>ghcr\\.io\\/kairos-io\\/hadron):(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver-coerced"
     }
   ]
 }
