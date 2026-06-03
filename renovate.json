@@ -87,7 +87,7 @@
         "(?<depName>ghcr\\.io/kairos-io/hadron):(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"
       ],
       "datasourceTemplate": "docker",
-      "versioningTemplate": "semver-coerced"
+      "versioningTemplate": "semver"
     }
   ]
 }
