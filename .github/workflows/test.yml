@@ -43,7 +43,7 @@ jobs:
          - "oraclelinux:10"
          - "quay.io/centos/centos:stream9"
          - "quay.io/centos/centos:stream10"
-         - "ghcr.io/kairos-io/hadron:v0.3.1"
+         - "ghcr.io/kairos-io/hadron:v0.3.0"
          - "ghcr.io/kairos-io/hadron:main"
          - "registry.suse.com/suse/sle-micro-rancher/5.4:latest"
         include:
