@@ -2,8 +2,8 @@
 IMMUCORE_VERSION := v0.16.2
 AGENT_VERSION := v2.29.4
 KCRYPT_DISCOVERY_CHALLENGER_VERSION := v0.13.2
-PROVIDER_KAIROS_VERSION := v2.16.0
-EDGEVPN_VERSION := v0.34.0
+PROVIDER_KAIROS_VERSION := v2.16.1
+EDGEVPN_VERSION := v0.35.0
 ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
 BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger provider-kairos
 OUTPUT_DIR := pkg/bundled/binaries
