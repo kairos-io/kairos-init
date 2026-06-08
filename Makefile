@@ -69,19 +69,19 @@ download-edgevpn:
 	@echo "Downloading and extracting edgevpn for architecture $(ARCH)..."
 	@mkdir -p $(OUTPUT_DIR)
 	@# Unfortunately edgevpn uses x86_64 instead of amd64 so we need to do some string manipulation here
-	@curl -L -s https://github.com/mudler/edgevpn/releases/download/$(EDGEVPN_VERSION)/edgevpn-$(EDGEVPN_VERSION)-Linux-$(shell echo $(ARCH) | sed -e 's/amd64/x86_64/').tar.gz | tar -xz -C $(OUTPUT_DIR)
+	@curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 https://github.com/mudler/edgevpn/releases/download/$(EDGEVPN_VERSION)/edgevpn-$(EDGEVPN_VERSION)-Linux-$(shell echo $(ARCH) | sed -e 's/amd64/x86_64/').tar.gz | tar -xz -C $(OUTPUT_DIR)
 
 # Download each binary
 $(OUTPUT_DIR)/%:
 	@echo "Downloading and extracting $* for architecture $(ARCH)..."
 	@mkdir -p $(OUTPUT_DIR)
-	@curl -L -s $($*_URL) | tar -xz -C $(OUTPUT_DIR)
+	@curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 $($*_URL) | tar -xz -C $(OUTPUT_DIR)
 
 # Download each FIPS binary
 $(OUTPUT_DIR_FIPS)/%-fips:
 	@echo "Downloading and extracting $*-fips for architecture $(ARCH)..."
 	@mkdir -p $(OUTPUT_DIR_FIPS)
-	@curl -L -s $($*-fips_URL) | tar -xz -C $(OUTPUT_DIR_FIPS)
+	@curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 $($*-fips_URL) | tar -xz -C $(OUTPUT_DIR_FIPS)
 
 
 # Run upx to compress binaries unless SKIP_UPX is non-empty
