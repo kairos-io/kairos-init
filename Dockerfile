@@ -14,7 +14,7 @@ ENV SKIP_UPX=${SKIP_UPX}
 WORKDIR /app
 # Install UPX for BUILDARCH — it runs on the build machine to compress TARGETARCH binaries
 RUN apt-get update && apt-get install -y --no-install-recommends xz-utils file && \
-  curl -Ls https://github.com/upx/upx/releases/download/v5.1.1/upx-5.1.1-${BUILDARCH}_linux.tar.xz -o - | tar xvJf - -C /tmp && \
+  curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 https://github.com/upx/upx/releases/download/v5.1.1/upx-5.1.1-${BUILDARCH}_linux.tar.xz -o - | tar xvJf - -C /tmp && \
   cp /tmp/upx-5.1.1-${BUILDARCH}_linux/upx /usr/local/bin/ && \
   chmod +x /usr/local/bin/upx && \
   apt-get remove -y xz-utils && \
