@@ -4,6 +4,7 @@ AGENT_VERSION := v2.29.4
 KCRYPT_DISCOVERY_CHALLENGER_VERSION := v0.13.2
 PROVIDER_KAIROS_VERSION := v2.16.1
 EDGEVPN_VERSION := v0.35.2
+INSTALLER_VERSION := v0.1.0
 ARCH ?= $(shell uname -m | sed -e 's/x86_64/amd64/' -e 's/aarch64/arm64/')
 BINARY_NAMES := kairos-agent immucore kcrypt-discovery-challenger provider-kairos
 OUTPUT_DIR := pkg/bundled/binaries
@@ -59,7 +60,7 @@ else
 FIPS_BINARIES := $(addprefix $(OUTPUT_DIR_FIPS)/, $(addsuffix -fips, $(BINARY_NAMES)))
 endif
 
-download: $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES)) $(FIPS_BINARIES) download-edgevpn
+download: $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES)) $(FIPS_BINARIES) download-edgevpn download-kairos-installer
 ifeq ($(ARCH),riscv64)
 	@echo "Skipping FIPS binaries download for riscv64."
 endif
@@ -70,6 +71,12 @@ download-edgevpn:
 	@mkdir -p $(OUTPUT_DIR)
 	@# Unfortunately edgevpn uses x86_64 instead of amd64 so we need to do some string manipulation here
 	@curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 https://github.com/mudler/edgevpn/releases/download/$(EDGEVPN_VERSION)/edgevpn-$(EDGEVPN_VERSION)-Linux-$(shell echo $(ARCH) | sed -e 's/amd64/x86_64/').tar.gz | tar -xz -C $(OUTPUT_DIR)
+
+# Download kairos-installer (no FIPS variant; same binary for all image flavors)
+download-kairos-installer:
+	@echo "Downloading and extracting kairos-installer for architecture $(ARCH)..."
+	@mkdir -p $(OUTPUT_DIR)
+	@curl -fsSL --retry 5 --retry-all-errors --retry-delay 2 https://github.com/kairos-io/kairos-installer/releases/download/$(INSTALLER_VERSION)/kairos-installer-$(INSTALLER_VERSION)-Linux-$(ARCH).tar.gz | tar -xz -C $(OUTPUT_DIR)
 
 # Download each binary
 $(OUTPUT_DIR)/%:
@@ -89,7 +96,7 @@ $(OUTPUT_DIR_FIPS)/%-fips:
 compress:
 	@if [ -z "$(SKIP_UPX)" ]; then \
 		echo "Running upx compress..."; \
-		upx -q --best --lzma $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn ); \
+		upx -q --best --lzma $(addprefix $(OUTPUT_DIR)/, $(BINARY_NAMES) edgevpn kairos-installer ); \
 		if [ "$(ARCH)" != "riscv64" ]; then upx -q --best --lzma $(addprefix $(OUTPUT_DIR_FIPS)/, $(BINARY_NAMES)); fi; \
 	else \
 		echo "Skipping upx compression (SKIP_UPX is set)"; \

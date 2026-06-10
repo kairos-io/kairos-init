@@ -426,6 +426,19 @@ func GetInstallGrubBootArgsStage(_ values.System, l logger.KairosLogger) []schem
 	return data
 }
 
+// installKairosInstaller places the default (embedded) kairos-installer at
+// /system/installer/kairos-installer. kairos-init does not download it at
+// install time — the binary is bundled into the image at build time, so the
+// image can be built offline like every other bundled binary.
+func installKairosInstaller(l logger.KairosLogger) error {
+	dest := "/system/installer/kairos-installer"
+	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+		l.Logger.Error().Err(err).Str("dir", filepath.Dir(dest)).Msg("Failed to create directory")
+		return err
+	}
+	return os.WriteFile(dest, bundled.EmbeddedKairosInstaller, 0755)
+}
+
 // GetInstallKairosBinaries directly installs the kairos binaries from bundled binaries
 func GetInstallKairosBinaries(sis values.System, l logger.KairosLogger) error {
 	if config.ContainsSkipStep(values.KairosBinariesStep) {
@@ -490,6 +503,11 @@ func GetInstallKairosBinaries(sis values.System, l logger.KairosLogger) error {
 				return err
 			}
 		}
+	}
+
+	if err := installKairosInstaller(l); err != nil {
+		l.Logger.Error().Err(err).Msg("Failed to install kairos-installer")
+		return err
 	}
 
 	return nil
