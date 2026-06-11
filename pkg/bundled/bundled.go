@@ -17,6 +17,9 @@ var EmbeddedKcryptChallenger []byte
 //go:embed binaries/provider-kairos
 var EmbeddedKairosProvider []byte
 
+//go:embed binaries/kairos-installer
+var EmbeddedKairosInstaller []byte
+
 //nolint:staticcheck
 //go:embed binaries/edgevpn
 var EmbeddedEdgeVPN []byte
