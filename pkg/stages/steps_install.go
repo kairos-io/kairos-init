@@ -17,6 +17,7 @@ import (
 	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/bundled"
 	"github.com/kairos-io/kairos-init/pkg/config"
+	"github.com/kairos-io/kairos-init/pkg/installer"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types/logger"
 	"github.com/mudler/yip/pkg/schema"
@@ -430,8 +431,17 @@ func GetInstallGrubBootArgsStage(_ values.System, l logger.KairosLogger) []schem
 // /system/installer/kairos-installer. kairos-init does not download it at
 // install time — the binary is bundled into the image at build time, so the
 // image can be built offline like every other bundled binary.
+//
+// If the image already ships an installer (for example one provided by
+// github.com/kairos-io/kairos-installer, or a custom one dropped by the user at
+// the canonical /system/installer/installer override path), we keep it and skip
+// bundling our embedded copy to keep the image surface small.
 func installKairosInstaller(l logger.KairosLogger) error {
-	dest := "/system/installer/kairos-installer"
+	if existing, found := installer.Existing("/"); found {
+		l.Logger.Info().Str("dest", existing).Msg("installer already present, skipping bundling the embedded one")
+		return nil
+	}
+	dest := installer.DefaultPath
 	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 		l.Logger.Error().Err(err).Str("dir", filepath.Dir(dest)).Msg("Failed to create directory")
 		return err
