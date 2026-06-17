@@ -17,8 +17,9 @@ import (
 	semver "github.com/hashicorp/go-version"
 	"github.com/kairos-io/kairos-init/pkg/bundled"
 	"github.com/kairos-io/kairos-init/pkg/config"
-	"github.com/kairos-io/kairos-init/pkg/installer"
 	"github.com/kairos-io/kairos-init/pkg/values"
+	"github.com/kairos-io/kairos-sdk/constants"
+	"github.com/kairos-io/kairos-sdk/installer"
 	"github.com/kairos-io/kairos-sdk/types/logger"
 	"github.com/mudler/yip/pkg/schema"
 )
@@ -441,7 +442,7 @@ func installKairosInstaller(l logger.KairosLogger) error {
 		l.Logger.Info().Str("dest", existing).Msg("installer already present, skipping bundling the embedded one")
 		return nil
 	}
-	dest := installer.DefaultPath
+	dest := constants.InstallerDefaultPath
 	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 		l.Logger.Error().Err(err).Str("dir", filepath.Dir(dest)).Msg("Failed to create directory")
 		return err
