@@ -512,6 +512,8 @@ var BasePackages = PackageMap{
 				"systemd",
 				"timezone",
 				"tmux",
+				"tpm2-tools", // For TPM support, mainly trusted boot
+				"tpm2-tss",   // For TPM support, mainly trusted boot
 				"vim",
 				"which",
 			},

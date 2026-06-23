@@ -156,14 +156,6 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			},
 		},
 		{
-			Name:     "Pre-install tpm2 packages for SUSE",  // tpm2* wildcard can pull in backport packages with broken deps on newer releases (e.g. Leap 16.0)
-			OnlyIfOs: values.AllSuseButMicroRegex,           // SLE Micro handles tpm2 in its own workaround stage above
-			If:       `[ "$(uname -m)" = "x86_64" ]`,       // tpm2* only relevant on x86_64 (amd64)
-			Commands: []string{
-				"zypper -n install --force-resolution tpm2*", // --force-resolution lets zypper auto-resolve dependency conflicts without interactive prompt
-			},
-		},
-		{
 			Name: "Install base packages",
 			Packages: schema.Packages{
 				Install: finalMergedPkgs,
