@@ -520,11 +520,6 @@ var BasePackages = PackageMap{
 				"systemd-resolved",
 			},
 		},
-		ArchAMD64: {
-			Common: {
-				"tpm2*",
-			},
-		},
 	},
 	OpenSUSELeap: {
 		ArchCommon: {
