@@ -184,6 +184,8 @@ github.com/joshdk/go-junit v1.0.0 h1:S86cUKIdwBHWwA6xCmFlf3RTLfVXYQfvanM5Uh+K6GE
 github.com/joshdk/go-junit v1.0.0/go.mod h1:TiiV0PqkaNfFXjEiyjWM3XXrhVyCa1K4Zfga6W52ung=
 github.com/kairos-io/kairos-sdk v0.22.2-0.20260622215838-fd2aaae9c280 h1:2c0BOboGKn4AB2Pmr0CXoqJf0EcC54kNQHuAQ19nCCU=
 github.com/kairos-io/kairos-sdk v0.22.2-0.20260622215838-fd2aaae9c280/go.mod h1:zzULzLTNjdsDW82W7HowCygHtruG8rGPGV94FaI+iT8=
+github.com/kairos-io/kairos-sdk v0.22.2-0.20260623152946-4400cd2cd046 h1:SdGcGHd/Wplk+F20AX+d5g8KOx72HycYKrMJBId5K0g=
+github.com/kairos-io/kairos-sdk v0.22.2-0.20260623152946-4400cd2cd046/go.mod h1:zzULzLTNjdsDW82W7HowCygHtruG8rGPGV94FaI+iT8=
 github.com/kendru/darwin/go/depgraph v0.0.0-20230809052043-4d1c7e9d1767 h1:Ds6xHRvL0yjG4kZD05leRKt70mM18Fjt0+B5gIqqe1g=
 github.com/kendru/darwin/go/depgraph v0.0.0-20230809052043-4d1c7e9d1767/go.mod h1:VOfm8h1NySetVlpHDSnbpCMsvCgYaU+YDn4XezUy2+4=
 github.com/kevinburke/ssh_config v1.2.0 h1:x584FjTGwHzMwvHx18PXxbBVzfnxogHaAReU4gf13a4=
