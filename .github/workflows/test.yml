@@ -91,10 +91,6 @@ jobs:
             base_image: "fedorariscv/base:42"
             model: "generic"
             fips: false
-          - platform: "riscv64"
-            base_image: "ghcr.io/kairos-io/hadron:v0.4.0"
-            model: "generic"
-            fips: false
     steps:
       - uses: actions/checkout@v7
         with:
