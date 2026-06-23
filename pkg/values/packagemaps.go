@@ -512,14 +512,18 @@ var BasePackages = PackageMap{
 				"systemd",
 				"timezone",
 				"tmux",
-				"tpm2-tools", // For TPM support, mainly trusted boot
-				"tpm2-tss",   // For TPM support, mainly trusted boot
 				"vim",
 				"which",
 			},
 			"!=5.4, !=5.5": {
 				"systemd-networkd",
 				"systemd-resolved",
+			},
+		},
+		ArchAMD64: {
+			Common: {
+				"tpm2-tools", // For TPM support, mainly trusted boot
+				"tpm2-tss",   // For TPM support, mainly trusted boot
 			},
 		},
 	},
