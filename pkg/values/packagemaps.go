@@ -522,8 +522,8 @@ var BasePackages = PackageMap{
 		},
 		ArchAMD64: {
 			Common: {
-				"tpm2-tools", // For TPM support, mainly trusted boot
-				"tpm2-tss",   // For TPM support, mainly trusted boot
+				"tpm2.0-tools", // For TPM support, mainly trusted boot
+				"tpm2-0-tss",   // For TPM support, mainly trusted boot
 			},
 		},
 	},
