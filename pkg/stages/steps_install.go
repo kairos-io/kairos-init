@@ -459,7 +459,7 @@ func GetInstallKairosBinaries(sis values.System, l logger.KairosLogger) error {
 	//  If versions are provided, download and install those instead? i.e. Allow online install versions?
 
 	binaries := map[string]string{
-		"/usr/bin/kairos-agent":                         config.DefaultConfig.VersionOverrides.Agent,
+		constants.AgentDefaultPath:                      config.DefaultConfig.VersionOverrides.Agent,
 		"/usr/bin/immucore":                             config.DefaultConfig.VersionOverrides.Immucore,
 		"/system/discovery/kcrypt-discovery-challenger": config.DefaultConfig.VersionOverrides.KcryptChallenger,
 	}
@@ -492,7 +492,7 @@ func GetInstallKairosBinaries(sis values.System, l logger.KairosLogger) error {
 			// Use embedded binaries
 			var data []byte
 			switch dest {
-			case "/usr/bin/kairos-agent":
+			case constants.AgentDefaultPath:
 				data = bundled.EmbeddedAgent
 			case "/usr/bin/immucore":
 				data = bundled.EmbeddedImmucore
