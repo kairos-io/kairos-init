@@ -79,6 +79,18 @@ jobs:
             base_image: "ubuntu:22.04"
             model: "nvidia-jetson-orin-nx"
             fips: false
+          - platform: "arm64"
+            base_image: "ubuntu:22.04"
+            model: "rpi4"
+            fips: false
+          - platform: "arm64"
+            base_image: "ghcr.io/kairos-io/hadron:v0.4.0"
+            model: "rpi4"
+            fips: false
+          - platform: "arm64"
+            base_image: "ghcr.io/kairos-io/hadron:main"
+            model: "rpi4"
+            fips: false
           - platform: "riscv64"
             base_image: "ubuntu:24.04"
             model: "generic"
