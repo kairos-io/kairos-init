@@ -744,7 +744,7 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 
 // getLatestKernel returns the latest kernel version installed on the system.
 func getLatestKernel(l logger.KairosLogger) (string, error) {
-	return kernel.GetLatestFromPath("/lib/modules", config.DefaultConfig.Model, l)
+	return kernel.GetLatest(config.DefaultConfig.Model, l)
 }
 
 // GetKairosInitramfsFilesStage installs the kairos initramfs files

@@ -11,17 +11,27 @@ import (
 	"github.com/kairos-io/kairos-sdk/types/logger"
 )
 
+// GetLatest returns the latest kernel version installed under /lib/modules for
+// the given model. It is the standard production entry-point; use
+// GetLatestFromPath when you need to inject a custom path (e.g. in tests).
+func GetLatest(model string, l logger.KairosLogger) (string, error) {
+	return GetLatestFromPath("/lib/modules", model, l)
+}
+
 // GetLatestFromPath returns the latest kernel version found under modulesPath
 // for the given model name.
 //
-// Selection rules:
-//  1. For RPi3/RPi4 models, directories ending in "-raspi" are preferred.
-//     The highest semver raspi directory is returned; if none parse as semver
-//     the lexicographically last raspi directory name is used.
-//  2. For all other models (or when no raspi directory is found on an RPi),
-//     the highest semver directory is returned.  If no directory parses as
-//     semver the first directory entry is used as a fallback.
+// General selection rules:
+//  1. The highest semver directory is returned.
+//  2. If no directory name parses as semver, the first directory entry is used
+//     as a fallback.
 //  3. If no directories exist at all, an error is returned.
+//
+// RPi3/RPi4 models apply an extra preference step before the general rules:
+// directories ending in "-raspi" are tried first.  The highest semver raspi
+// directory wins; if none parse as semver the lexicographically last raspi
+// directory is used.  Only when no raspi directory is present at all does
+// selection fall through to the general rules above.
 func GetLatestFromPath(modulesPath, model string, l logger.KairosLogger) (string, error) {
 	var kernelVersion string
 
