@@ -388,4 +388,60 @@ var _ = Describe("Validator", func() {
 			GinkgoWriter.Printf("Validation result: %v\n", err)
 		})
 	})
+
+	Describe("ValidateSingleKernel", func() {
+		var (
+			validator *validation.Validator
+			bootDir   string
+		)
+
+		BeforeEach(func() {
+			validator = &validation.Validator{
+				Log:    createTestLogger(),
+				System: values.System{Family: values.DebianFamily},
+			}
+
+			var err error
+			bootDir, err = os.MkdirTemp("", "boot")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			if bootDir != "" {
+				os.RemoveAll(bootDir)
+			}
+		})
+
+		It("should not error when there is a single kernel", func() {
+			Expect(os.WriteFile(filepath.Join(bootDir, "vmlinuz-6.8.0-generic"), []byte("kernel"), 0644)).To(Succeed())
+			// A bare vmlinuz symlink pointing at the real kernel should not count as a second kernel
+			Expect(os.Symlink(filepath.Join(bootDir, "vmlinuz-6.8.0-generic"), filepath.Join(bootDir, "vmlinuz"))).To(Succeed())
+
+			err := validator.ValidateSingleKernelWithPath(bootDir)
+			Expect(err).NotTo(HaveOccurred(), "Should not error when a single kernel is present")
+		})
+
+		It("should not error when there are no kernels", func() {
+			err := validator.ValidateSingleKernelWithPath(bootDir)
+			Expect(err).NotTo(HaveOccurred(), "Should not error when no kernel is present")
+		})
+
+		It("should error when there are two or more kernels", func() {
+			Expect(os.WriteFile(filepath.Join(bootDir, "vmlinuz-6.8.0-generic"), []byte("kernel"), 0644)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(bootDir, "vmlinuz-6.8.0-raspi"), []byte("kernel"), 0644)).To(Succeed())
+
+			err := validator.ValidateSingleKernelWithPath(bootDir)
+			Expect(err).To(HaveOccurred(), "Should error when two kernels are present")
+			Expect(err.Error()).To(ContainSubstring("[KERNEL]"))
+		})
+
+		It("should count a symlink and its target as a single kernel", func() {
+			Expect(os.WriteFile(filepath.Join(bootDir, "vmlinuz-6.8.0-generic"), []byte("kernel"), 0644)).To(Succeed())
+			// A versioned symlink pointing at the same real kernel should not be counted twice
+			Expect(os.Symlink(filepath.Join(bootDir, "vmlinuz-6.8.0-generic"), filepath.Join(bootDir, "vmlinuz-current"))).To(Succeed())
+
+			err := validator.ValidateSingleKernelWithPath(bootDir)
+			Expect(err).NotTo(HaveOccurred(), "Should not error when a symlink points to the only kernel")
+		})
+	})
 })

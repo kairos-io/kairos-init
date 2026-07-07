@@ -210,6 +210,11 @@ func (v *Validator) Validate() error {
 		multi = multierror.Append(multi, err)
 	}
 
+	// Check that only a single kernel is installed under /boot
+	if err := v.ValidateSingleKernel(); err != nil {
+		multi = multierror.Append(multi, err)
+	}
+
 	if multi.ErrorOrNil() == nil {
 		v.Log.Logger.Info().Msg("System validation passed")
 	}
@@ -232,6 +237,49 @@ func (v *Validator) ValidateServices() error {
 	}
 
 	return multi.ErrorOrNil()
+}
+
+// ValidateSingleKernel checks that only a single kernel image is installed under /boot.
+// Some builds (e.g. Ubuntu on Raspberry Pi) could end up pulling in both the board specific
+// kernel and the generic kernel, leaving two or more kernels under /boot. That bloats the
+// image and can lead to booting the wrong kernel, so we make sure there is exactly one.
+func (v *Validator) ValidateSingleKernel() error {
+	return v.ValidateSingleKernelWithPath("/boot")
+}
+
+// ValidateSingleKernelWithPath checks that only a single kernel image exists under the given
+// boot directory. It is used for testing by allowing a custom boot path.
+func (v *Validator) ValidateSingleKernelWithPath(bootPath string) error {
+	// Kernel images across the supported distros are named vmlinuz-<version> (Debian/Ubuntu,
+	// RHEL family, SUSE) or vmlinuz-<flavour> (Alpine). The bare "vmlinuz" entry is a symlink
+	// to the actual kernel, so we only count the versioned images to detect duplicates.
+	matches, err := filepath.Glob(filepath.Join(bootPath, "vmlinuz-*"))
+	if err != nil {
+		return fmt.Errorf("[KERNEL] error checking for kernels under %s: %s", bootPath, err)
+	}
+
+	// Deduplicate by the file the entry ultimately resolves to, so a symlink pointing at a
+	// real kernel image is not counted as a separate kernel.
+	kernels := map[string]struct{}{}
+	for _, m := range matches {
+		resolved, err := filepath.EvalSymlinks(m)
+		if err != nil {
+			// If it cannot be resolved, fall back to the raw path so we still count it.
+			resolved = m
+		}
+		kernels[resolved] = struct{}{}
+	}
+
+	if len(kernels) > 1 {
+		list := make([]string, 0, len(kernels))
+		for k := range kernels {
+			list = append(list, k)
+		}
+		return fmt.Errorf("[KERNEL] found %d kernels under %s, expected a single one: %v", len(kernels), bootPath, list)
+	}
+
+	v.Log.Logger.Info().Int("count", len(kernels)).Str("path", bootPath).Msg("Single kernel check passed")
+	return nil
 }
 
 // lookupSystemdServiceFile checks if a service file exists in the provided systemd search paths
