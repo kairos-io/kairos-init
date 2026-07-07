@@ -756,10 +756,26 @@ func getLatestKernel(l logger.KairosLogger) (string, error) {
 	// Ubuntu RPi images must boot the raspi kernel: the generic HWE kernel lacks
 	// the Pi SD/MMC drivers needed under UEFI (see kairos-io/kairos#4222).
 	if config.DefaultConfig.Model == values.Rpi3.String() || config.DefaultConfig.Model == values.Rpi4.String() {
+		var raspiVersions []*semver.Version
+		var raspiFallback []string
 		for _, dir := range dirs {
-			if dir.IsDir() && strings.HasSuffix(dir.Name(), "-raspi") {
-				return dir.Name(), nil
+			if !dir.IsDir() || !strings.HasSuffix(dir.Name(), "-raspi") {
+				continue
 			}
+			raspiFallback = append(raspiFallback, dir.Name())
+			v, parseErr := semver.NewVersion(dir.Name())
+			if parseErr != nil {
+				continue
+			}
+			raspiVersions = append(raspiVersions, v)
+		}
+		if len(raspiVersions) > 0 {
+			sort.Sort(semver.Collection(raspiVersions))
+			return raspiVersions[len(raspiVersions)-1].String(), nil
+		}
+		if len(raspiFallback) > 0 {
+			sort.Strings(raspiFallback)
+			return raspiFallback[len(raspiFallback)-1], nil
 		}
 	}
 
