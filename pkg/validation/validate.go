@@ -270,6 +270,9 @@ func (v *Validator) ValidateSingleKernelWithPath(bootPath string) error {
 		kernels[resolved] = struct{}{}
 	}
 
+	// Note: a missing kernel (zero matches) is intentionally not treated as an error here,
+	// as the presence of a bootable kernel is already covered by the /boot/vmlinuz file check
+	// above. This validation is only concerned with detecting duplicate kernels.
 	if len(kernels) > 1 {
 		list := make([]string, 0, len(kernels))
 		for k := range kernels {
