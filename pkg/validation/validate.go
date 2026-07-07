@@ -10,7 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/joho/godotenv"
 	"github.com/kairos-io/kairos-init/pkg/config"
-	"github.com/kairos-io/kairos-init/pkg/stages"
+	"github.com/kairos-io/kairos-init/pkg/kernel"
 	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types/logger"
@@ -307,11 +307,11 @@ func (v *Validator) ValidateKernel() error {
 // step so that the validation and the actual kernel selection stay in sync.
 // model is the machine model string (e.g. "rpi4", "generic"), used for model-specific logic.
 func (v *Validator) ValidateKernelWithPath(modulesPath, model string) error {
-	kernel, err := stages.GetLatestKernelFromPath(modulesPath, model, v.Log)
+	kernelVersion, err := kernel.GetLatestFromPath(modulesPath, model, v.Log)
 	if err != nil {
 		return fmt.Errorf("[KERNEL] %w", err)
 	}
-	v.Log.Logger.Info().Str("kernel", kernel).Msg("[KERNEL] Found kernel")
+	v.Log.Logger.Info().Str("kernel", kernelVersion).Msg("[KERNEL] Found kernel")
 	return nil
 }
 

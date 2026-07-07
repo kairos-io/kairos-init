@@ -1,4 +1,4 @@
-package stages
+package kernel
 
 import (
 	"os"
@@ -14,7 +14,6 @@ func newTestLogger() logger.KairosLogger {
 	return logger.NewKairosLogger("test", "info", false)
 }
 
-// mkdirs creates a set of sub-directories under base.
 func mkdirs(t *testing.T, base string, names ...string) {
 	t.Helper()
 	for _, n := range names {
@@ -24,18 +23,17 @@ func mkdirs(t *testing.T, base string, names ...string) {
 	}
 }
 
-func TestGetLatestKernelFromPath(t *testing.T) {
+func TestGetLatestFromPath(t *testing.T) {
 	log := newTestLogger()
 
 	tests := []struct {
 		name        string
 		model       string
-		dirs        []string // kernel directories to create
-		wantKernel  string   // exact expected return value ("" = don't check)
+		dirs        []string
+		wantKernel  string
 		wantErr     bool
 		errContains string
 	}{
-		// ── generic model ──────────────────────────────────────────────────────
 		{
 			name:        "no kernel directories → error",
 			model:       values.Generic.String(),
@@ -44,35 +42,29 @@ func TestGetLatestKernelFromPath(t *testing.T) {
 			errContains: "no kernel versions found",
 		},
 		{
-			// go-version parses "5.15.0-101-generic" and String() returns the
-			// original version string as provided.
 			name:       "single semver kernel",
 			model:      values.Generic.String(),
 			dirs:       []string{"5.15.0-101-generic"},
 			wantKernel: "5.15.0-101-generic",
 		},
 		{
-			name:  "multiple semver kernels → highest selected",
-			model: values.Generic.String(),
-			dirs:  []string{"5.15.0-100-generic", "5.15.0-102-generic", "5.15.0-101-generic"},
-			// 102 > 101 > 100, so 5.15.0-102-generic is returned
+			name:       "multiple semver kernels → highest selected",
+			model:      values.Generic.String(),
+			dirs:       []string{"5.15.0-100-generic", "5.15.0-102-generic", "5.15.0-101-generic"},
 			wantKernel: "5.15.0-102-generic",
 		},
 		{
-			name:  "non-semver kernel name → returned as-is (first entry fallback)",
-			model: values.Generic.String(),
-			dirs:  []string{"5.4.0-101-generic.fc32.x86_64"},
-			// non-semver: falls back to dirs[0].Name()
+			name:       "non-semver kernel name → returned as-is (first entry fallback)",
+			model:      values.Generic.String(),
+			dirs:       []string{"5.4.0-101-generic.fc32.x86_64"},
 			wantKernel: "5.4.0-101-generic.fc32.x86_64",
 		},
 		{
-			name:  "multiple non-semver kernels → first directory entry returned",
-			model: values.Generic.String(),
-			dirs:  []string{"alpha-kernel", "beta-kernel"},
-			// os.ReadDir returns entries sorted by name, so "alpha-kernel" is first
+			name:       "multiple non-semver kernels → first directory entry returned",
+			model:      values.Generic.String(),
+			dirs:       []string{"alpha-kernel", "beta-kernel"},
 			wantKernel: "alpha-kernel",
 		},
-		// ── RPi4 model ────────────────────────────────────────────────────────
 		{
 			name:       "rpi4: single raspi semver kernel",
 			model:      values.Rpi4.String(),
@@ -80,24 +72,21 @@ func TestGetLatestKernelFromPath(t *testing.T) {
 			wantKernel: "5.15.0-1025-raspi",
 		},
 		{
-			name:  "rpi4: multiple raspi semver kernels → highest selected",
-			model: values.Rpi4.String(),
-			dirs:  []string{"5.15.0-1023-raspi", "5.15.0-1025-raspi", "5.15.0-1024-raspi"},
-			// 1025 > 1024 > 1023
+			name:       "rpi4: multiple raspi semver kernels → highest selected",
+			model:      values.Rpi4.String(),
+			dirs:       []string{"5.15.0-1023-raspi", "5.15.0-1025-raspi", "5.15.0-1024-raspi"},
 			wantKernel: "5.15.0-1025-raspi",
 		},
 		{
-			name:  "rpi4: raspi preferred over generic even when generic is higher",
-			model: values.Rpi4.String(),
-			dirs:  []string{"6.8.0-51-generic", "5.15.0-1025-raspi"},
-			// raspi wins regardless of version comparison with generic
+			name:       "rpi4: raspi preferred over generic even when generic is higher",
+			model:      values.Rpi4.String(),
+			dirs:       []string{"6.8.0-51-generic", "5.15.0-1025-raspi"},
 			wantKernel: "5.15.0-1025-raspi",
 		},
 		{
-			name:  "rpi4: raspi non-semver name → lexicographic last returned",
-			model: values.Rpi4.String(),
-			dirs:  []string{"custom-b-raspi", "custom-a-raspi"},
-			// no semver parse succeeds; raspiFallback sorted → "custom-b-raspi" last
+			name:       "rpi4: raspi non-semver name → lexicographic last returned",
+			model:      values.Rpi4.String(),
+			dirs:       []string{"custom-b-raspi", "custom-a-raspi"},
 			wantKernel: "custom-b-raspi",
 		},
 		{
@@ -106,7 +95,6 @@ func TestGetLatestKernelFromPath(t *testing.T) {
 			dirs:       []string{"5.15.0-101-generic", "5.15.0-102-generic"},
 			wantKernel: "5.15.0-102-generic",
 		},
-		// ── RPi3 model (same logic as RPi4) ───────────────────────────────────
 		{
 			name:       "rpi3: raspi kernel preferred",
 			model:      values.Rpi3.String(),
@@ -120,7 +108,7 @@ func TestGetLatestKernelFromPath(t *testing.T) {
 			base := t.TempDir()
 			mkdirs(t, base, tc.dirs...)
 
-			got, err := GetLatestKernelFromPath(base, tc.model, log)
+			got, err := GetLatestFromPath(base, tc.model, log)
 
 			if tc.wantErr {
 				if err == nil {
