@@ -886,13 +886,6 @@ var KernelPackagesModels = ModelPackageMap{
 				},
 				"20.04": {"linux-firmware-raspi2"},
 				"22.04": {"linux-firmware-raspi", "linux-modules-extra-raspi"},
-				"20.04 || 22.04 || 24.04 || 26.04 || 28.04": {
-					// Note: this logic only works for LTS release (x.04), any odd year or x.10 will not work
-					// This is a template, so we can replace the version with the actual version of the system
-					"linux-image-generic-hwe-{{.version}}",
-				},
-				// 24.10 uses the 24.04 hwe kernel as it is the same hwe track https://ubuntu.com/kernel/lifecycle
-				">=24.10": {"linux-image-generic-hwe-24.04"},
 			},
 			Rpi4: {
 				Common: {
@@ -900,13 +893,6 @@ var KernelPackagesModels = ModelPackageMap{
 				},
 				"20.04": {"linux-firmware-raspi2"},
 				"22.04": {"linux-firmware-raspi", "linux-modules-extra-raspi"},
-				"20.04 || 22.04 || 24.04 || 26.04 || 28.04": {
-					// Note: this logic only works for LTS release (x.04), any odd year or x.10 will not work
-					// This is a template, so we can replace the version with the actual version of the system
-					"linux-image-generic-hwe-{{.version}}",
-				},
-				// 24.10 uses the 24.04 hwe kernel as it is the same hwe track https://ubuntu.com/kernel/lifecycle
-				">=24.10": {"linux-image-generic-hwe-24.04"},
 			},
 			AgxOrin: {
 				Common: {
