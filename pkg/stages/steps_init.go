@@ -4,14 +4,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/kairos-io/kairos-init/pkg/bundled"
+	"github.com/kairos-io/kairos-init/pkg/config"
+	"github.com/kairos-io/kairos-init/pkg/kernel"
 
 	semver "github.com/hashicorp/go-version"
-	"github.com/kairos-io/kairos-init/pkg/config"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/bus"
 	"github.com/kairos-io/kairos-sdk/types/logger"
@@ -742,49 +742,9 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 	}, nil
 }
 
-// getLatestKernel returns the latest kernel version installed on the system
+// getLatestKernel returns the latest kernel version installed on the system.
 func getLatestKernel(l logger.KairosLogger) (string, error) {
-	var kernelVersion string
-	modulesPath := "/lib/modules"
-	// Read the directories under /lib/modules
-	dirs, err := os.ReadDir(modulesPath)
-	if err != nil {
-		l.Logger.Error().Msgf("Failed to read the directory %s: %s", modulesPath, err)
-		return kernelVersion, err
-	}
-
-	var versions []*semver.Version
-	var version *semver.Version
-	for _, dir := range dirs {
-		if dir.IsDir() {
-			// Parse the directory name as a semver version
-			version, err = semver.NewVersion(dir.Name())
-			if err != nil {
-				l.Logger.Debug().Err(err).Str("version", dir.Name()).Msg("Failed to parse the version as semver, will use the full name instead")
-				continue
-			}
-			versions = append(versions, version)
-		}
-	}
-
-	// We could have no semver version but custom versions like 5.4.0-101-generic.fc32.x86_64
-	// In that case we need to just use the full name
-	if len(versions) == 0 {
-		if len(dirs) >= 1 {
-			kernelVersion = dirs[0].Name()
-		} else {
-			return kernelVersion, fmt.Errorf("no kernel versions found")
-		}
-	} else {
-		sort.Sort(semver.Collection(versions))
-		kernelVersion = versions[len(versions)-1].String()
-		if kernelVersion == "" {
-			l.Logger.Error().Msgf("Failed to find the latest kernel version")
-			return kernelVersion, fmt.Errorf("failed to find the latest kernel")
-		}
-	}
-
-	return kernelVersion, nil
+	return kernel.GetLatest(config.DefaultConfig.Model, l)
 }
 
 // GetKairosInitramfsFilesStage installs the kairos initramfs files

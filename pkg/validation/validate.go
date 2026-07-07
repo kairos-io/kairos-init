@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/joho/godotenv"
 	"github.com/kairos-io/kairos-init/pkg/config"
+	"github.com/kairos-io/kairos-init/pkg/kernel"
 	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types/logger"
@@ -210,6 +211,11 @@ func (v *Validator) Validate() error {
 		multi = multierror.Append(multi, err)
 	}
 
+	// Validate exactly one kernel is installed
+	if err := v.ValidateKernel(); err != nil {
+		multi = multierror.Append(multi, err)
+	}
+
 	if multi.ErrorOrNil() == nil {
 		v.Log.Logger.Info().Msg("System validation passed")
 	}
@@ -289,6 +295,24 @@ func (v *Validator) ValidateRHELServicesWithPaths(searchPaths []string) error {
 // ValidateGettyServices checks that getty.target is not masked on systemd-based flavors
 func (v *Validator) ValidateGettyServices() error {
 	return v.ValidateGettyServicesWithPaths(defaultSystemdSearchPaths)
+}
+
+// ValidateKernel checks that the kernel chooser can find a valid kernel under /lib/modules.
+func (v *Validator) ValidateKernel() error {
+	return v.ValidateKernelWithPath("/lib/modules", config.DefaultConfig.Model)
+}
+
+// ValidateKernelWithPath checks that the kernel chooser can find a valid kernel in the given
+// modules path for the specified model.  It uses the same selection logic as the init kernel
+// step so that the validation and the actual kernel selection stay in sync.
+// model is the machine model string (e.g. "rpi4", "generic"), used for model-specific logic.
+func (v *Validator) ValidateKernelWithPath(modulesPath, model string) error {
+	kernelVersion, err := kernel.GetLatestFromPath(modulesPath, model, v.Log)
+	if err != nil {
+		return fmt.Errorf("[KERNEL] %w", err)
+	}
+	v.Log.Logger.Info().Str("kernel", kernelVersion).Msg("[KERNEL] Found kernel")
+	return nil
 }
 
 // ValidateGettyServicesWithPaths checks that getty.target is not masked on systemd-based flavors
