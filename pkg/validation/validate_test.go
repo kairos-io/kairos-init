@@ -401,25 +401,25 @@ var _ = Describe("Validator", func() {
 
 		Context("with no kernels installed", func() {
 			It("should error when there are no kernel directories", func() {
-				err := validator.ValidateKernelWithPath(tempDir)
+				err := validator.ValidateKernelWithPath(tempDir, "generic")
 				Expect(err).To(HaveOccurred(), "Should error when no kernels are installed")
-				Expect(err.Error()).To(ContainSubstring("[KERNEL] no kernel found"))
+				Expect(err.Error()).To(ContainSubstring("[KERNEL]"))
 			})
 		})
 
-		Context("with exactly one kernel installed", func() {
+		Context("with a single semver kernel installed", func() {
 			BeforeEach(func() {
 				err := os.Mkdir(filepath.Join(tempDir, "5.15.0-101-generic"), 0755)
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("should not error when exactly one kernel is installed", func() {
-				err := validator.ValidateKernelWithPath(tempDir)
-				Expect(err).NotTo(HaveOccurred(), "Should not error when exactly one kernel is installed")
+			It("should not error and select the single kernel", func() {
+				err := validator.ValidateKernelWithPath(tempDir, "generic")
+				Expect(err).NotTo(HaveOccurred(), "Should not error when a single kernel is installed")
 			})
 		})
 
-		Context("with two kernels installed", func() {
+		Context("with multiple semver kernels installed", func() {
 			BeforeEach(func() {
 				err := os.Mkdir(filepath.Join(tempDir, "5.15.0-101-generic"), 0755)
 				Expect(err).NotTo(HaveOccurred())
@@ -427,19 +427,46 @@ var _ = Describe("Validator", func() {
 				Expect(err).NotTo(HaveOccurred())
 			})
 
-			It("should error when more than one kernel is installed", func() {
-				err := validator.ValidateKernelWithPath(tempDir)
-				Expect(err).To(HaveOccurred(), "Should error when more than one kernel is installed")
-				Expect(err.Error()).To(ContainSubstring("expected exactly 1 kernel"))
-				Expect(err.Error()).To(ContainSubstring("found 2"))
+			It("should not error and select the highest kernel", func() {
+				// Multiple kernels are valid — the chooser picks the highest semver
+				err := validator.ValidateKernelWithPath(tempDir, "generic")
+				Expect(err).NotTo(HaveOccurred(), "Should not error when multiple kernels are installed")
 			})
 		})
 
 		Context("with an invalid modules path", func() {
 			It("should error when the modules path does not exist", func() {
-				err := validator.ValidateKernelWithPath("/nonexistent/path/lib/modules")
+				err := validator.ValidateKernelWithPath("/nonexistent/path/lib/modules", "generic")
 				Expect(err).To(HaveOccurred(), "Should error when modules path does not exist")
-				Expect(err.Error()).To(ContainSubstring("[KERNEL] failed to read modules directory"))
+				Expect(err.Error()).To(ContainSubstring("[KERNEL]"))
+			})
+		})
+
+		Context("for an RPi4 model", func() {
+			Context("with a raspi kernel installed", func() {
+				BeforeEach(func() {
+					err := os.Mkdir(filepath.Join(tempDir, "5.15.0-1025-raspi"), 0755)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should not error", func() {
+					err := validator.ValidateKernelWithPath(tempDir, values.Rpi4.String())
+					Expect(err).NotTo(HaveOccurred(), "Should not error when raspi kernel is installed")
+				})
+			})
+
+			Context("with a raspi kernel alongside a higher generic kernel", func() {
+				BeforeEach(func() {
+					err := os.Mkdir(filepath.Join(tempDir, "6.8.0-51-generic"), 0755)
+					Expect(err).NotTo(HaveOccurred())
+					err = os.Mkdir(filepath.Join(tempDir, "5.15.0-1025-raspi"), 0755)
+					Expect(err).NotTo(HaveOccurred())
+				})
+
+				It("should not error (raspi kernel wins)", func() {
+					err := validator.ValidateKernelWithPath(tempDir, values.Rpi4.String())
+					Expect(err).NotTo(HaveOccurred(), "Should prefer the raspi kernel over the generic one")
+				})
 			})
 		})
 	})

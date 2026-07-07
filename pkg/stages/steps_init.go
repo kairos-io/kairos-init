@@ -742,11 +742,28 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 	}, nil
 }
 
-// getLatestKernel returns the latest kernel version installed on the system
+// getLatestKernel returns the latest kernel version installed on the system.
+// It delegates to GetLatestKernelFromPath using the real /lib/modules path and
+// the model from the global config.
 func getLatestKernel(l logger.KairosLogger) (string, error) {
+	return GetLatestKernelFromPath("/lib/modules", config.DefaultConfig.Model, l)
+}
+
+// GetLatestKernelFromPath returns the latest kernel version found under modulesPath
+// for the given model name.  It is exported so that it can be called by the
+// validation layer and tested independently of the running system.
+//
+// Selection rules:
+//  1. For RPi3/RPi4 models, directories ending in "-raspi" are preferred.
+//     The highest semver raspi directory is returned; if none parse as semver
+//     the lexicographically last raspi directory name is used.
+//  2. For all other models (or when no raspi directory is found on an RPi),
+//     the highest semver directory is returned.  If no directory parses as
+//     semver the first directory entry is used as a fallback.
+//  3. If no directories exist at all, an error is returned.
+func GetLatestKernelFromPath(modulesPath, model string, l logger.KairosLogger) (string, error) {
 	var kernelVersion string
-	modulesPath := "/lib/modules"
-	// Read the directories under /lib/modules
+
 	dirs, err := os.ReadDir(modulesPath)
 	if err != nil {
 		l.Logger.Error().Msgf("Failed to read the directory %s: %s", modulesPath, err)
@@ -755,7 +772,7 @@ func getLatestKernel(l logger.KairosLogger) (string, error) {
 
 	// Ubuntu RPi images must boot the raspi kernel: the generic HWE kernel lacks
 	// the Pi SD/MMC drivers needed under UEFI (see kairos-io/kairos#4222).
-	if config.DefaultConfig.Model == values.Rpi3.String() || config.DefaultConfig.Model == values.Rpi4.String() {
+	if model == values.Rpi3.String() || model == values.Rpi4.String() {
 		var raspiVersions []*semver.Version
 		var raspiFallback []string
 		for _, dir := range dirs {

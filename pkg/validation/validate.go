@@ -10,6 +10,7 @@ import (
 	"github.com/hashicorp/go-multierror"
 	"github.com/joho/godotenv"
 	"github.com/kairos-io/kairos-init/pkg/config"
+	"github.com/kairos-io/kairos-init/pkg/stages"
 	"github.com/kairos-io/kairos-init/pkg/system"
 	"github.com/kairos-io/kairos-init/pkg/values"
 	"github.com/kairos-io/kairos-sdk/types/logger"
@@ -296,35 +297,22 @@ func (v *Validator) ValidateGettyServices() error {
 	return v.ValidateGettyServicesWithPaths(defaultSystemdSearchPaths)
 }
 
-// ValidateKernel checks that exactly one kernel is installed under /lib/modules
+// ValidateKernel checks that the kernel chooser can find a valid kernel under /lib/modules.
 func (v *Validator) ValidateKernel() error {
-	return v.ValidateKernelWithPath("/lib/modules")
+	return v.ValidateKernelWithPath("/lib/modules", config.DefaultConfig.Model)
 }
 
-// ValidateKernelWithPath checks that exactly one kernel directory exists under the given modules path.
-// This method is used for testing by allowing a custom modules path.
-func (v *Validator) ValidateKernelWithPath(modulesPath string) error {
-	dirs, err := os.ReadDir(modulesPath)
+// ValidateKernelWithPath checks that the kernel chooser can find a valid kernel in the given
+// modules path for the specified model.  It uses the same selection logic as the init kernel
+// step so that the validation and the actual kernel selection stay in sync.
+// model is the machine model string (e.g. "rpi4", "generic"), used for model-specific logic.
+func (v *Validator) ValidateKernelWithPath(modulesPath, model string) error {
+	kernel, err := stages.GetLatestKernelFromPath(modulesPath, model, v.Log)
 	if err != nil {
-		return fmt.Errorf("[KERNEL] failed to read modules directory %s: %s", modulesPath, err)
+		return fmt.Errorf("[KERNEL] %w", err)
 	}
-
-	var kernelDirs []string
-	for _, d := range dirs {
-		if d.IsDir() {
-			kernelDirs = append(kernelDirs, d.Name())
-		}
-	}
-
-	switch len(kernelDirs) {
-	case 0:
-		return fmt.Errorf("[KERNEL] no kernel found in %s", modulesPath)
-	case 1:
-		v.Log.Logger.Info().Str("kernel", kernelDirs[0]).Msg("[KERNEL] Exactly one kernel installed")
-		return nil
-	default:
-		return fmt.Errorf("[KERNEL] expected exactly 1 kernel in %s but found %d: %v", modulesPath, len(kernelDirs), kernelDirs)
-	}
+	v.Log.Logger.Info().Str("kernel", kernel).Msg("[KERNEL] Found kernel")
+	return nil
 }
 
 // ValidateGettyServicesWithPaths checks that getty.target is not masked on systemd-based flavors
