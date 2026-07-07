@@ -374,6 +374,76 @@ var _ = Describe("Validator", func() {
 		})
 	})
 
+	Describe("validateKernel", func() {
+		var (
+			log       logger.KairosLogger
+			validator *validation.Validator
+			tempDir   string
+		)
+
+		BeforeEach(func() {
+			log = createTestLogger()
+			validator = &validation.Validator{
+				Log:    log,
+				System: values.System{},
+			}
+
+			var err error
+			tempDir, err = os.MkdirTemp("", "lib-modules")
+			Expect(err).NotTo(HaveOccurred())
+		})
+
+		AfterEach(func() {
+			if tempDir != "" {
+				os.RemoveAll(tempDir)
+			}
+		})
+
+		Context("with no kernels installed", func() {
+			It("should error when there are no kernel directories", func() {
+				err := validator.ValidateKernelWithPath(tempDir)
+				Expect(err).To(HaveOccurred(), "Should error when no kernels are installed")
+				Expect(err.Error()).To(ContainSubstring("[KERNEL] no kernel found"))
+			})
+		})
+
+		Context("with exactly one kernel installed", func() {
+			BeforeEach(func() {
+				err := os.Mkdir(filepath.Join(tempDir, "5.15.0-101-generic"), 0755)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should not error when exactly one kernel is installed", func() {
+				err := validator.ValidateKernelWithPath(tempDir)
+				Expect(err).NotTo(HaveOccurred(), "Should not error when exactly one kernel is installed")
+			})
+		})
+
+		Context("with two kernels installed", func() {
+			BeforeEach(func() {
+				err := os.Mkdir(filepath.Join(tempDir, "5.15.0-101-generic"), 0755)
+				Expect(err).NotTo(HaveOccurred())
+				err = os.Mkdir(filepath.Join(tempDir, "5.15.0-102-generic"), 0755)
+				Expect(err).NotTo(HaveOccurred())
+			})
+
+			It("should error when more than one kernel is installed", func() {
+				err := validator.ValidateKernelWithPath(tempDir)
+				Expect(err).To(HaveOccurred(), "Should error when more than one kernel is installed")
+				Expect(err.Error()).To(ContainSubstring("expected exactly 1 kernel"))
+				Expect(err.Error()).To(ContainSubstring("found 2"))
+			})
+		})
+
+		Context("with an invalid modules path", func() {
+			It("should error when the modules path does not exist", func() {
+				err := validator.ValidateKernelWithPath("/nonexistent/path/lib/modules")
+				Expect(err).To(HaveOccurred(), "Should error when modules path does not exist")
+				Expect(err.Error()).To(ContainSubstring("[KERNEL] failed to read modules directory"))
+			})
+		})
+	})
+
 	Describe("Validate", func() {
 		It("should run full validation without panicking", func() {
 			logger := createTestLogger()

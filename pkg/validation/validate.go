@@ -210,6 +210,11 @@ func (v *Validator) Validate() error {
 		multi = multierror.Append(multi, err)
 	}
 
+	// Validate exactly one kernel is installed
+	if err := v.ValidateKernel(); err != nil {
+		multi = multierror.Append(multi, err)
+	}
+
 	if multi.ErrorOrNil() == nil {
 		v.Log.Logger.Info().Msg("System validation passed")
 	}
@@ -289,6 +294,37 @@ func (v *Validator) ValidateRHELServicesWithPaths(searchPaths []string) error {
 // ValidateGettyServices checks that getty.target is not masked on systemd-based flavors
 func (v *Validator) ValidateGettyServices() error {
 	return v.ValidateGettyServicesWithPaths(defaultSystemdSearchPaths)
+}
+
+// ValidateKernel checks that exactly one kernel is installed under /lib/modules
+func (v *Validator) ValidateKernel() error {
+	return v.ValidateKernelWithPath("/lib/modules")
+}
+
+// ValidateKernelWithPath checks that exactly one kernel directory exists under the given modules path.
+// This method is used for testing by allowing a custom modules path.
+func (v *Validator) ValidateKernelWithPath(modulesPath string) error {
+	dirs, err := os.ReadDir(modulesPath)
+	if err != nil {
+		return fmt.Errorf("[KERNEL] failed to read modules directory %s: %s", modulesPath, err)
+	}
+
+	var kernelDirs []string
+	for _, d := range dirs {
+		if d.IsDir() {
+			kernelDirs = append(kernelDirs, d.Name())
+		}
+	}
+
+	switch len(kernelDirs) {
+	case 0:
+		return fmt.Errorf("[KERNEL] no kernel found in %s", modulesPath)
+	case 1:
+		v.Log.Logger.Info().Str("kernel", kernelDirs[0]).Msg("[KERNEL] Exactly one kernel installed")
+		return nil
+	default:
+		return fmt.Errorf("[KERNEL] expected exactly 1 kernel in %s but found %d: %v", modulesPath, len(kernelDirs), kernelDirs)
+	}
 }
 
 // ValidateGettyServicesWithPaths checks that getty.target is not masked on systemd-based flavors
