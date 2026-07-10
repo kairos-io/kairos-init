@@ -503,7 +503,6 @@ var BasePackages = PackageMap{
 				"nfs-client", // NFS support, basic
 				"open-iscsi",
 				"openssh",
-				"open-vm-tools",
 				"pigz",
 				"polkit",
 				"procps",
@@ -522,8 +521,14 @@ var BasePackages = PackageMap{
 		},
 		ArchAMD64: {
 			Common: {
+				"open-vm-tools",
 				"tpm2.0-tools", // For TPM support, mainly trusted boot
 				"tpm2-0-tss",   // For TPM support, mainly trusted boot
+			},
+		},
+		ArchARM64: {
+			Common: {
+				"open-vm-tools",
 			},
 		},
 	},
