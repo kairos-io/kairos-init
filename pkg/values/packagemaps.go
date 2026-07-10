@@ -739,6 +739,14 @@ var GrubPackages = PackageMap{
 				"grub-efi-arm64-signed", // For secure boot support
 			},
 		},
+		ArchRiscV64: {
+			Common: {
+				"grub2-common",
+				"grub-efi-riscv64-bin",
+				"grub-efi-riscv64",
+				// No Debian/Ubuntu shim for riscv64; boot with grubriscv64.efi directly.
+			},
+		},
 	},
 	RedHatFamily: {
 		ArchCommon: {
