@@ -795,12 +795,12 @@ var GrubPackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				"nethogs",
-				"shim",
 				"iw",
 			},
 		},
 		ArchAMD64: {
 			Common: {
+				"shim",
 				"grub2-i386-pc",
 				"grub2-x86_64-efi",
 				"kernel-firmware-all",
@@ -808,6 +808,7 @@ var GrubPackages = PackageMap{
 		},
 		ArchARM64: {
 			Common: {
+				"shim",
 				"bcm43xx-firmware",
 				"grub2-arm64-efi",
 				"kernel-firmware-ath10k",
@@ -820,6 +821,12 @@ var GrubPackages = PackageMap{
 				"kernel-firmware-realtek",
 				"kernel-firmware-serial",
 				"kernel-firmware-usb-network",
+			},
+		},
+		ArchRiscV64: {
+			Common: {
+				"grub2-riscv64-efi",
+				// No openSUSE shim package for riscv64; boot with grub.efi directly.
 			},
 		},
 	},
