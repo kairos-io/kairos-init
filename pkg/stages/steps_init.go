@@ -699,7 +699,7 @@ func GetKernelStage(_ values.System, logger logger.KairosLogger) ([]schema.Stage
 			If:         fmt.Sprintf("test -f /boot/vmlinux-%s", kernel),
 			OnlyIfArch: "riscv64",
 			Commands: []string{
-				fmt.Sprintf("ln -s /boot/vmlinux-%s /boot/vmlinuz", kernel),
+				fmt.Sprintf("ln -sf vmlinux-%s /boot/vmlinuz", kernel),
 			},
 		},
 		{
