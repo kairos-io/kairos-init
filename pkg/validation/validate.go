@@ -105,20 +105,11 @@ func (v *Validator) Validate() error {
 		v.Log.Logger.Info().Str("file", f).Msg("Found file")
 		// Check if its a symlink in the vmlinuz case
 		if s != nil && s.Mode()&os.ModeSymlink != 0 && f == "/boot/vmlinuz" {
-			// check if it resolves correctly
-			target, err := os.Readlink(f)
-			if err != nil {
-				multi = multierror.Append(multi, fmt.Errorf("%s symlink is not a valid symlink", f))
+			if err := validateBootFileSymlink(f); err != nil {
+				multi = multierror.Append(multi, err)
 				continue
-			} else {
-				v.Log.Logger.Info().Str("file", f).Msg("File is a symlink and resolves as expected")
 			}
-			if _, err = os.Stat(target); os.IsNotExist(err) {
-				multi = multierror.Append(multi, fmt.Errorf("[FILES] symlink %s points to a non-existent file %s", f, target))
-			} else {
-				v.Log.Logger.Info().Str("target", target).Msg("Symlink points to a valid file")
-			}
-
+			v.Log.Logger.Info().Str("file", f).Msg("File is a symlink and resolves as expected")
 		} else {
 			v.Log.Logger.Info().Str("file", f).Msg("File is not a symlink")
 		}
@@ -312,6 +303,27 @@ func (v *Validator) ValidateKernelWithPath(modulesPath, model string) error {
 		return fmt.Errorf("[KERNEL] %w", err)
 	}
 	v.Log.Logger.Info().Str("kernel", kernelVersion).Msg("[KERNEL] Found kernel")
+	return nil
+}
+
+// validateBootFileSymlink checks that a boot symlink resolves to an existing file.
+// Relative targets (e.g. Debian riscv64 vmlinux-* links) are resolved from the
+// symlink directory, not the process working directory.
+func validateBootFileSymlink(linkPath string) error {
+	target, err := os.Readlink(linkPath)
+	if err != nil {
+		return fmt.Errorf("%s symlink is not a valid symlink", linkPath)
+	}
+
+	resolved, err := filepath.EvalSymlinks(linkPath)
+	if err != nil {
+		return fmt.Errorf("[FILES] symlink %s points to a non-existent file %s", linkPath, target)
+	}
+
+	if _, err = os.Stat(resolved); os.IsNotExist(err) {
+		return fmt.Errorf("[FILES] symlink %s points to a non-existent file %s", linkPath, target)
+	}
+
 	return nil
 }
 

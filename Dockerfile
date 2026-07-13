@@ -19,15 +19,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends xz-utils file &
   chmod +x /usr/local/bin/upx && \
   apt-get remove -y xz-utils && \
   rm -rf /var/lib/apt/lists/*
-# Copy the Makefile first to leverage Docker cache
-COPY Makefile .
+# Copy dependency files first to leverage Docker cache
+COPY Makefile go.mod go.sum ./
+RUN go mod download
+# Copy source (pkg/bundled/binaries/ excluded via .dockerignore)
+COPY . .
 # Download and compress bundled binaries for TARGETARCH (runs natively on BUILDARCH)
 RUN ARCH=${TARGETARCH} make all
-# Now copy the go.mod and go.sum files to leverage Docker cache
-COPY go.mod go.sum .
-RUN go mod download
-# Copy the rest of the source code
-COPY . .
 ENV CGO_ENABLED=0
 RUN echo "Building version: $(git describe --tags --always --dirty)"
 RUN echo "Building commit: $(git rev-parse --short HEAD)"

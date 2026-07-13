@@ -503,7 +503,6 @@ var BasePackages = PackageMap{
 				"nfs-client", // NFS support, basic
 				"open-iscsi",
 				"openssh",
-				"open-vm-tools",
 				"pigz",
 				"polkit",
 				"procps",
@@ -522,8 +521,14 @@ var BasePackages = PackageMap{
 		},
 		ArchAMD64: {
 			Common: {
+				"open-vm-tools",
 				"tpm2.0-tools", // For TPM support, mainly trusted boot
 				"tpm2-0-tss",   // For TPM support, mainly trusted boot
+			},
+		},
+		ArchARM64: {
+			Common: {
+				"open-vm-tools",
 			},
 		},
 	},
@@ -739,6 +744,14 @@ var GrubPackages = PackageMap{
 				"grub-efi-arm64-signed", // For secure boot support
 			},
 		},
+		ArchRiscV64: {
+			Common: {
+				"grub2-common",
+				"grub-efi-riscv64-bin",
+				"grub-efi-riscv64",
+				// No Debian/Ubuntu shim for riscv64; boot with grubriscv64.efi directly.
+			},
+		},
 	},
 	RedHatFamily: {
 		ArchCommon: {
@@ -787,12 +800,12 @@ var GrubPackages = PackageMap{
 		ArchCommon: {
 			Common: {
 				"nethogs",
-				"shim",
 				"iw",
 			},
 		},
 		ArchAMD64: {
 			Common: {
+				"shim",
 				"grub2-i386-pc",
 				"grub2-x86_64-efi",
 				"kernel-firmware-all",
@@ -800,6 +813,7 @@ var GrubPackages = PackageMap{
 		},
 		ArchARM64: {
 			Common: {
+				"shim",
 				"bcm43xx-firmware",
 				"grub2-arm64-efi",
 				"kernel-firmware-ath10k",
@@ -812,6 +826,12 @@ var GrubPackages = PackageMap{
 				"kernel-firmware-realtek",
 				"kernel-firmware-serial",
 				"kernel-firmware-usb-network",
+			},
+		},
+		ArchRiscV64: {
+			Common: {
+				"grub2-riscv64-efi",
+				// No openSUSE shim package for riscv64; boot with grub.efi directly.
 			},
 		},
 	},
