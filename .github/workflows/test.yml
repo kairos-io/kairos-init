@@ -43,8 +43,6 @@ jobs:
          - "oraclelinux:10"
          - "quay.io/centos/centos:stream9"
          - "quay.io/centos/centos:stream10"
-         - "ghcr.io/kairos-io/hadron:v0.5.1"
-         - "ghcr.io/kairos-io/hadron:main"
          - "registry.suse.com/suse/sle-micro-rancher/5.4:latest"
         include:
           - platform: "amd64"
@@ -83,6 +81,14 @@ jobs:
             base_image: "ubuntu:22.04"
             model: "rpi4"
             fips: false
+          - platform: "amd64"
+            base_image: "ghcr.io/kairos-io/hadron:v0.5.1"
+          - platform: "amd64"
+            base_image: "ghcr.io/kairos-io/hadron:main"
+          - platform: "arm64"
+            base_image: "ghcr.io/kairos-io/hadron:v0.5.1"
+          - platform: "arm64"
+            base_image: "ghcr.io/kairos-io/hadron:main"
           - platform: "arm64"
             base_image: "ghcr.io/kairos-io/hadron:v0.5.1"
             model: "rpi4"
