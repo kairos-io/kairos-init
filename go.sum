@@ -40,6 +40,8 @@ github.com/containerd/containerd/api v1.11.1 h1:h8nfoDW9+fNsC/9TwiAHj8B1GzXKtR4e
 github.com/containerd/containerd/api v1.11.1/go.mod h1:CaQFRu+N1MtbgL6JDOJLUB1hCKESU1lD6MuTJhgtdlw=
 github.com/containerd/containerd/v2 v2.3.2 h1:eLven1YxRMkeiKu7IcMrPKE+gn8sGR1DqHbbshMEvWM=
 github.com/containerd/containerd/v2 v2.3.2/go.mod h1:rHKGm3VW6wNrINb3x8mNT+w7qYXFVElTt/8HTuxVhD4=
+github.com/containerd/containerd/v2 v2.3.3 h1:MUNBVVBTBpPll7KPh5GTvkC3cfG03PQLAHVdsUoue9k=
+github.com/containerd/containerd/v2 v2.3.3/go.mod h1:rHKGm3VW6wNrINb3x8mNT+w7qYXFVElTt/8HTuxVhD4=
 github.com/containerd/continuity v0.5.0 h1:7a85HZpCSs+1Zps0Ee3DPSuAWY+0SJM1JNM51nlEVDg=
 github.com/containerd/continuity v0.5.0/go.mod h1:/lNJvtJKUQStBzpVQ1+rasXO1LAWtUQssk28EZvJ3nE=
 github.com/containerd/errdefs v1.0.0 h1:tg5yIfIlQIrxYtu9ajqY42W3lpS19XqdxRQeEwYG8PI=
@@ -187,6 +189,8 @@ github.com/joshdk/go-junit v1.0.0 h1:S86cUKIdwBHWwA6xCmFlf3RTLfVXYQfvanM5Uh+K6GE
 github.com/joshdk/go-junit v1.0.0/go.mod h1:TiiV0PqkaNfFXjEiyjWM3XXrhVyCa1K4Zfga6W52ung=
 github.com/kairos-io/kairos-sdk v0.23.2 h1:5dZzdzYn+sGoeOoaFBwYMukdO02WdDeWLzTZ4NsqQk0=
 github.com/kairos-io/kairos-sdk v0.23.2/go.mod h1:DnDXUdqr55o/yQQYtX0blKeukEEeYGJwCOBhFJuIJ90=
+github.com/kairos-io/kairos-sdk v0.23.3 h1:xYflI9vIGMOSQGwYgrH7Gbu8e3UVhAfzLVgPQS4j64I=
+github.com/kairos-io/kairos-sdk v0.23.3/go.mod h1:GqoFurJzpu0ym9TEPBrjUqw0efvK0d9oZMV9HsQ6APU=
 github.com/kendru/darwin/go/depgraph v0.0.0-20230809052043-4d1c7e9d1767 h1:Ds6xHRvL0yjG4kZD05leRKt70mM18Fjt0+B5gIqqe1g=
 github.com/kendru/darwin/go/depgraph v0.0.0-20230809052043-4d1c7e9d1767/go.mod h1:VOfm8h1NySetVlpHDSnbpCMsvCgYaU+YDn4XezUy2+4=
 github.com/kevinburke/ssh_config v1.2.0 h1:x584FjTGwHzMwvHx18PXxbBVzfnxogHaAReU4gf13a4=
@@ -378,6 +382,8 @@ golang.org/x/mod v0.2.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.3.0/go.mod h1:s0Qsj1ACt9ePp/hMypM3fl4fZqREWJwdYDEqhRiZZUA=
 golang.org/x/mod v0.37.0 h1:vF1DjpVEshcIqoEaauuHebaLk1O1forxjxBaVn884JQ=
 golang.org/x/mod v0.37.0/go.mod h1:m8S8VeM9r4dzDwjrKO0a1sZP3YjeMamRRlD+fmR2Q/0=
+golang.org/x/mod v0.38.0 h1:MECBjubtXD7yj4HrhIUcywNaGeNVUdfVnxmPajOk4yk=
+golang.org/x/mod v0.38.0/go.mod h1:V6Xz0pq8TQ3dGqVQ1FVHuelZpAL0uNhSkk9ogYP3c40=
 golang.org/x/net v0.0.0-20180724234803-3673e40ba225/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/net v0.0.0-20180826012351-8a410e7b638d/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
 golang.org/x/net v0.0.0-20180906233101-161cd47e91fd/go.mod h1:mL1N/T3taQHkDXs73rZJwtUhF3w3ftmwwsq0BUmARs4=
@@ -442,6 +448,8 @@ golang.org/x/tools v0.0.0-20200619180055-7c47624df98f/go.mod h1:EkVYQZoAsY45+roY
 golang.org/x/tools v0.0.0-20210106214847-113979e3529a/go.mod h1:emZCQorbCU4vsT4fOWvOPXz4eW1wZW4PmDk9uLelYpA=
 golang.org/x/tools v0.46.0 h1:7jTurBkPZu4moS/Uy4OQT1M+QBlsj3wejyZwsT8Z7rk=
 golang.org/x/tools v0.46.0/go.mod h1:FrD85F8l+NWL+9XWBSyVSHO6Ne4jutsfIFba7AWQ5Ys=
+golang.org/x/tools v0.47.0 h1:7Kn5x/d1svx/PzryTsqeoZN4TZwqeH5pGWjefhLi/1Q=
+golang.org/x/tools v0.47.0/go.mod h1:dFHnyTvFWY212G+h7ZY4Vsp/K3U4/7W9TyVaAul8uCA=
 golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
