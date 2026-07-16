@@ -193,10 +193,16 @@ func (v *Validator) Validate() error {
 			// lsinitrd may render the module filename with either form.
 			for _, module := range []string{"xhci_pci_renesas"} {
 				dashed := strings.ReplaceAll(module, "_", "-")
-				if !strings.Contains(string(out), module) && !strings.Contains(string(out), dashed) {
+				found := ""
+				if strings.Contains(string(out), module) {
+					found = module
+				} else if strings.Contains(string(out), dashed) {
+					found = dashed
+				}
+				if found == "" {
 					v.Log.Logger.Warn().Str("module", module).Msg("[INITRD] kernel module not found in initrd (may be absent from kernel package)")
 				} else {
-					v.Log.Logger.Info().Str("module", module).Msg("Found kernel module in the initrd")
+					v.Log.Logger.Info().Str("module", found).Msg("Found kernel module in the initrd")
 				}
 			}
 		}
