@@ -189,7 +189,7 @@ func (v *Validator) Validate() error {
 			// module, in which case dracut silently drops the add_drivers directive. That's
 			// not a build failure — but on kernels that DO ship it, a miss here means the
 			// dracut config was never applied and iLO virtual media boots would break.
-			for _, module := range []string{"xhci_pci_renesas"} {
+			for _, module := range []string{"xhci-pci-renesas"} {
 				if !strings.Contains(string(out), module) {
 					v.Log.Logger.Warn().Str("module", module).Msg("[INITRD] kernel module not found in initrd (may be absent from kernel package)")
 				} else {
