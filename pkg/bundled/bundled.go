@@ -290,16 +290,21 @@ const DracutSkipIscsi = `omit_dracutmodules+=" iscsi "`
 // early, iLO-remoted installs and rescue sessions lose keyboard input and cannot see the
 // mounted virtual media during the initramfs phase, dropping the user to an unusable shell.
 //
-// Dracut defaults to host-only mode (hostonly=yes) which only bundles modules for hardware
-// present on the build host. Kairos images are built in containers/VMs that never expose
-// Renesas xHCI hardware, so the module is always stripped unless we force it in via
-// add_drivers. Cost: ~a few KiB in the initramfs, applied unconditionally so the same
-// image works on iLO-managed hardware and on hardware that never touches the module.
+// Kairos already sets hostonly="no" globally (see ImmucoreConfigDracut), so dracut is in
+// generic mode — but generic mode is not "include every .ko under /lib/modules". Dracut
+// still applies its own driver-class filter and hardcoded include set, and uncommon USB
+// host controllers like this Renesas part are not in the default pull. On top of that
+// the module ships in the "extras" kernel package (kernel-modules-extra on RHEL family,
+// linux-modules-extra-* on Ubuntu/Debian), so the package must be installed too — the
+// package maps in pkg/values are responsible for that half. This file is the other half:
+// once the .ko is on disk, tell dracut explicitly to bundle it via add_drivers.
 const DracutXhciRenesasConfig = `# Force-include the Renesas xHCI USB 3.0 driver (uPD720201/uPD720202).
 # Required for HPE ProLiant iLO virtual media (vCD, vUSB, virtual keyboard) to work
-# during the initramfs phase. Dracut host-only mode strips it otherwise because the
-# build host never has this hardware. Do not remove without confirming iLO installs
-# still work on affected HPE ProLiant generations.
+# during the initramfs phase. Kairos runs dracut with hostonly=no, but dracut's generic
+# mode still filters drivers and does not auto-include this uncommon USB host controller,
+# so it must be listed explicitly. The module itself lives in the kernel "extras" package
+# (kernel-modules-extra / linux-modules-extra-*); this config assumes it is installed.
+# Do not remove without confirming iLO installs still work on affected HPE ProLiant gens.
 add_drivers+=" xhci_pci_renesas "
 `
 
