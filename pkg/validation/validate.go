@@ -183,6 +183,19 @@ func (v *Validator) Validate() error {
 					v.Log.Logger.Info().Str("binary", binary).Msg("Found binary in the initrd")
 				}
 			}
+
+			// Verify kernel modules that we force-include via dracut add_drivers made it in.
+			// Warn-only: some kernels (minimal builds, non-x86 arches) simply don't ship the
+			// module, in which case dracut silently drops the add_drivers directive. That's
+			// not a build failure — but on kernels that DO ship it, a miss here means the
+			// dracut config was never applied and iLO virtual media boots would break.
+			for _, module := range []string{"xhci_pci_renesas"} {
+				if !strings.Contains(string(out), module) {
+					v.Log.Logger.Warn().Str("module", module).Msg("[INITRD] kernel module not found in initrd (may be absent from kernel package)")
+				} else {
+					v.Log.Logger.Info().Str("module", module).Msg("Found kernel module in the initrd")
+				}
+			}
 		}
 	}
 

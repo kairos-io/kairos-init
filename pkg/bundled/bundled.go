@@ -282,9 +282,26 @@ const DracutSkipNvidiaDrivers = `omit_drivers+=" nvidia nvidia_drm nvidia_modese
 // DracutSkipIscsi is the dracut config to avoid loading iscsi during initramfs
 const DracutSkipIscsi = `omit_dracutmodules+=" iscsi "`
 
-// DracutXhciRenesasConfig is the dracut config to always add the xhci_pci_renesas module to the initramfs
-// Some servers use this module to provide support for ILO devices like cdrom, usb keyboard and such and won't work without it
-const DracutXhciRenesasConfig = `add_drivers+=" xhci_pci_renesas "`
+// DracutXhciRenesasConfig forces the xhci_pci_renesas kernel module into the initramfs.
+//
+// The module drives Renesas uPD720201/uPD720202 xHCI USB 3.0 controllers, which are the
+// USB host controllers exposed by HPE ProLiant iLO (Integrated Lights-Out) virtual media:
+// virtual CD-ROM, virtual USB keyboard, virtual USB storage. Without this module loaded
+// early, iLO-remoted installs and rescue sessions lose keyboard input and cannot see the
+// mounted virtual media during the initramfs phase, dropping the user to an unusable shell.
+//
+// Dracut defaults to host-only mode (hostonly=yes) which only bundles modules for hardware
+// present on the build host. Kairos images are built in containers/VMs that never expose
+// Renesas xHCI hardware, so the module is always stripped unless we force it in via
+// add_drivers. Cost: ~a few KiB in the initramfs, applied unconditionally so the same
+// image works on iLO-managed hardware and on hardware that never touches the module.
+const DracutXhciRenesasConfig = `# Force-include the Renesas xHCI USB 3.0 driver (uPD720201/uPD720202).
+# Required for HPE ProLiant iLO virtual media (vCD, vUSB, virtual keyboard) to work
+# during the initramfs phase. Dracut host-only mode strips it otherwise because the
+# build host never has this hardware. Do not remove without confirming iLO installs
+# still work on affected HPE ProLiant generations.
+add_drivers+=" xhci_pci_renesas "
+`
 
 // DRACUT stuff ends here
 
