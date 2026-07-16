@@ -188,7 +188,9 @@ func (v *Validator) Validate() error {
 			// Warn-only: some kernels (minimal builds, non-x86 arches) simply don't ship the
 			// module, in which case dracut silently drops the add_drivers directive. That's
 			// not a build failure — but on kernels that DO ship it, a miss here means the
-			// dracut config was never applied and iLO virtual media boots would break.
+			// dracut config was never applied and BMC virtual media boots would break on
+			// affected server generations (HPE iLO, Dell iDRAC, Supermicro BMC) — the
+			// dependency is on the BMC controller hardware/firmware, not the server chipset.
 			// Check both the canonical underscored name and the dashed variant since
 			// lsinitrd may render the module filename with either form.
 			for _, module := range []string{"xhci_pci_renesas"} {

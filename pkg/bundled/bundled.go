@@ -284,11 +284,15 @@ const DracutSkipIscsi = `omit_dracutmodules+=" iscsi "`
 
 // DracutXhciRenesasConfig forces the xhci_pci_renesas kernel module into the initramfs.
 //
-// The module drives Renesas uPD720201/uPD720202 xHCI USB 3.0 controllers, which are the
-// USB host controllers exposed by HPE ProLiant iLO (Integrated Lights-Out) virtual media:
-// virtual CD-ROM, virtual USB keyboard, virtual USB storage. Without this module loaded
-// early, iLO-remoted installs and rescue sessions lose keyboard input and cannot see the
-// mounted virtual media during the initramfs phase, dropping the user to an unusable shell.
+// The module drives Renesas uPD720201/uPD720202 xHCI USB 3.0 controllers. These parts
+// are used broadly by server BMC (baseboard management controller) implementations to
+// expose remote virtual media — virtual CD-ROM, virtual USB storage, virtual USB
+// keyboard — to the host as USB 3.0 devices. This is a BMC hardware/firmware trait,
+// not a server-chipset trait: HPE ProLiant (iLO), Dell PowerEdge (iDRAC), and
+// Supermicro (BMC / SuperDoctor / IPMI) all exhibit it on affected generations,
+// regardless of the platform chipset. Without this module loaded early, BMC-remoted
+// installs and rescue sessions lose keyboard input and cannot see the mounted
+// virtual media during the initramfs phase, dropping the operator to an unusable shell.
 //
 // Kairos already sets hostonly="no" globally (see ImmucoreConfigDracut), so dracut is in
 // generic mode — but generic mode is not "include every .ko under /lib/modules". Dracut
@@ -299,12 +303,16 @@ const DracutSkipIscsi = `omit_dracutmodules+=" iscsi "`
 // package maps in pkg/values are responsible for that half. This file is the other half:
 // once the .ko is on disk, tell dracut explicitly to bundle it via add_drivers.
 const DracutXhciRenesasConfig = `# Force-include the Renesas xHCI USB 3.0 driver (uPD720201/uPD720202).
-# Required for HPE ProLiant iLO virtual media (vCD, vUSB, virtual keyboard) to work
-# during the initramfs phase. Kairos runs dracut with hostonly=no, but dracut's generic
-# mode still filters drivers and does not auto-include this uncommon USB host controller,
-# so it must be listed explicitly. The module itself lives in the kernel "extras" package
-# (kernel-modules-extra / linux-modules-extra-*); this config assumes it is installed.
-# Do not remove without confirming iLO installs still work on affected HPE ProLiant gens.
+# Required for server BMC virtual media (vCD, vUSB, virtual keyboard) to work during
+# the initramfs phase. This affects all major server brands — HPE ProLiant (iLO),
+# Dell PowerEdge (iDRAC), Supermicro (BMC/IPMI) — because the dependency is on the
+# BMC controller hardware/firmware exposing a Renesas xHCI USB device to the host,
+# not on the server's chipset. Kairos runs dracut with hostonly=no, but dracut's
+# generic mode still filters drivers and does not auto-include this uncommon USB
+# host controller, so it must be listed explicitly. The module itself lives in the
+# kernel "extras" package (kernel-modules-extra / linux-modules-extra-*); this
+# config assumes it is installed. Do not remove without confirming BMC-remoted
+# installs still work on affected server generations.
 add_drivers+=" xhci_pci_renesas "
 `
 
