@@ -132,6 +132,7 @@ const (
 	DracutMultipathPath           = "/etc/dracut.conf.d/kairos-multipath.conf"
 	DracutSkipNvidiaDriversPath   = "/etc/dracut.conf.d/kairos-skip-nvidia.conf"
 	DracutSkipScsiPath            = "/etc/dracut.conf.d/kairos-skip-scsi.conf"
+	DracutXhciRenesasPath         = "/etc/dracut.conf.d/kairos-xhci-renesas.conf"
 	DracutConfigPath              = "/etc/dracut.conf.d/99-immucore.conf"
 	DracutImmucoreModuleSetupPath = "/usr/lib/dracut/modules.d/28immucore/module-setup.sh"
 	DracutImmucoreGeneratorPath   = "/usr/lib/dracut/modules.d/28immucore/generator.sh"
@@ -280,6 +281,10 @@ const DracutSkipNvidiaDrivers = `omit_drivers+=" nvidia nvidia_drm nvidia_modese
 
 // DracutSkipIscsi is the dracut config to avoid loading iscsi during initramfs
 const DracutSkipIscsi = `omit_dracutmodules+=" iscsi "`
+
+// DracutXhciRenesasConfig is the dracut config to always add the xhci_pci_renesas module to the initramfs
+// Some servers use this module to provide support for ILO devices like cdrom, usb keyboard and such and won't work without it
+const DracutXhciRenesasConfig = `add_drivers+=" xhci_pci_renesas "`
 
 // DRACUT stuff ends here
 

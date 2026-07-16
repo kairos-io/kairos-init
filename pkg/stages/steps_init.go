@@ -958,6 +958,19 @@ func GetKairosInitramfsFilesStage(sis values.System, l logger.KairosLogger) ([]s
 				},
 			},
 			{
+				Name:     "Add xhci_pci_renesas module to initramfs",
+				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
+				Files: []schema.File{
+					{
+						Path:        bundled.DracutXhciRenesasPath,
+						Owner:       0,
+						Group:       0,
+						Permissions: 0644,
+						Content:     bundled.DracutXhciRenesasConfig,
+					},
+				},
+			},
+			{
 				Name:     "Add sysext module to initramfs",
 				OnlyIfOs: "Ubuntu.*|Debian.*|Fedora.*|CentOS.*|Red\\sHat.*|Rocky.*|AlmaLinux.*|Oracle\\sLinux.*|[Oo]penSUSE.*|SUSE.*|Hadron.*",
 				If:       strconv.FormatBool(sysextModule),
