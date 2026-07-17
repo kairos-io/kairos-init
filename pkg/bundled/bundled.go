@@ -132,6 +132,7 @@ const (
 	DracutMultipathPath           = "/etc/dracut.conf.d/kairos-multipath.conf"
 	DracutSkipNvidiaDriversPath   = "/etc/dracut.conf.d/kairos-skip-nvidia.conf"
 	DracutSkipScsiPath            = "/etc/dracut.conf.d/kairos-skip-scsi.conf"
+	DracutXhciRenesasPath         = "/etc/dracut.conf.d/kairos-xhci-renesas.conf"
 	DracutConfigPath              = "/etc/dracut.conf.d/99-immucore.conf"
 	DracutImmucoreModuleSetupPath = "/usr/lib/dracut/modules.d/28immucore/module-setup.sh"
 	DracutImmucoreGeneratorPath   = "/usr/lib/dracut/modules.d/28immucore/generator.sh"
@@ -280,6 +281,40 @@ const DracutSkipNvidiaDrivers = `omit_drivers+=" nvidia nvidia_drm nvidia_modese
 
 // DracutSkipIscsi is the dracut config to avoid loading iscsi during initramfs
 const DracutSkipIscsi = `omit_dracutmodules+=" iscsi "`
+
+// DracutXhciRenesasConfig forces the xhci_pci_renesas kernel module into the initramfs.
+//
+// The module drives Renesas uPD720201/uPD720202 xHCI USB 3.0 controllers. These parts
+// are used broadly by server BMC (baseboard management controller) implementations to
+// expose remote virtual media — virtual CD-ROM, virtual USB storage, virtual USB
+// keyboard — to the host as USB 3.0 devices. This is a BMC hardware/firmware trait,
+// not a server-chipset trait: HPE ProLiant (iLO), Dell PowerEdge (iDRAC), and
+// Supermicro (BMC / SuperDoctor / IPMI) all exhibit it on affected generations,
+// regardless of the platform chipset. Without this module loaded early, BMC-remoted
+// installs and rescue sessions lose keyboard input and cannot see the mounted
+// virtual media during the initramfs phase, dropping the operator to an unusable shell.
+//
+// Kairos already sets hostonly="no" globally (see ImmucoreConfigDracut), so dracut is in
+// generic mode — but generic mode is not "include every .ko under /lib/modules". Dracut
+// still applies its own driver-class filter and hardcoded include set, and uncommon USB
+// host controllers like this Renesas part are not in the default pull. On top of that
+// the module ships in the "extras" kernel package (kernel-modules-extra on RHEL family,
+// linux-modules-extra-* on Ubuntu/Debian), so the package must be installed too — the
+// package maps in pkg/values are responsible for that half. This file is the other half:
+// once the .ko is on disk, tell dracut explicitly to bundle it via add_drivers.
+const DracutXhciRenesasConfig = `# Force-include the Renesas xHCI USB 3.0 driver (uPD720201/uPD720202).
+# Required for server BMC virtual media (vCD, vUSB, virtual keyboard) to work during
+# the initramfs phase. This affects all major server brands — HPE ProLiant (iLO),
+# Dell PowerEdge (iDRAC), Supermicro (BMC/IPMI) — because the dependency is on the
+# BMC controller hardware/firmware exposing a Renesas xHCI USB device to the host,
+# not on the server's chipset. Kairos runs dracut with hostonly=no, but dracut's
+# generic mode still filters drivers and does not auto-include this uncommon USB
+# host controller, so it must be listed explicitly. The module itself lives in the
+# kernel "extras" package (kernel-modules-extra / linux-modules-extra-*); this
+# config assumes it is installed. Do not remove without confirming BMC-remoted
+# installs still work on affected server generations.
+add_drivers+=" xhci_pci_renesas "
+`
 
 // DRACUT stuff ends here
 

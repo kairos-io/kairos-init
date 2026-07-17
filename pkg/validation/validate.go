@@ -183,6 +183,30 @@ func (v *Validator) Validate() error {
 					v.Log.Logger.Info().Str("binary", binary).Msg("Found binary in the initrd")
 				}
 			}
+
+			// Verify kernel modules that we force-include via dracut add_drivers made it in.
+			// Warn-only: some kernels (minimal builds, non-x86 arches) simply don't ship the
+			// module, in which case dracut silently drops the add_drivers directive. That's
+			// not a build failure — but on kernels that DO ship it, a miss here means the
+			// dracut config was never applied and BMC virtual media boots would break on
+			// affected server generations (HPE iLO, Dell iDRAC, Supermicro BMC) — the
+			// dependency is on the BMC controller hardware/firmware, not the server chipset.
+			// Check both the canonical underscored name and the dashed variant since
+			// lsinitrd may render the module filename with either form.
+			for _, module := range []string{"xhci_pci_renesas"} {
+				dashed := strings.ReplaceAll(module, "_", "-")
+				found := ""
+				if strings.Contains(string(out), module) {
+					found = module
+				} else if strings.Contains(string(out), dashed) {
+					found = dashed
+				}
+				if found == "" {
+					v.Log.Logger.Warn().Str("module", module).Msg("[INITRD] kernel module not found in initrd (may be absent from kernel package)")
+				} else {
+					v.Log.Logger.Info().Str("module", found).Msg("Found kernel module in the initrd")
+				}
+			}
 		}
 	}
 
