@@ -76,9 +76,9 @@ const (
 
 var SupportedModels = []Model{Generic, Rpi3, Rpi4, AgxOrin, OrinNX, Thor}
 
-// ModelArch maps a Model to the architecture it must be built on.
+// modelArch maps a Model to the target architecture that kairos-init must run under.
 // Generic is architecture-agnostic and is intentionally omitted.
-var ModelArch = map[Model]Architecture{
+var modelArch = map[Model]Architecture{
 	Rpi3:    ArchARM64,
 	Rpi4:    ArchARM64,
 	AgxOrin: ArchARM64,
@@ -86,10 +86,10 @@ var ModelArch = map[Model]Architecture{
 	Thor:    ArchARM64,
 }
 
-// RequiredArch returns the architecture required to build for this model.
+// RequiredArch returns the target architecture required for this model.
 // Returns "" when the model has no architecture constraint (e.g. Generic).
 func (m Model) RequiredArch() Architecture {
-	return ModelArch[m]
+	return modelArch[m]
 }
 
 func SupportedModelStrings() []string {
