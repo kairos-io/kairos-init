@@ -126,6 +126,13 @@ var rootCmd = &cobra.Command{
 			return fmt.Errorf("FIPS is not supported on riscv64")
 		}
 		preRun(cmd, args)
+		if required := values.Model(config.DefaultConfig.Model).RequiredArch(); required != "" && required.String() != runtime.GOARCH {
+			return fmt.Errorf(
+				"model %q requires architecture %q but kairos-init is running on %q. "+
+					"You are likely cross-building without emulation: pass '--platform=linux/%s' to 'docker build' (or the equivalent for your build tool) so the base image and kairos-init run under the target architecture",
+				config.DefaultConfig.Model, required, runtime.GOARCH, required,
+			)
+		}
 		return nil
 	},
 	RunE: func(cmd *cobra.Command, args []string) error {
