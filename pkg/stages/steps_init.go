@@ -213,6 +213,11 @@ func getProviderInfo(logger logger.KairosLogger) (bus.ProviderInstalledVersionPa
 // For ubuntu + trusted boot we need to download the linux-modules-extra package, save the nvdimm modules
 // and then clean it up so http uki boot works out of the box. By default the nvdimm modules needed are in that package
 // We could just install the package but its a 100+MB  package and we need just 4 or 5 modules.
+// Canonical deprecated linux-modules-extra starting with the 6.15 development kernel and the split is gone
+// on newer HWE kernels (e.g. linux-hwe-7.0 on noble). When the package is not available in apt the nvdimm
+// modules are already shipped inside linux-modules (installed as a dep of the kernel image), so we skip the
+// whole workaround via an apt-cache guard rather than version-gating (the 6.17 noble HWE backport still had
+// modules-extra while 6.17 in questing did not, so a plain version check would misfire).
 func GetWorkaroundsStage(_ values.System, l logger.KairosLogger) []schema.Stage {
 	if config.ContainsSkipStep(values.WorkaroundsStep) {
 		l.Logger.Warn().Msg("Skipping workarounds stage")
@@ -268,12 +273,15 @@ func GetWorkaroundsStage(_ values.System, l logger.KairosLogger) []schema.Stage 
 			l.Logger.Error().Msgf("Failed to get the latest kernel: %s", err)
 			return stages
 		}
-		// 25.10 is the first version where this workaround is not needed
+		// 25.10 is the first version where this workaround is not needed. On 24.04 with newer HWE kernels
+		// (linux-hwe-7.0 and up) Canonical dropped the modules-extra split too, so the apt-cache guard
+		// skips the stage in that case (nvdimm modules already live in linux-modules).
 		stages = append(stages, []schema.Stage{
 			{
 				Name:            "Download linux-modules-extra for nvdimm modules",
 				OnlyIfOs:        "Ubuntu.*",
 				OnlyIfOsVersion: `2[0-4]\..*`,
+				If:              fmt.Sprintf("apt-cache show linux-modules-extra-%s >/dev/null 2>&1", kernel),
 				Commands: []string{
 					fmt.Sprintf("apt-get download linux-modules-extra-%s", kernel),
 					fmt.Sprintf("dpkg-deb -x linux-modules-extra-%s_*.deb /tmp/modules", kernel),
