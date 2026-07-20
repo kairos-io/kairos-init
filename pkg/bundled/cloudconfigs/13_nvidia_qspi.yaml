@@ -2,7 +2,14 @@ name: "Nvidia Jetson QSPI firmware check"
 stages:
   after-install-chroot:
     - name: "Check and stage QSPI firmware update"
+      # Only check that the script is present. Board detection (Thor vs. not)
+      # deliberately lives solely inside the script itself, which fails closed
+      # (aborts) when it cannot read the SoC compatible string, rather than
+      # skipping silently. Duplicating that check here would let an unreadable
+      # compatible file silently skip this stage before the script's own
+      # fail-closed logic ever runs - the exact bug this feature was fixed to
+      # no longer have.
       if: |
-        [ -x "/usr/sbin/kairos-jetson-qspi-update" ] && [ -f "/sys/firmware/devicetree/base/compatible" ] && grep -aq "nvidia,tegra264" "/sys/firmware/devicetree/base/compatible"
+        [ -x "/usr/sbin/kairos-jetson-qspi-update" ]
       commands:
         - /usr/sbin/kairos-jetson-qspi-update

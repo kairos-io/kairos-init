@@ -56,11 +56,23 @@ cleanup() {
 		if ! umount "${ESP_MOUNT_DIR}"; then
 			echo "[kairos-qspi] ERROR: cannot unmount ${ESP_MOUNT_DIR}; the ESP may still hold unwritten data" >&2
 			rc=1
+			# TRADE-OFF (deliberate, not a bug): if we get here after a successful
+			# stage, the capsule is already on the ESP and OsIndications is already
+			# set - the board WILL flash firmware on next boot regardless of this
+			# script's exit code. Forcing rc=1 still aborts the install on an
+			# unmount failure that has nothing left to protect. We considered
+			# clearing OsIndications here to make the abort "clean", but that write
+			# has its own failure modes (immutability, a wedged efivarfs) and would
+			# turn a recoverable warning into another way to fail mid-cleanup for no
+			# real benefit. So we accept the noisy, occasionally-unnecessary abort.
 		fi
 	fi
 	exit "${rc}"
 }
-trap cleanup EXIT
+# INT/TERM (not just EXIT) so a killed install still tears down the ESP mount
+# instead of leaking it at ESP_MOUNT_DIR, which would otherwise block
+# kairos-agent's own teardown of the underlying device.
+trap cleanup EXIT INT TERM
 
 # encode_version 39.2.0 -> 2556416. Accepts 2 or 3 numeric components; anything
 # else is an error rather than a silently wrong number.
@@ -294,12 +306,31 @@ log "staged ${capsule_src##*/} on the ESP"
 
 # Set bit 2 of OsIndications (EFI_OS_INDICATIONS_FILE_CAPSULE_DELIVERY_SUPPORTED).
 # UEFI applies the capsule on the next boot, before Linux starts.
-# dd (rather than a redirect) because efivarfs rejects an O_TRUNC open on an
-# existing variable that carries the immutable attribute.
 osind="${EFIVARS_DIR}/OsIndications-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+
+# efivarfs marks every variable it discovers at mount time S_IMMUTABLE. If this
+# variable already exists on the board (it usually does), opening it for write
+# fails with EPERM no matter how we write it. Try to clear the immutable
+# attribute first; chattr may be missing (minimal images) or may fail for other
+# reasons (kernel that never set the flag) - either is tolerated here, because
+# the write immediately below is the real, hard gate, not this best-effort step.
+if [ -e "${osind}" ]; then
+	chattr -i "${osind}" 2>/dev/null || true
+fi
+
+# dd (rather than a redirect) because efivarfs rejects an O_TRUNC open, and
+# conv=notrunc tells dd not to attempt to truncate the destination before
+# writing (a plain shell ">" redirect would open O_TRUNC and fail). This does
+# NOT address the immutable attribute - only the chattr above does that, and
+# even that is best-effort; a stubborn EPERM below is still possible.
+# iflag=fullblock guards against a short read: a single read() on the printf
+# pipe below is not guaranteed to return all 12 bytes, and a short read here
+# would silently write a truncated, garbage OsIndications value.
 printf '\x07\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00' |
-	dd of="${osind}" bs=12 count=1 conv=notrunc status=none ||
-	fail "cannot write ${osind}"
+	dd of="${osind}" bs=12 count=1 conv=notrunc iflag=fullblock status=none ||
+	fail "cannot write ${osind}. If this variable already exists on the board, the
+efivarfs immutable attribute is the likely cause: chattr -i \"${osind}\" may need
+to be run manually, or this kernel may not support clearing it in-band."
 
 log "firmware will be updated on the next boot"
 `

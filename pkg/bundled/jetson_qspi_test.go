@@ -434,6 +434,15 @@ var _ = Describe("Jetson QSPI script", func() {
 		// Writing a regular file into it would look like a complete success while
 		// staging nothing, and the user would boot a Thor board to a black screen.
 		It("aborts instead of reporting success when the target is not efivarfs", func() {
+			if os.Geteuid() == 0 {
+				// As root, "mount -t efivarfs" below would not fail with EPERM the
+				// way it does as an unprivileged test user - it would really mount
+				// efivarfs onto this Ginkgo temp dir. Skip rather than risk that;
+				// the shim-based test alongside this one exercises the same
+				// aborts-when-not-efivarfs guarantee without depending on
+				// privilege level or ever invoking the real mount(8) at all.
+				Skip("requires non-root privileges to safely exercise the real mount(8) EPERM failure")
+			}
 			dir := GinkgoT().TempDir()
 			esrt := filepath.Join(dir, "fw_version")
 			Expect(os.WriteFile(esrt, []byte("2490368\n"), 0o644)).To(Succeed())
@@ -466,6 +475,64 @@ var _ = Describe("Jetson QSPI script", func() {
 				"the script reported success while writing the capsule flag to a plain directory: %s", string(out))
 			Expect(string(out)).ToNot(ContainSubstring("firmware will be updated on the next boot"))
 			// It must not have left a fake variable behind either.
+			Expect(filepath.Join(efivars, "OsIndications-8be4df61-93ca-11d2-aa0d-00e098032b8c")).
+				ToNot(BeAnExistingFile())
+		})
+
+		It("aborts instead of reporting success when mount succeeds but the target still isn't efivarfs", func() {
+			// This is the branch that actually matters in production: root,
+			// inside the chroot, "mount -t efivarfs" succeeds - but the chroot's
+			// /sys/firmware/efi/efivars is only ever a plain sysfs directory
+			// (see the big comment above the efivarfs section in the script), so
+			// the re-verification after mount must catch it and abort. The test
+			// above only proves "mount refused" (EPERM as a non-root test user);
+			// it never reaches this branch. A fake "mount" shim that exits 0
+			// without mounting anything drives the script into it deterministically,
+			// without ever invoking the real mount(8) - so this test is safe to run
+			// as any user, including root on a UEFI host.
+			dir := GinkgoT().TempDir()
+			esrt := filepath.Join(dir, "fw_version")
+			Expect(os.WriteFile(esrt, []byte("2490368\n"), 0o644)).To(Succeed())
+			dtFile := filepath.Join(dir, "compatible")
+			Expect(os.WriteFile(dtFile, thorCompatible(), 0o644)).To(Succeed())
+			ota := filepath.Join(dir, "ota", "t26x")
+			Expect(os.MkdirAll(ota, 0o755)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(ota, "TEGRA_BL_3834_agx.Cap"),
+				[]byte("CAPSULE-PAYLOAD"), 0o644)).To(Succeed())
+			esp := filepath.Join(dir, "esp")
+			Expect(os.MkdirAll(esp, 0o755)).To(Succeed())
+			// A plain directory standing in for the chroot's empty sysfs path,
+			// same as the EPERM test above - "mount" succeeding must not be
+			// enough on its own.
+			efivars := filepath.Join(dir, "efivars")
+			Expect(os.MkdirAll(efivars, 0o755)).To(Succeed())
+
+			shimDir := GinkgoT().TempDir()
+			Expect(os.WriteFile(filepath.Join(shimDir, "mount"),
+				[]byte("#!/bin/sh\nexit 0\n"), 0o755)).To(Succeed())
+
+			cmd := exec.Command(writeScript())
+			// Note: KAIROS_QSPI_SKIP_EFIVARS_CHECK is deliberately NOT set.
+			env := append(os.Environ(),
+				"ESRT_FW_VERSION_FILE="+esrt,
+				"DT_COMPATIBLE_FILE="+dtFile,
+				"OTA_PACKAGE_DIR="+filepath.Join(dir, "ota"),
+				"EFIVARS_DIR="+efivars,
+				"ESP_MOUNT_DIR="+esp,
+				"KAIROS_QSPI_SKIP_MOUNT=1",
+				"KAIROS_QSPI_IMAGE_VERSION=39.2.0",
+			)
+			for i, e := range env {
+				if strings.HasPrefix(e, "PATH=") {
+					env[i] = "PATH=" + shimDir + string(os.PathListSeparator) + strings.TrimPrefix(e, "PATH=")
+				}
+			}
+			cmd.Env = env
+			out, err := cmd.CombinedOutput()
+
+			Expect(err).To(HaveOccurred(),
+				"the script reported success after a mount that didn't actually produce efivarfs: %s", string(out))
+			Expect(string(out)).ToNot(ContainSubstring("firmware will be updated on the next boot"))
 			Expect(filepath.Join(efivars, "OsIndications-8be4df61-93ca-11d2-aa0d-00e098032b8c")).
 				ToNot(BeAnExistingFile())
 		})
@@ -517,10 +584,16 @@ var _ = Describe("Jetson QSPI cloud-config", func() {
 		Expect(string(data)).To(ContainSubstring(bundled.JetsonQSPIScriptPath))
 	})
 
-	It("gates on the devicetree SoC compatible string", func() {
+	It("delegates board detection entirely to the script, not the YAML guard", func() {
+		// The compatible-string check used to live here too. That meant an
+		// unreadable compatible file silently skipped this whole stage before
+		// the script's own fail-closed logic (the fix for the bug that made
+		// this feature inert) ever got a chance to run. The YAML guard must
+		// do nothing more than check the script is present; the script itself
+		// decides Thor-vs-not and exits 0 cleanly on non-Thor boards.
 		data, err := bundled.EmbeddedConfigs.ReadFile("cloudconfigs/13_nvidia_qspi.yaml")
 		Expect(err).ToNot(HaveOccurred())
-		Expect(string(data)).To(ContainSubstring("/sys/firmware/devicetree/base/compatible"))
-		Expect(string(data)).To(ContainSubstring("nvidia,tegra264"))
+		Expect(string(data)).ToNot(ContainSubstring("devicetree"))
+		Expect(string(data)).ToNot(ContainSubstring("tegra264"))
 	})
 })
