@@ -233,3 +233,12 @@ var _ = Describe("Jetson QSPI script", func() {
 		})
 	})
 })
+
+var _ = Describe("Jetson QSPI cloud-config", func() {
+	It("is embedded and runs on after-install-chroot", func() {
+		data, err := bundled.EmbeddedConfigs.ReadFile("cloudconfigs/13_nvidia_qspi.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(string(data)).To(ContainSubstring("after-install-chroot"))
+		Expect(string(data)).To(ContainSubstring(bundled.JetsonQSPIScriptPath))
+	})
+})

@@ -1,0 +1,8 @@
+name: "Nvidia Jetson QSPI firmware check"
+stages:
+  after-install-chroot:
+    - name: "Check and stage QSPI firmware update"
+      if: |
+        [ -x "/usr/sbin/kairos-jetson-qspi-update" ] && [ -r "/etc/nv_boot_control.conf" ]
+      commands:
+        - /usr/sbin/kairos-jetson-qspi-update

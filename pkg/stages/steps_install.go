@@ -242,6 +242,19 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 				"sed -i -e 's|mntpoint=\"/mnt|mntpoint=\"/srv/data|' /opt/nvidia/l4t-usb-device-mode/nv-l4t-usb-device-mode-start.sh || true",
 			},
 		},
+		{
+			Name: "Install Jetson QSPI firmware update script",
+			If:   isNvidiaThorBoard,
+			Files: []schema.File{
+				{
+					Path:        bundled.JetsonQSPIScriptPath,
+					Content:     bundled.JetsonQSPIScript,
+					Permissions: 0o755,
+					Owner:       0,
+					Group:       0,
+				},
+			},
+		},
 	}
 	return stage, nil
 }
