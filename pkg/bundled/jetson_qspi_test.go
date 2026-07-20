@@ -33,4 +33,82 @@ var _ = Describe("Jetson QSPI script", func() {
 			Entry("two-component version", "39.2", "2556416"),
 		)
 	})
+
+	Describe("decision logic", func() {
+		// env builds a fixture environment: an ESRT file holding the board's current
+		// firmware version, and an nv_boot_control.conf declaring a Thor chip id.
+		env := func(currentQSPI, chipID string) (string, []string) {
+			dir := GinkgoT().TempDir()
+			esrt := filepath.Join(dir, "fw_version")
+			Expect(os.WriteFile(esrt, []byte(currentQSPI+"\n"), 0o644)).To(Succeed())
+			conf := filepath.Join(dir, "nv_boot_control.conf")
+			Expect(os.WriteFile(conf, []byte("TNSPEC 3834-0008\nCHIPID "+chipID+"\n"), 0o644)).To(Succeed())
+			return dir, append(os.Environ(),
+				"ESRT_FW_VERSION_FILE="+esrt,
+				"NV_BOOT_CONTROL_CONF="+conf,
+				"KAIROS_QSPI_DRY_RUN=1",
+			)
+		}
+
+		run := func(envv []string, imageVersion string) (string, error) {
+			cmd := exec.Command(writeScript())
+			cmd.Env = append(envv, "KAIROS_QSPI_IMAGE_VERSION="+imageVersion)
+			out, err := cmd.CombinedOutput()
+			return string(out), err
+		}
+
+		It("stages a capsule when the image is newer than the board", func() {
+			_, envv := env("2490368", "0x26") // board 38.0.0
+			out, err := run(envv, "39.2.0")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(out).To(ContainSubstring("staging capsule"))
+		})
+
+		It("does nothing when versions match", func() {
+			_, envv := env("2556416", "0x26")
+			out, err := run(envv, "39.2.0")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(out).To(ContainSubstring("already matches"))
+			Expect(out).ToNot(ContainSubstring("staging capsule"))
+		})
+
+		It("aborts when the board firmware is newer than the image", func() {
+			_, envv := env("2556416", "0x26") // board 39.2.0
+			out, err := run(envv, "38.4.0")   // image 38.4.0
+			Expect(err).To(HaveOccurred())
+			Expect(out).To(ContainSubstring("newer than this image"))
+			Expect(out).To(ContainSubstring("2556416"))
+			Expect(out).To(ContainSubstring("2491392"))
+		})
+
+		It("aborts when the board is below the 38.0.0 floor", func() {
+			_, envv := env("2424832", "0x26") // 37.0.0
+			out, err := run(envv, "39.2.0")
+			Expect(err).To(HaveOccurred())
+			Expect(out).To(ContainSubstring("USB host flash"))
+		})
+
+		It("skips silently on non-Thor chip ids", func() {
+			_, envv := env("2490368", "0x23") // Orin
+			out, err := run(envv, "39.2.0")
+			Expect(err).ToNot(HaveOccurred())
+			Expect(out).To(ContainSubstring("not a Thor board"))
+		})
+
+		It("aborts when ESRT is unreadable", func() {
+			dir := GinkgoT().TempDir()
+			conf := filepath.Join(dir, "nv_boot_control.conf")
+			Expect(os.WriteFile(conf, []byte("CHIPID 0x26\n"), 0o644)).To(Succeed())
+			cmd := exec.Command(writeScript())
+			cmd.Env = append(os.Environ(),
+				"ESRT_FW_VERSION_FILE="+filepath.Join(dir, "absent"),
+				"NV_BOOT_CONTROL_CONF="+conf,
+				"KAIROS_QSPI_DRY_RUN=1",
+				"KAIROS_QSPI_IMAGE_VERSION=39.2.0",
+			)
+			out, err := cmd.CombinedOutput()
+			Expect(err).To(HaveOccurred())
+			Expect(string(out)).To(ContainSubstring("cannot read current firmware version"))
+		})
+	})
 })
