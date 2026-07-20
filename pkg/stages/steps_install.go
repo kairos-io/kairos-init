@@ -77,9 +77,11 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 	isNvidiaBoard := fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ] || [ "%[1]s" = "nvidia-jetson-thor" ]`, config.DefaultConfig.Model)
 
 	if values.Model(config.DefaultConfig.Model) == values.Thor {
-		logger.Logger.Info().Msg("NVIDIA Thor detected, using L4T version 38.4 for repository setup")
+		// The L4T version must correspond to the QSPI boot firmware version on the
+		// board, otherwise it black-screens on boot. See kairos-io/kairos#4228.
+		logger.Logger.Info().Msg("NVIDIA Thor detected, using L4T version 39.2 for repository setup")
 		boardModel = "t264"
-		l4tVersion = getEnvOrDefault("L4T_VERSION", "38.4")
+		l4tVersion = getEnvOrDefault("L4T_VERSION", "39.2")
 	}
 
 	stage := []schema.Stage{
