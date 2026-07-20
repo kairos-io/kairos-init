@@ -225,7 +225,7 @@ var _ = Describe("Jetson QSPI script", func() {
 				"ESP_MOUNT_DIR="+esp,
 				"KAIROS_QSPI_SKIP_MOUNT=1",
 				"KAIROS_QSPI_IMAGE_VERSION=39.2.0",
-				"KAIROS_QSPI_FORCE_FREE_KB=1", // pretend the ESP is full
+				"KAIROS_QSPI_FORCE_FREE_KB=0", // pretend the ESP is full
 			)
 			out, err := cmd.CombinedOutput()
 			Expect(err).To(HaveOccurred())

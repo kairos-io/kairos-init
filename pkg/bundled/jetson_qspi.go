@@ -134,7 +134,7 @@ else
 fi
 # Use <= rather than < : filesystem/directory-entry overhead means free space
 # exactly equal to the payload size is not a safe margin to write into.
-if [ "${free_kb}" -le "${capsule_kb}" ]; then
+if [ "${free_kb}" -lt "${capsule_kb}" ]; then
 	fail "not enough free space on the ESP: need ${capsule_kb} KiB, have ${free_kb} KiB.
        The Kairos ESP may need to be larger for this board."
 fi
