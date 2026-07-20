@@ -152,4 +152,84 @@ var _ = Describe("Jetson QSPI script", func() {
 			Expect(string(out)).To(ContainSubstring("not-a-version"))
 		})
 	})
+
+	Describe("capsule staging", func() {
+		It("copies the capsule to the ESP and sets OsIndications", func() {
+			dir := GinkgoT().TempDir()
+
+			esrt := filepath.Join(dir, "fw_version")
+			Expect(os.WriteFile(esrt, []byte("2490368\n"), 0o644)).To(Succeed())
+			conf := filepath.Join(dir, "nv_boot_control.conf")
+			Expect(os.WriteFile(conf, []byte("CHIPID 0x26\n"), 0o644)).To(Succeed())
+
+			ota := filepath.Join(dir, "ota", "t26x")
+			Expect(os.MkdirAll(ota, 0o755)).To(Succeed())
+			capsule := filepath.Join(ota, "TEGRA_BL_3834_agx.Cap")
+			Expect(os.WriteFile(capsule, []byte("CAPSULE-PAYLOAD"), 0o644)).To(Succeed())
+
+			esp := filepath.Join(dir, "esp")
+			Expect(os.MkdirAll(esp, 0o755)).To(Succeed())
+			efivars := filepath.Join(dir, "efivars")
+			Expect(os.MkdirAll(efivars, 0o755)).To(Succeed())
+
+			cmd := exec.Command(writeScript())
+			cmd.Env = append(os.Environ(),
+				"ESRT_FW_VERSION_FILE="+esrt,
+				"NV_BOOT_CONTROL_CONF="+conf,
+				"OTA_PACKAGE_DIR="+filepath.Join(dir, "ota"),
+				"EFIVARS_DIR="+efivars,
+				"ESP_MOUNT_DIR="+esp,
+				"KAIROS_QSPI_SKIP_MOUNT=1",
+				"KAIROS_QSPI_IMAGE_VERSION=39.2.0",
+			)
+			out, err := cmd.CombinedOutput()
+			Expect(err).ToNot(HaveOccurred(), string(out))
+
+			staged, err := os.ReadFile(filepath.Join(esp, "EFI", "UpdateCapsule", "TEGRA_BL_3834_agx.Cap"))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(string(staged)).To(Equal("CAPSULE-PAYLOAD"))
+
+			v, err := os.ReadFile(filepath.Join(efivars,
+				"OsIndications-8be4df61-93ca-11d2-aa0d-00e098032b8c"))
+			Expect(err).ToNot(HaveOccurred())
+			Expect(v).To(Equal([]byte{0x07, 0, 0, 0, 0x04, 0, 0, 0, 0, 0, 0, 0}))
+		})
+
+		It("never writes a bootloader into EFI/BOOT", func() {
+			// Regression guard: NVIDIA's postinst copies L4TLauncher over
+			// EFI/BOOT/BOOTAA64.efi, which on Kairos is our own bootloader.
+			Expect(bundled.JetsonQSPIScript).ToNot(ContainSubstring("BOOTAA64"))
+			Expect(bundled.JetsonQSPIScript).ToNot(ContainSubstring("extlinux"))
+			Expect(bundled.JetsonQSPIScript).ToNot(ContainSubstring("dpkg-reconfigure"))
+		})
+
+		It("aborts when the ESP lacks room for the capsule", func() {
+			dir := GinkgoT().TempDir()
+			esrt := filepath.Join(dir, "fw_version")
+			Expect(os.WriteFile(esrt, []byte("2490368\n"), 0o644)).To(Succeed())
+			conf := filepath.Join(dir, "nv_boot_control.conf")
+			Expect(os.WriteFile(conf, []byte("CHIPID 0x26\n"), 0o644)).To(Succeed())
+			ota := filepath.Join(dir, "ota", "t26x")
+			Expect(os.MkdirAll(ota, 0o755)).To(Succeed())
+			Expect(os.WriteFile(filepath.Join(ota, "TEGRA_BL_3834_agx.Cap"),
+				[]byte("CAPSULE-PAYLOAD"), 0o644)).To(Succeed())
+			esp := filepath.Join(dir, "esp")
+			Expect(os.MkdirAll(esp, 0o755)).To(Succeed())
+
+			cmd := exec.Command(writeScript())
+			cmd.Env = append(os.Environ(),
+				"ESRT_FW_VERSION_FILE="+esrt,
+				"NV_BOOT_CONTROL_CONF="+conf,
+				"OTA_PACKAGE_DIR="+filepath.Join(dir, "ota"),
+				"EFIVARS_DIR="+filepath.Join(dir, "efivars"),
+				"ESP_MOUNT_DIR="+esp,
+				"KAIROS_QSPI_SKIP_MOUNT=1",
+				"KAIROS_QSPI_IMAGE_VERSION=39.2.0",
+				"KAIROS_QSPI_FORCE_FREE_KB=1", // pretend the ESP is full
+			)
+			out, err := cmd.CombinedOutput()
+			Expect(err).To(HaveOccurred())
+			Expect(string(out)).To(ContainSubstring("not enough free space"))
+		})
+	})
 })

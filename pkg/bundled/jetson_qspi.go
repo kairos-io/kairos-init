@@ -99,4 +99,58 @@ if [ "${current_qspi_ver}" -eq "${image_ver}" ]; then
 fi
 
 log "board firmware is older than the image; staging capsule update"
+
+# A dry run must exit before anything that requires the real image layout
+# (e.g. OTA_PACKAGE_DIR), since the decision-logic tests exercise this seam
+# without staging fixtures in place.
+if [ "${KAIROS_QSPI_DRY_RUN:-0}" = "1" ]; then
+	log "dry run; not staging"
+	exit 0
+fi
+
+# --- locate the payload -------------------------------------------------------
+capsule_src="${OTA_PACKAGE_DIR}/${payload_subdir}/TEGRA_BL_3834_agx.Cap"
+[ -r "${capsule_src}" ] || fail "capsule payload not found at ${capsule_src}"
+capsule_size="$(stat -c %s "${capsule_src}")" || fail "cannot stat ${capsule_src}"
+capsule_kb=$(( (capsule_size + 1023) / 1024 ))
+
+# --- mount the ESP ------------------------------------------------------------
+# The after-install-chroot hook does not bind-mount the ESP into the chroot, so we
+# mount it ourselves by label. /dev is bind-mounted, so the device is resolvable.
+mkdir -p "${ESP_MOUNT_DIR}" || fail "cannot create ${ESP_MOUNT_DIR}"
+if [ "${KAIROS_QSPI_SKIP_MOUNT:-0}" != "1" ]; then
+	esp_dev="$(blkid -L "${ESP_LABEL}")" || fail "cannot find an ESP labelled ${ESP_LABEL}"
+	mount "${esp_dev}" "${ESP_MOUNT_DIR}" || fail "cannot mount ${esp_dev} at ${ESP_MOUNT_DIR}"
+	trap 'umount "${ESP_MOUNT_DIR}" || true' EXIT
+fi
+
+# --- capacity check -----------------------------------------------------------
+if [ -n "${KAIROS_QSPI_FORCE_FREE_KB:-}" ]; then
+	# Test hook: let tests simulate a full ESP without needing real block devices.
+	free_kb="${KAIROS_QSPI_FORCE_FREE_KB}"
+else
+	free_kb="$(df -Pk "${ESP_MOUNT_DIR}" | awk 'NR==2 {print $4}')" ||
+		fail "cannot determine free space on ${ESP_MOUNT_DIR}"
+fi
+# Use <= rather than < : filesystem/directory-entry overhead means free space
+# exactly equal to the payload size is not a safe margin to write into.
+if [ "${free_kb}" -le "${capsule_kb}" ]; then
+	fail "not enough free space on the ESP: need ${capsule_kb} KiB, have ${free_kb} KiB.
+       The Kairos ESP may need to be larger for this board."
+fi
+
+# --- stage --------------------------------------------------------------------
+capsule_dir="${ESP_MOUNT_DIR}/EFI/UpdateCapsule"
+mkdir -p "${capsule_dir}" || fail "cannot create ${capsule_dir}"
+cp "${capsule_src}" "${capsule_dir}/" || fail "cannot copy ${capsule_src} to ${capsule_dir}"
+log "staged $(basename "${capsule_src}") on the ESP"
+
+# Set bit 2 of OsIndications (EFI_OS_INDICATIONS_FILE_CAPSULE_DELIVERY_SUPPORTED).
+# UEFI applies the capsule on the next boot, before Linux starts.
+osind="${EFIVARS_DIR}/OsIndications-8be4df61-93ca-11d2-aa0d-00e098032b8c"
+mkdir -p "${EFIVARS_DIR}" || fail "cannot create ${EFIVARS_DIR}"
+printf '\x07\x00\x00\x00\x04\x00\x00\x00\x00\x00\x00\x00' > "${osind}" ||
+	fail "cannot write ${osind}"
+
+log "firmware will be updated on the next boot"
 `
