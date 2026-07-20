@@ -31,9 +31,10 @@ You can then use [AuroraBoot](https://github.com/kairos-io/auroraboot) to transf
 Thor boards will not boot if the QSPI boot firmware version does not correspond to the L4T
 version in the image. Kairos images pin L4T `39.2`.
 
-At install time, `after-install-chroot` runs `/usr/sbin/kairos-jetson-qspi-update`, which
-compares the board's firmware version (from the UEFI ESRT) against the image's
-`nvidia-l4t-bootloader` version and:
+At install time, `after-install-chroot` runs `/usr/sbin/kairos-jetson-qspi-update` on boards
+whose devicetree SoC compatible string is `nvidia,tegra264` (uniform across every Thor
+variant: AGX, IGX and devkit). It compares the board's firmware version (from the UEFI ESRT)
+against the image's `nvidia-l4t-bootloader` version and:
 
 - stages a UEFI capsule update when the image is newer — applied by UEFI on the next boot;
 - does nothing when they match;

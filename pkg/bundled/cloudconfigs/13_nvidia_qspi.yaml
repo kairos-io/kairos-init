@@ -3,6 +3,6 @@ stages:
   after-install-chroot:
     - name: "Check and stage QSPI firmware update"
       if: |
-        [ -x "/usr/sbin/kairos-jetson-qspi-update" ] && [ -r "/etc/nv_boot_control.conf" ]
+        [ -x "/usr/sbin/kairos-jetson-qspi-update" ] && [ -f "/sys/firmware/devicetree/base/compatible" ] && grep -aq "nvidia,tegra264" "/sys/firmware/devicetree/base/compatible"
       commands:
         - /usr/sbin/kairos-jetson-qspi-update
