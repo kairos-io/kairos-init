@@ -110,5 +110,46 @@ var _ = Describe("Jetson QSPI script", func() {
 			Expect(err).To(HaveOccurred())
 			Expect(string(out)).To(ContainSubstring("cannot read current firmware version"))
 		})
+
+		// failingDpkgQueryDir writes a "dpkg-query" shim that always fails and
+		// returns its directory, so prepending it to PATH shadows any real
+		// dpkg-query without disturbing the other coreutils (awk, cut, tr, head)
+		// the script depends on for the steps before the bootloader-version check.
+		failingDpkgQueryDir := func() string {
+			dir := GinkgoT().TempDir()
+			shim := filepath.Join(dir, "dpkg-query")
+			Expect(os.WriteFile(shim, []byte("#!/bin/sh\nexit 1\n"), 0o755)).To(Succeed())
+			return dir
+		}
+
+		It("aborts with a clear message when the bootloader version cannot be determined on the real (non-test) path", func() {
+			// Leave KAIROS_QSPI_IMAGE_VERSION unset so the script takes the
+			// production dpkg-query branch, not the test seam. Shadow
+			// dpkg-query with a failing shim so the command substitution fails
+			// the way it would on an image without nvidia-l4t-bootloader installed.
+			_, envv := env("2490368", "0x26")
+			for i, e := range envv {
+				if strings.HasPrefix(e, "PATH=") {
+					envv[i] = "PATH=" + failingDpkgQueryDir() + string(os.PathListSeparator) + strings.TrimPrefix(e, "PATH=")
+				}
+			}
+
+			cmd := exec.Command(writeScript())
+			cmd.Env = envv
+			out, err := cmd.CombinedOutput()
+			Expect(err).To(HaveOccurred())
+			Expect(string(out)).To(ContainSubstring("cannot determine the L4T bootloader version in this image"))
+		})
+
+		It("aborts with a clear message when the image L4T version is malformed", func() {
+			_, envv := env("2490368", "0x26")
+			envv = append(envv, "KAIROS_QSPI_IMAGE_VERSION=not-a-version")
+			cmd := exec.Command(writeScript())
+			cmd.Env = envv
+			out, err := cmd.CombinedOutput()
+			Expect(err).To(HaveOccurred())
+			Expect(string(out)).To(ContainSubstring("cannot parse"))
+			Expect(string(out)).To(ContainSubstring("not-a-version"))
+		})
 	})
 })
