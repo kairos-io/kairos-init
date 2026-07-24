@@ -3,13 +3,13 @@ stages:
   boot:
     - name: "Enable QEMU"
       if: |
-          grep -iE "qemu|kvm|Virtual Machine" /sys/class/dmi/id/product_name
+          grep -iE "qemu|kvm|Virtual Machine|Standard PC" /sys/class/dmi/id/product_name
       only_service_manager: "openrc"
       commands:
         - rc-service qemu-guest-agent start
     - name: "Enable QEMU"
       if: |
-          grep -iE "qemu|kvm|Virtual Machine" /sys/class/dmi/id/product_name
+          grep -iE "qemu|kvm|Virtual Machine|Standard PC" /sys/class/dmi/id/product_name
       only_service_manager: "systemd"
       commands:
         - systemctl start qemu-guest-agent
