@@ -1058,21 +1058,14 @@ var KernelPackagesModels = ModelPackageMap{
 					"nvidia-l4t-cuda",
 					"nvidia-l4t-nvml",
 					"nvidia-l4t-firmware",
-					// GPU/display firmware. The openrm variant alone cannot
-					// initialize the Thor DCE display ("Cannot initialize DCE
-					// firmware RM"), leaving HDMI black; the nvgpu variant carries
-					// the working HDMI display path. NVIDIA's own BSP installs
-					// both. See kairos-io/kairos#4228 (display follow-up).
-					"nvidia-l4t-firmware-nvgpu",
 					"nvidia-l4t-extlinux",
 					"nvidia-l4t-initrd",
 					"nvidia-l4t-kernel",
+					// Thor (T264) is openrm-only. The nvgpu variant must NOT be
+					// installed/loaded: NVIDIA selects openrm for tegra264 and the
+					// display bring-up is activated separately (see the "Activate
+					// openrm display driver" install step). See kairos-io/kairos#4228.
 					"nvidia-l4t-kernel-openrm",
-					// nvgpu GPU driver: provides the DCE-capable display stack
-					// (nv-modprobe-nvgpu-l4t-display.conf) that actually drives
-					// the Thor HDMI. Without it only openrm loads and the display
-					// never comes up.
-					"nvidia-l4t-kernel-nvgpu",
 					"nvidia-l4t-kernel-dtbs",
 					"nvidia-l4t-kernel-oot-modules",
 					"nvidia-l4t-display-kernel",
