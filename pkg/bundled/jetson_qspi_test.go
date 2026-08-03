@@ -584,6 +584,18 @@ var _ = Describe("Jetson QSPI cloud-config", func() {
 		Expect(string(data)).To(ContainSubstring(bundled.JetsonQSPIScriptPath))
 	})
 
+	It("also runs on after-upgrade-chroot so OCI upgrades restage a newer capsule", func() {
+		// An OCI upgrade never fires the after-install hook, so without this the
+		// newer bootloader capsule an upgraded image ships would never be staged
+		// and the board would keep booting old firmware into a version mismatch.
+		data, err := bundled.EmbeddedConfigs.ReadFile("cloudconfigs/13_nvidia_qspi.yaml")
+		Expect(err).ToNot(HaveOccurred())
+		Expect(string(data)).To(ContainSubstring("after-upgrade-chroot"))
+		// The upgrade stage must invoke the same script, not a soft-gated variant:
+		// both stages run the identical self-gating command.
+		Expect(strings.Count(string(data), bundled.JetsonQSPIScriptPath+"\n")).To(Equal(2))
+	})
+
 	It("delegates board detection entirely to the script, not the YAML guard", func() {
 		// The compatible-string check used to live here too. That meant an
 		// unreadable compatible file silently skipped this whole stage before
