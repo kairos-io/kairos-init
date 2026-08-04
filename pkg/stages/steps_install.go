@@ -222,22 +222,19 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 		{
 			// DGX Spark (GB10): standard arm64 UEFI/SBSA machine with its OWN public
 			// repos (not L4T/jetson). The kernel (linux-image-nvidia-hwe-24.04) and
-			// the open GPU driver (nvidia-headless-580-open) come from stock Ubuntu
-			// ports (noble-updates/main + restricted), so NO canonical-nvidia PPA is
-			// needed. We only add the NVIDIA repos for the CUDA(sbsa), Mellanox and
-			// nvidia-spark-* platform packages. CUDA's key is published at the repo
-			// root; the BaseOS/dgx and Spark repos publish no fetchable key and
-			// gpg keyserver/dirmngr is unavailable in the build sandbox, so their
-			// keys are embedded (see pkg/bundled/dgx_keys.go).
+			// the open GPU driver (nvidia-headless-580-open/nvidia-utils-580) come
+			// from stock Ubuntu ports (noble-updates/main + restricted), so no
+			// canonical-nvidia PPA and no CUDA repo are needed here. We only add the
+			// NVIDIA BaseOS/dgx + Spark repos for the Mellanox and nvidia-spark-*
+			// platform packages. Those repos publish no fetchable key and gpg
+			// keyserver/dirmngr is unavailable in the build sandbox, so their keys
+			// are embedded (see pkg/bundled/dgx_keys.go). CUDA, if wanted, is a
+			// downstream concern (add the CUDA sbsa repo in the derived image).
 			Name: "Setup NVIDIA DGX Spark repositories",
 			If:   isDgxSpark,
 			Commands: []string{
 				"install -d -m 0755 /usr/share/keyrings",
-				"command -v curl >/dev/null 2>&1 || { apt-get update -qq && apt-get install -y --no-install-recommends ca-certificates curl; }",
-				// CUDA (sbsa): armored key straight from the repo (apt accepts .asc via signed-by)
-				"curl -fSsL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/3bf863cc.pub -o /usr/share/keyrings/nvidia-cuda-sbsa.asc",
-				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-cuda-sbsa.asc] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/ /' > /etc/apt/sources.list.d/nvidia-cuda-sbsa.list",
-				// BaseOS/dgx + Spark: embedded keys (base64 binary keyrings), no gpg needed
+				// BaseOS/dgx + Spark: embedded keys (base64 binary keyrings), no gpg/curl needed
 				fmt.Sprintf("echo %s | base64 -d > /usr/share/keyrings/nvidia-dgx.gpg", bundled.DgxRepoKeyBase64),
 				fmt.Sprintf("echo %s | base64 -d > /usr/share/keyrings/nvidia-spark.gpg", bundled.SparkRepoKeyBase64),
 				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-dgx.gpg] https://repo.download.nvidia.com/baseos/ubuntu/noble/arm64/ noble common dgx' > /etc/apt/sources.list.d/nvidia-dgx.list",
