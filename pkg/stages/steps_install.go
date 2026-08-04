@@ -75,6 +75,10 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 	isNvidiaThorBoard := fmt.Sprintf(`[ "%s" = "nvidia-jetson-thor" ]`, config.DefaultConfig.Model)
 	// This matches any of the nvidia boards for steps shared between them
 	isNvidiaBoard := fmt.Sprintf(`[ "%[1]s" = "nvidia-jetson-agx-orin" ] || [ "%[1]s" = "nvidia-jetson-orin-nx" ] || [ "%[1]s" = "nvidia-jetson-thor" ]`, config.DefaultConfig.Model)
+	// DGX Spark (GB10) is a standard arm64 UEFI/SBSA machine, NOT an L4T/Jetson
+	// board - it uses its own public repos, so it is deliberately excluded from
+	// the isNvidiaBoard (L4T) steps above.
+	isDgxSpark := fmt.Sprintf(`[ "%s" = "nvidia-dgx-spark" ]`, config.DefaultConfig.Model)
 
 	if values.Model(config.DefaultConfig.Model) == values.Thor {
 		// The L4T version must correspond to the QSPI boot firmware version on the
@@ -213,6 +217,35 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-drivers-2204.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2204/x86_64/ /' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list",
 				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-drivers-2004.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2004/x86_64/ /' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list",
 				fmt.Sprintf("echo 'deb [signed-by=/usr/share/keyrings/jetson-ota.gpg] https://repo.download.nvidia.com/jetson/%s r%s main' | tee -a /etc/apt/sources.list.d/nvidia-drivers.list", boardModel, l4tVersion),
+			},
+		},
+		{
+			// DGX Spark (GB10): standard arm64 UEFI/SBSA machine with its OWN public
+			// repos (not L4T/jetson). Add BaseOS/dgx + Spark + CUDA(sbsa) + the
+			// canonical-nvidia edge PPA (which carries the -nvidia HWE kernel and the
+			// open GPU driver). CUDA's key is published at the repo root; the DGX and
+			// Spark repo keys are fetched by fingerprint from the Ubuntu keyserver.
+			// NOTE: this key/PPA bootstrap is the part to validate on the first
+			// hardware build - if a key is not on the keyserver, embed it instead.
+			Name: "Setup NVIDIA DGX Spark repositories",
+			If:   isDgxSpark,
+			Commands: []string{
+				"apt-get update -qq || true",
+				"apt-get install -y --no-install-recommends ca-certificates curl gnupg dirmngr software-properties-common",
+				"install -d -m 0755 /usr/share/keyrings",
+				// CUDA (sbsa) - key published at the repo root
+				"curl -fSsL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/3bf863cc.pub | gpg --dearmor | tee /usr/share/keyrings/nvidia-cuda-sbsa.gpg > /dev/null",
+				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-cuda-sbsa.gpg] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/ /' | tee /etc/apt/sources.list.d/nvidia-cuda-sbsa.list",
+				// DGX BaseOS + Spark repo keys, by fingerprint, from the Ubuntu keyserver
+				"gpg --no-default-keyring --keyring /tmp/nvkeys.gpg --keyserver keyserver.ubuntu.com --recv-keys 5E62373C3E8236A0D1123818208CE844D9F220AD 2C609607EDFA661DABFD3E4292552E806FE7EE4D",
+				"gpg --no-default-keyring --keyring /tmp/nvkeys.gpg --export 5E62373C3E8236A0D1123818208CE844D9F220AD | tee /usr/share/keyrings/nvidia-dgx.gpg > /dev/null",
+				"gpg --no-default-keyring --keyring /tmp/nvkeys.gpg --export 2C609607EDFA661DABFD3E4292552E806FE7EE4D | tee /usr/share/keyrings/nvidia-spark.gpg > /dev/null",
+				"rm -f /tmp/nvkeys.gpg",
+				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-dgx.gpg] https://repo.download.nvidia.com/baseos/ubuntu/noble/arm64/ noble common dgx' | tee /etc/apt/sources.list.d/nvidia-dgx.list",
+				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-dgx.gpg] https://repo.download.nvidia.com/baseos/ubuntu/noble/arm64/ noble-updates common dgx' | tee -a /etc/apt/sources.list.d/nvidia-dgx.list",
+				"echo 'deb [signed-by=/usr/share/keyrings/nvidia-spark.gpg] https://repo.download.nvidia.com/spark/ubuntu/arm64/ noble-updates common' | tee /etc/apt/sources.list.d/nvidia-spark.list",
+				// canonical-nvidia nvidia-desktop-edge PPA: the -nvidia HWE kernel + open driver
+				"add-apt-repository -y ppa:canonical-nvidia/nvidia-desktop-edge",
 			},
 		},
 		{

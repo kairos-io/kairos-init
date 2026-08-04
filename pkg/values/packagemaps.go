@@ -197,6 +197,32 @@ var BasePackagesModels = ModelPackageMap{
 					"fuse3",
 				},
 			},
+			// NVIDIA DGX Spark (GB10 Grace-Blackwell). Unlike the Jetson models
+			// this is a standard arm64 UEFI/SBSA machine; packages come from the
+			// public DGX/spark/CUDA repos set up in the DGX Spark repo stage.
+			// Minimal + headless (no X/Wayland). Validated on hardware to resolve
+			// cleanly at ~163 packages. See kairos-io DGX Spark support.
+			DgxSpark: {
+				Common: {
+					"bridge-utils",
+					"fuse3",
+					// kernel: Canonical/NVIDIA HWE "-nvidia" flavour (6.17-nvidia)
+					"linux-image-nvidia-hwe-24.04",
+					// GPU: headless open driver (no X/Wayland) + nvidia-smi + firmware
+					"nvidia-headless-580-open",
+					"nvidia-utils-580",
+					// firmware updates via fwupd (UEFI capsule / ESRT) - no custom staging
+					"fwupd",
+					// Mellanox / ConnectX networking
+					"rdma-core",
+					"nvidia-mlnx-tools",
+					"nvidia-spark-mlnx-firmware-manager",
+					// platform config (grub PCI args, initcall blacklist, fstab)
+					"nvidia-spark-grub-pci",
+					"nvidia-spark-initcall-bl",
+					"nvidia-spark-fstab-config",
+				},
+			},
 		},
 	},
 }
