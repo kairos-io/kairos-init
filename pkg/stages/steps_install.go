@@ -234,6 +234,11 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			If:   isDgxSpark,
 			Commands: []string{
 				"install -d -m 0755 /usr/share/keyrings",
+				// To add the CUDA (sbsa) repo back (e.g. for host CUDA in a derived
+				// image), uncomment the two lines below (curl must be present; the
+				// CUDA key is published at the repo root, apt accepts the .asc):
+				// "curl -fSsL https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/3bf863cc.pub -o /usr/share/keyrings/nvidia-cuda-sbsa.asc",
+				// "echo 'deb [signed-by=/usr/share/keyrings/nvidia-cuda-sbsa.asc] https://developer.download.nvidia.com/compute/cuda/repos/ubuntu2404/sbsa/ /' > /etc/apt/sources.list.d/nvidia-cuda-sbsa.list",
 				// BaseOS/dgx + Spark: embedded keys (base64 binary keyrings), no gpg/curl needed
 				fmt.Sprintf("echo %s | base64 -d > /usr/share/keyrings/nvidia-dgx.gpg", bundled.DgxRepoKeyBase64),
 				fmt.Sprintf("echo %s | base64 -d > /usr/share/keyrings/nvidia-spark.gpg", bundled.SparkRepoKeyBase64),
