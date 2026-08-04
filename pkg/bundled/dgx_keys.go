@@ -3,8 +3,8 @@ package bundled
 // DGX Spark repository signing keys (binary GPG keyrings, base64-encoded).
 // The BaseOS/dgx and Spark repos do not publish a fetchable key file, and
 // gpg --recv-keys/dirmngr is unavailable in container/buildkit build sandboxes,
-// so the keys are embedded and written directly. The CUDA (sbsa) key is fetched
-// from the repo at build time (see the DGX Spark repo-setup stage).
+// so the keys are embedded and written directly.
+// (CUDA/sbsa repo setup is intentionally left to downstream images.)
 const (
 	// DgxRepoKeyBase64 signs repo.download.nvidia.com/baseos (dgx_debian_prod).
 	DgxRepoKeyBase64 = "mQINBGJYmlEBEACMviBXYMvQakrHwa/pJNSEFXyX4HpWRm3ZbXxiyDANln7KJfYBIPaNxzANmpBwKkHJGZWihH4nhub3dYgryGTRHaRRa3xtPfstbp1xe9pHk74uchjELdUKpNcpCmJgr9+16A5LKibGRGuoKHvV41utuA9MqB84kj9I3JAsUxEqc0iXN4fMZkd0Rbi30cL6d2YWah/fsIpHorexUE532ZZltL+ql/2GkabYwSj25R/UPbsdTIb8ENkY/fSxhCVYMWAHL+MSDnjdDfZj9ElWHe+2a1L5OQ8kmThU43S8+hvwPoiVe6ztF05Irk+YTW3elNBF0Hc405eI3e8445q7GGvTLKeVeaP8yAFZu08TAPMR2EeVLAaNAt1E1smdMVetgg5gDLsEE3tki52x5hOINjlSmg5CwtyigBZylmkhvcZHL3LT/r7ruGc/a4jVXyiqqMajh5Ku19yPN+kwMP7a/locCpF5+89SHVNuAsUGZJq5vshX3Q2L+4VWuA+Aeyvr7fC3Agx+Fpm9nfmABE4pyAHYp66dF0pqoY/QaPFCPsad+BEQXKsSKIahCGf6Zr4Kd+erYkRotVVLfMNxbWDOEJR+x1gpQTQkHFmWKHASx9sRKjaVzf5TzJyY3jB+rEAfw+k9qWJSMzyhgCiV1loTLzkNdrQ/zW0Pnsw0QgHpK7LS8wARAQABtDJkZ3gtY29zbW9zLXN1cHBvcnQgPGRneC1jb3Ntb3Mtc3VwcG9ydEBudmlkaWEuY29tPokCOQQTAQIAIwUCYliaUQIbAwcLCQgHAwIBBhUIAgkKCwQWAgMBAh4BAheAAAoJECCM6ETZ8iCtIa0P/30L9LTv4kkYDZldr5WZ4FKF4D/hByUP1c6HSxIIN6v2fF42UWNVAIrsdRUtOLibPGCqJ+2KWeEtbxVX8RS/ur+li5Y1u5DQy5k7qk3idnT9jzNwfM5QCxWK5yMO6atPgkEuNvIFkfPWJf8hLrSkeTzAf91EsMPm7D5equSNbY3JMWSqZIn+YeF00FakbdOjTiE+oSyP7qrMY4+1GbNRaKg3jlpOWR/xCqJHV3bCTTrd4u3vX8xr4/B14DrQ3CAzS8JCg0PwtVZyh65AdTMG7iUSD0ZRjRM6fM8LQhUOnwsylwMh58EBxmcJVwL32z/R5sXPToD/wgRo/WvfTVtuNwLs0TyPNEQp/RGFP3rlp/29fZBmhg+YFUzK9e3Ec80ruWT+ignpYZmPNtSXo6J+Cg78jbJtjDYSZgMaIwFA7HmtWs4uh4M7mwsZZLej5AHx11O9HMDYaAP14ND8L5IKyTwedeMgff2bMXkeNb8U9/IiSULd782wSWHDNqq1nAtIXcCBNYZZIprCtq6+alRA8g+KUo8AEyzFITTaa7WRwfrwVPlxAQeks/j1IG4bJ6Fj0BhElfxyF3pLV42bZwmCfw752/X5p+3XRTKV8kFmwNs+HnZoZy8ouVuZAGnF6rI1fJgU/zOg+GwNYteU0I2jUpsmPbZCMd/QqY7l8KA3i011"
