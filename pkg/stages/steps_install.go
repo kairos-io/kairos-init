@@ -246,6 +246,18 @@ func GetInstallStage(sis values.System, logger logger.KairosLogger) ([]schema.St
 			},
 		},
 		{
+			// Installed here (not in the base package map) because the base-packages
+			// stage runs before the DGX repos above are configured. These come from
+			// the Spark/BaseOS repos: Mellanox tooling + the platform config packages
+			// (grub PCI args, initcall blacklist, fstab).
+			Name: "Install NVIDIA DGX Spark packages",
+			If:   isDgxSpark,
+			Commands: []string{
+				"apt-get update",
+				"apt-get install -y --no-install-recommends nvidia-mlnx-tools nvidia-spark-mlnx-firmware-manager nvidia-spark-grub-pci nvidia-spark-initcall-bl nvidia-spark-fstab-config",
+			},
+		},
+		{
 			Name: "Setup OpenCV symlink for NVIDIA devices",
 			If:   isNvidiaAgxOrOrinNxBoard,
 			Commands: []string{

@@ -202,25 +202,25 @@ var BasePackagesModels = ModelPackageMap{
 			// public DGX/spark/CUDA repos set up in the DGX Spark repo stage.
 			// Minimal + headless (no X/Wayland). Validated on hardware to resolve
 			// cleanly at ~163 packages. See kairos-io DGX Spark support.
+			// These are the base packages available from stock Ubuntu ports at
+			// "Install base packages" time (main + restricted). The NVIDIA-repo
+			// packages (Mellanox + nvidia-spark-*) are installed in a dedicated
+			// stage AFTER the DGX repo-setup - see steps_install.go - because the
+			// base-packages stage runs before the repos are configured.
 			DgxSpark: {
 				Common: {
 					"bridge-utils",
 					"fuse3",
 					// kernel: Canonical/NVIDIA HWE "-nvidia" flavour (6.17-nvidia)
 					"linux-image-nvidia-hwe-24.04",
-					// GPU: headless open driver (no X/Wayland) + nvidia-smi + firmware
+					// GPU: headless open driver (no X/Wayland) + nvidia-smi. From
+					// Ubuntu restricted (nvidia-headless-580-open, nvidia-utils-580).
 					"nvidia-headless-580-open",
 					"nvidia-utils-580",
 					// firmware updates via fwupd (UEFI capsule / ESRT) - no custom staging
 					"fwupd",
-					// Mellanox / ConnectX networking
+					// Mellanox / ConnectX userspace from Ubuntu
 					"rdma-core",
-					"nvidia-mlnx-tools",
-					"nvidia-spark-mlnx-firmware-manager",
-					// platform config (grub PCI args, initcall blacklist, fstab)
-					"nvidia-spark-grub-pci",
-					"nvidia-spark-initcall-bl",
-					"nvidia-spark-fstab-config",
 				},
 			},
 		},
