@@ -25,6 +25,21 @@ jobs:
         with:
           go-version-file: 'go.mod'
           cache: true
+      - name: Prepare embedded binary placeholders
+        run: |
+          mkdir -p pkg/bundled/binaries/fips
+          touch \
+            pkg/bundled/binaries/kairos-agent \
+            pkg/bundled/binaries/immucore \
+            pkg/bundled/binaries/kcrypt-discovery-challenger \
+            pkg/bundled/binaries/provider-kairos \
+            pkg/bundled/binaries/kairos-installer \
+            pkg/bundled/binaries/edgevpn \
+            pkg/bundled/binaries/version-info.yaml \
+            pkg/bundled/binaries/fips/kairos-agent \
+            pkg/bundled/binaries/fips/immucore \
+            pkg/bundled/binaries/fips/kcrypt-discovery-challenger \
+            pkg/bundled/binaries/fips/provider-kairos
       - name: Run tests
         run: |
           go run github.com/onsi/ginkgo/v2/ginkgo run -p --github-output  --covermode=atomic --coverprofile=coverage.out --race -r ./...
