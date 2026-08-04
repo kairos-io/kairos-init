@@ -198,10 +198,10 @@ var BasePackagesModels = ModelPackageMap{
 				},
 			},
 			// NVIDIA DGX Spark (GB10 Grace-Blackwell). Unlike the Jetson models
-			// this is a standard arm64 UEFI/SBSA machine; packages come from the
-			// public DGX/spark/CUDA repos set up in the DGX Spark repo stage.
+			// this is a standard arm64 UEFI/SBSA machine; platform repos are set up
+			// in the DGX Spark repo stage (BaseOS/dgx + Spark). CUDA (sbsa) is not
+			// configured here (it can be added downstream if needed).
 			// Minimal + headless (no X/Wayland). Validated on hardware to resolve
-			// cleanly at ~163 packages. See kairos-io DGX Spark support.
 			// These are the base packages available from stock Ubuntu ports at
 			// "Install base packages" time (main + restricted). The NVIDIA-repo
 			// packages (Mellanox + nvidia-spark-*) are installed in a dedicated
