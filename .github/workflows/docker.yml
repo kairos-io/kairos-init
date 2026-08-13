@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: build-main-${{ github.head_ref || github.ref }}-${{ github.repository }}
+  group: docker-build-${{ github.head_ref || github.ref }}-${{ github.repository }}
   cancel-in-progress: true
 
 jobs:
@@ -19,7 +19,11 @@ jobs:
   # manifest assembly. The old ttl.sh handoff was unauthenticated and let
   # anyone substitute image content at our predictable per-sha tag; content
   # addressing via digest makes that impossible.
+  #
+  # Fork PRs are skipped: GITHUB_TOKEN is read-only for them so a ghcr push
+  # would fail. Same-repo PRs (and pushes to main) run normally.
   build:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     permissions:
       contents: read
       packages: write
@@ -88,6 +92,7 @@ jobs:
   # tagged reference. Main pushes get the docker-metadata-action-derived
   # tag set (main, sha, semver as applicable); PRs get pr-<N>.
   merge:
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
     needs: build
     runs-on: ubuntu-24.04
     permissions:
