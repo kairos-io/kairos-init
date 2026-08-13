@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+  pull_request:
 
 permissions:
   contents: read
@@ -45,6 +46,7 @@ jobs:
           push: true
           tags: ttl.sh/kairos:${{ github.sha }}-arm64
   build:
+    if: github.event_name == 'push'
     needs:
       - build-linux-amd64
       - build-linux-arm64
@@ -64,6 +66,29 @@ jobs:
         with:
           index-annotations: ${{ steps.metadata.outputs.labels }}
           tags: ${{ steps.metadata.outputs.tags }}
+          sources: |
+            ttl.sh/kairos:${{ github.sha }}-arm64
+            ttl.sh/kairos:${{ github.sha }}-amd64
+  # Preview image for PRs: consumers (e.g. kairos-io/kairos) can point their
+  # Dockerfile at ghcr.io/kairos-io/kairos-init:pr-<N> while iterating.
+  publish-pr:
+    if: github.event_name == 'pull_request'
+    needs:
+      - build-linux-amd64
+      - build-linux-arm64
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: int128/docker-manifest-create-action@v2
+        with:
+          tags: ghcr.io/${{ github.repository_owner }}/kairos-init:pr-${{ github.event.pull_request.number }}
           sources: |
             ttl.sh/kairos:${{ github.sha }}-arm64
             ttl.sh/kairos:${{ github.sha }}-amd64
