@@ -213,6 +213,15 @@ var BasePackagesModels = ModelPackageMap{
 					"fuse3",
 					// kernel: Canonical/NVIDIA HWE "-nvidia" flavour (6.17-nvidia)
 					"linux-image-nvidia-hwe-24.04",
+					// GPU kernel module: PREBUILT nvidia.ko matching the HWE kernel
+					// ABI (ships nvidia{,-uvm,-modeset,-drm}.ko already compiled).
+					// nvidia-headless-*-open would otherwise rely on DKMS to build
+					// the module at install time against the RUNNING kernel - which
+					// in a container image build is the build host's kernel, not the
+					// target -nvidia one, so DKMS never produces a module and
+					// nvidia-smi fails on the installed system. The prebuilt package
+					// tracks linux-image-nvidia-hwe-24.04 so they upgrade in lockstep.
+					"linux-modules-nvidia-580-open-nvidia-hwe-24.04",
 					// GPU: headless open driver (no X/Wayland) + nvidia-smi. From
 					// Ubuntu restricted (nvidia-headless-580-open, nvidia-utils-580).
 					"nvidia-headless-580-open",
