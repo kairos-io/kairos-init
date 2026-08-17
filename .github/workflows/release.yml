@@ -34,32 +34,66 @@ jobs:
       - uses: actions/checkout@v7
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+      - name: Log in to quay.io
+        uses: docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build the docker image
         uses: docker/build-push-action@v7
-        id: build-linux-amd64
+        id: build
         with:
           provenance: false
           context: .
           file: Dockerfile
           platforms: linux/amd64
-          push: true
-          tags: ttl.sh/kairos:${{ github.sha }}-amd64 # This are just temp images to build the final one
+          outputs: type=image,name=quay.io/kairos/kairos-init,push-by-digest=true,name-canonical=true,push=true
+      - name: Export the digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+      - name: Upload the digest
+        uses: actions/upload-artifact@v7
+        with:
+          name: digests-amd64
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
   build-linux-arm64:
     runs-on: 'ubuntu-24.04-arm'
     steps:
       - uses: actions/checkout@v7
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+      - name: Log in to quay.io
+        uses: docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build the docker image
         uses: docker/build-push-action@v7
-        id: build-linux-amr64
+        id: build
         with:
           provenance: false
           context: .
           file: Dockerfile
           platforms: linux/arm64
-          push: true
-          tags: ttl.sh/kairos:${{ github.sha }}-arm64 # This are just temp images to build the final one
+          outputs: type=image,name=quay.io/kairos/kairos-init,push-by-digest=true,name-canonical=true,push=true
+      - name: Export the digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+      - name: Upload the digest
+        uses: actions/upload-artifact@v7
+        with:
+          name: digests-arm64
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
   build-linux-riscv64:
     # No native riscv64 runner available; build stage cross-compiles natively via
     # --platform=$BUILDPLATFORM in the Dockerfile so QEMU is only needed for
@@ -73,9 +107,15 @@ jobs:
           platforms: riscv64
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
+      - name: Log in to quay.io
+        uses: docker/login-action@v4
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
       - name: Build the docker image
         uses: docker/build-push-action@v7
-        id: build-linux-riscv64
+        id: build
         with:
           provenance: false
           context: .
@@ -83,8 +123,19 @@ jobs:
           platforms: linux/riscv64
           build-args: |
             SKIP_UPX=1
-          push: true
-          tags: ttl.sh/kairos:${{ github.sha }}-riscv64 # This are just temp images to build the final one
+          outputs: type=image,name=quay.io/kairos/kairos-init,push-by-digest=true,name-canonical=true,push=true
+      - name: Export the digest
+        run: |
+          mkdir -p ${{ runner.temp }}/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "${{ runner.temp }}/digests/${digest#sha256:}"
+      - name: Upload the digest
+        uses: actions/upload-artifact@v7
+        with:
+          name: digests-riscv64
+          path: ${{ runner.temp }}/digests/*
+          if-no-files-found: error
+          retention-days: 1
   build:
     needs:
       - build-linux-amd64
@@ -92,7 +143,16 @@ jobs:
       - build-linux-riscv64
     runs-on: ubuntu-24.04
     steps:
-      - uses: docker/login-action@v4
+      - name: Download the digests
+        uses: actions/download-artifact@v8
+        with:
+          path: ${{ runner.temp }}/digests
+          pattern: digests-*
+          merge-multiple: true
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      - name: Log in to quay.io
+        uses: docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
@@ -101,12 +161,21 @@ jobs:
         id: metadata
         with:
           images: quay.io/kairos/kairos-init
-      - uses: int128/docker-manifest-create-action@v2
-        id: build
-        with:
-          index-annotations: ${{ steps.metadata.outputs.labels }}
-          tags: ${{ steps.metadata.outputs.tags }}
-          sources: |
-            ttl.sh/kairos:${{ github.sha }}-arm64
-            ttl.sh/kairos:${{ github.sha }}-amd64
-            ttl.sh/kairos:${{ github.sha }}-riscv64
+      # The annotations keep what int128/docker-manifest-create-action used to
+      # apply through index-annotations. A label value can contain spaces, so
+      # they go through an array rather than word splitting.
+      - name: Create the manifest list
+        working-directory: ${{ runner.temp }}/digests
+        run: |
+          mapfile -t annotations < <(
+            jq -r '.labels | to_entries[] | "--annotation", "index:" + .key + "=" + .value' \
+              <<< "$DOCKER_METADATA_OUTPUT_JSON"
+          )
+          mapfile -t tags < <(jq -r '.tags[] | "-t", .' <<< "$DOCKER_METADATA_OUTPUT_JSON")
+          docker buildx imagetools create \
+            "${annotations[@]}" "${tags[@]}" \
+            $(printf 'quay.io/kairos/kairos-init@sha256:%s ' *)
+      - name: Check the manifest list
+        run: |
+          docker buildx imagetools inspect \
+            "$(jq -cr '.tags[0]' <<< "$DOCKER_METADATA_OUTPUT_JSON")"
