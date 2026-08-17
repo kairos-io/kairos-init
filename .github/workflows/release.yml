@@ -32,66 +32,60 @@ jobs:
     runs-on: 'ubuntu-24.04'
     steps:
       - uses: actions/checkout@v7
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Log in to quay.io
-        uses: docker/login-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Build the docker image
-        uses: docker/build-push-action@v7
+      - name: Build and push by digest
         id: build
+        uses: docker/build-push-action@v7
         with:
           provenance: false
           context: .
           file: Dockerfile
           platforms: linux/amd64
           outputs: type=image,name=quay.io/kairos/kairos-init,push-by-digest=true,name-canonical=true,push=true
-      - name: Export the digest
+      - name: Export digest
         run: |
-          mkdir -p ${{ runner.temp }}/digests
+          mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "${{ runner.temp }}/digests/${digest#sha256:}"
-      - name: Upload the digest
-        uses: actions/upload-artifact@v7
+          touch "/tmp/digests/${digest#sha256:}"
+      - uses: actions/upload-artifact@v4
         with:
-          name: digests-amd64
-          path: ${{ runner.temp }}/digests/*
+          name: digests-linux-amd64
+          path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
   build-linux-arm64:
     runs-on: 'ubuntu-24.04-arm'
     steps:
       - uses: actions/checkout@v7
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Log in to quay.io
-        uses: docker/login-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Build the docker image
-        uses: docker/build-push-action@v7
+      - name: Build and push by digest
         id: build
+        uses: docker/build-push-action@v7
         with:
           provenance: false
           context: .
           file: Dockerfile
           platforms: linux/arm64
           outputs: type=image,name=quay.io/kairos/kairos-init,push-by-digest=true,name-canonical=true,push=true
-      - name: Export the digest
+      - name: Export digest
         run: |
-          mkdir -p ${{ runner.temp }}/digests
+          mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "${{ runner.temp }}/digests/${digest#sha256:}"
-      - name: Upload the digest
-        uses: actions/upload-artifact@v7
+          touch "/tmp/digests/${digest#sha256:}"
+      - uses: actions/upload-artifact@v4
         with:
-          name: digests-arm64
-          path: ${{ runner.temp }}/digests/*
+          name: digests-linux-arm64
+          path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
   build-linux-riscv64:
@@ -105,17 +99,15 @@ jobs:
         uses: docker/setup-qemu-action@v4
         with:
           platforms: riscv64
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Log in to quay.io
-        uses: docker/login-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-      - name: Build the docker image
-        uses: docker/build-push-action@v7
+      - name: Build and push by digest
         id: build
+        uses: docker/build-push-action@v7
         with:
           provenance: false
           context: .
@@ -124,16 +116,15 @@ jobs:
           build-args: |
             SKIP_UPX=1
           outputs: type=image,name=quay.io/kairos/kairos-init,push-by-digest=true,name-canonical=true,push=true
-      - name: Export the digest
+      - name: Export digest
         run: |
-          mkdir -p ${{ runner.temp }}/digests
+          mkdir -p /tmp/digests
           digest="${{ steps.build.outputs.digest }}"
-          touch "${{ runner.temp }}/digests/${digest#sha256:}"
-      - name: Upload the digest
-        uses: actions/upload-artifact@v7
+          touch "/tmp/digests/${digest#sha256:}"
+      - uses: actions/upload-artifact@v4
         with:
-          name: digests-riscv64
-          path: ${{ runner.temp }}/digests/*
+          name: digests-linux-riscv64
+          path: /tmp/digests/*
           if-no-files-found: error
           retention-days: 1
   build:
@@ -143,16 +134,13 @@ jobs:
       - build-linux-riscv64
     runs-on: ubuntu-24.04
     steps:
-      - name: Download the digests
-        uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@v4
         with:
-          path: ${{ runner.temp }}/digests
+          path: /tmp/digests
           pattern: digests-*
           merge-multiple: true
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-      - name: Log in to quay.io
-        uses: docker/login-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
         with:
           registry: quay.io
           username: ${{ secrets.QUAY_USERNAME }}
@@ -161,21 +149,28 @@ jobs:
         id: metadata
         with:
           images: quay.io/kairos/kairos-init
-      # The annotations keep what int128/docker-manifest-create-action used to
-      # apply through index-annotations. A label value can contain spaces, so
-      # they go through an array rather than word splitting.
-      - name: Create the manifest list
-        working-directory: ${{ runner.temp }}/digests
+      - name: Create manifest and push
+        working-directory: /tmp/digests
+        env:
+          IMAGE: quay.io/kairos/kairos-init
+          PUSH_TAGS: ${{ steps.metadata.outputs.tags }}
+          PUSH_LABELS: ${{ steps.metadata.outputs.labels }}
         run: |
-          mapfile -t annotations < <(
-            jq -r '.labels | to_entries[] | "--annotation", "index:" + .key + "=" + .value' \
-              <<< "$DOCKER_METADATA_OUTPUT_JSON"
-          )
-          mapfile -t tags < <(jq -r '.tags[] | "-t", .' <<< "$DOCKER_METADATA_OUTPUT_JSON")
-          docker buildx imagetools create \
-            "${annotations[@]}" "${tags[@]}" \
-            $(printf 'quay.io/kairos/kairos-init@sha256:%s ' *)
-      - name: Check the manifest list
+          set -euo pipefail
+          tag_args=()
+          while IFS= read -r t; do
+            [ -n "$t" ] && tag_args+=(-t "$t")
+          done <<< "$PUSH_TAGS"
+          # index-annotations, which int128/docker-manifest-create-action set
+          # before. A label value can contain spaces, so these go in an array.
+          annotation_args=()
+          while IFS= read -r l; do
+            [ -n "$l" ] && annotation_args+=(--annotation "index:$l")
+          done <<< "$PUSH_LABELS"
+          # shellcheck disable=SC2046  # digests are hex, no whitespace risk
+          docker buildx imagetools create "${tag_args[@]}" "${annotation_args[@]}" \
+            $(printf "${IMAGE}@sha256:%s " *)
+      - name: Inspect the manifest
         run: |
           docker buildx imagetools inspect \
-            "$(jq -cr '.tags[0]' <<< "$DOCKER_METADATA_OUTPUT_JSON")"
+            "$(head -n1 <<< '${{ steps.metadata.outputs.tags }}')"
