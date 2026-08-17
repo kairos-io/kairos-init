@@ -167,6 +167,16 @@ jobs:
           while IFS= read -r l; do
             [ -n "$l" ] && annotation_args+=(--annotation "index:$l")
           done <<< "$PUSH_LABELS"
+          # An empty tag list would publish a manifest nobody can pull, so stop
+          # rather than let docker/metadata-action produce nothing quietly.
+          if [ ${#tag_args[@]} -eq 0 ]; then
+            echo "docker/metadata-action returned no tags" >&2
+            exit 1
+          fi
+          if [ -z "$(echo *)" ] || [ "$(echo *)" = "*" ]; then
+            echo "no per-arch digests were downloaded" >&2
+            exit 1
+          fi
           # shellcheck disable=SC2046  # digests are hex, no whitespace risk
           docker buildx imagetools create "${tag_args[@]}" "${annotation_args[@]}" \
             $(printf "${IMAGE}@sha256:%s " *)
