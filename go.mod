@@ -9,7 +9,7 @@ require (
 	github.com/kairos-io/kairos-sdk v0.25.2
 	github.com/mudler/go-pluggable v0.0.0-20230126220627-7710299a0ae5
 	github.com/mudler/yip v1.25.1
-	github.com/onsi/ginkgo/v2 v2.32.0
+	github.com/onsi/ginkgo/v2 v2.32.1
 	github.com/onsi/gomega v1.42.1
 	github.com/rs/zerolog v1.35.1
 	github.com/sanity-io/litter v1.5.8
